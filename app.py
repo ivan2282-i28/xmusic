@@ -16,7 +16,7 @@ MUSIC_DIR = os.path.join(BASE_DIR, 'music')
 FON_DIR = os.path.join(BASE_DIR, 'fon')
 VIDEO_DIR = os.path.join(BASE_DIR, 'video')
 TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
-
+INDEX_DIR = os.path.join(BASE_DIR, 'index')
 # Создание директорий, если они не существуют
 for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
     if not os.path.exists(directory):
@@ -142,9 +142,9 @@ def init_db():
     ''')
 
     # Добавление админа, если его нет
-    c.execute("SELECT * FROM users WHERE username = 'DomRU'")
+    c.execute("SELECT * FROM users WHERE username = 'root'")
     if c.fetchone() is None:
-        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('DomRU', '12345', 'admin'))
+        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', '12345', 'admin'))
 
     # Добавление стандартных жанров
     genres = ['Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
@@ -172,11 +172,11 @@ app.config['UPLOAD_FOLDER'] = {
 
 @app.route('/')
 def serve_index():
-    return send_from_directory(BASE_DIR, 'index.html')
+    return send_from_directory(INDEX_DIR, 'index.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    return send_from_directory(BASE_DIR, filename)
+    return send_from_directory(INDEX_DIR, filename)
 
 @app.route('/music/<path:filename>')
 def serve_music(filename):
