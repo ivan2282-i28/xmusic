@@ -1440,8 +1440,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Трек отправлен на модерацию. Ожидайте одобрения.');
                     }, 1000);
                 } else {
-                    const result = JSON.parse(xhr.responseText);
-                    if (uploadStatusText) uploadStatusText.textContent = 'Ошибка загрузки: ' + result.message;
+                    const contentType = xhr.getResponseHeader('Content-Type');
+                    let result = { message: 'Произошла неизвестная ошибка.' };
+
+                    if (contentType && contentType.includes('application/json')) {
+                        try {
+                            result = JSON.parse(xhr.responseText);
+                        } catch (e) {
+                            console.error('Не удалось разобрать JSON:', e);
+                        }
+                    } else {
+                        // Если ответ не JSON (вероятно, HTML-страница ошибки), используем общее сообщение
+                        console.error('Сервер вернул не-JSON ответ:', xhr.responseText);
+                    }
+                    
+                    if (uploadStatusText) uploadStatusText.textContent = `Ошибка загрузки: ${result.message}`;
                     if (uploadProgressBar) uploadProgressBar.style.width = '0%';
                     if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
                 }
