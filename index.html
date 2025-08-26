@@ -28,7 +28,7 @@
             </nav>
             <nav class="main-nav" id="xcreatorNav" style="display: none;">
                 <button class="go-back-btn" id="backToXMusicBtn"><span>&#8592; Назад в XMusic</span></button>
-                <button class="creator-nav-btn active" id="creatorHomeBtn"><span>Главная</span></button>
+                <button class="creator-nav-btn active" id="creatorHomeBtn" style="display: none;"><span>Главная</span></button>
                 <button class="creator-nav-btn" id="myTracksBtn" style="display: none;"><span>Мои треки</span></button>
                 <button class="creator-nav-btn" id="analyticsBtn" style="display: none;"><span>Аналитика</span></button>
                 <button class="creator-nav-btn admin-section" id="adminApplicationsBtn" style="display: none;"><span>Заявки в Creator</span></button>
@@ -55,18 +55,22 @@
             </header>
 
             <div id="homeView" class="view active-view">
-                <section class="section now-playing-section">
+                <section class="section xrecomen-section" id="xrecomenSection" style="display: none;">
                     <p id="nowPlayingText" class="now-playing-text"></p>
+                    <button id="xrecomenBtn">
+                        <span class="xrecomen-title">Xrecomen</span>
+                        <span class="xrecomen-subtitle">Возможно, вам понравится</span>
+                    </button>
                 </section>
-                <section class="section">
+                <section class="section" id="youLikeSection">
                     <h2 class="section-title">Вам нравятся</h2>
                     <div class="scroll-container" id="youLikeGrid"></div>
                 </section>
-                <section class="section">
+                <section class="section" id="youMayLikeSection">
                     <h2 class="section-title">Вам могут понравиться</h2>
                     <div class="scroll-container" id="youMayLikeGrid"></div>
                 </section>
-                <section class="section">
+                <section class="section" id="favoriteCollectionsSection">
                     <h2 class="section-title">Ваши любимые подборки</h2>
                     <div class="scroll-container" id="favoriteCollectionsGrid"></div>
                 </section>
@@ -88,6 +92,7 @@
             </div>
             
             <div id="specificCategoryView" class="view">
+                <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn"><span>&#8592; К категориям</span></button>
                 <h2 class="section-title" id="specificCategoryTitle">Название категории</h2>
                 <div class="grid-container" id="specificCategoryGrid"></div>
             </div>
@@ -116,11 +121,13 @@
                             <p class="stat-value" id="totalPlays">0</p>
                         </div>
                         <div class="analytics-block">
-                            <h3>Прослушивания за последние 14 дней</h3>
-                            <canvas id="analyticsChart"></canvas>
+                            <h3>Прослушивания за последние 7 дней</h3>
+                            <div class="chart-container">
+                                <canvas id="analyticsChart"></canvas>
+                            </div>
                         </div>
                         <div class="analytics-block">
-                            <h3>Статистика по трекам</h3>
+                            <h3>Топ-5 популярных треков</h3>
                             <table class="analytics-table">
                                 <thead>
                                     <tr>
@@ -151,6 +158,8 @@
                 </div>
                 <div id="adminCategoriesSection" class="creator-main-section" style="display: none;">
                     <h2 class="section-title">Категории</h2>
+                    <button class="submit-btn create-category-btn" id="createCategoryBtn">Создать категорию</button>
+                    <div class="categories-list-container" id="adminCategoriesList"></div>
                 </div>
             </div>
         </main>
@@ -169,10 +178,10 @@
         
         <div class="control-buttons-and-progress">
             <div class="control-buttons">
-                <button id="nextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button id="prevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
-                <button class="play-button" id="playPauseBtn" title="Воспроизвести"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
                 <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+                <button id="prevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
+                <button class="play-button" id="playPauseBtn" title="Воспроизвести"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
+                <button id="nextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
                 <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">❤</button>
             </div>
             
@@ -212,6 +221,7 @@
                 <select id="moderationGenreSelect"></select>
             </div>
             <audio id="moderationPlayer" controls></audio>
+            <video id="moderationVideoPlayer" controls></video>
             <div class="moderation-actions">
                 <button class="approve-track-btn" id="moderationApproveBtn">Одобрить</button>
                 <button class="reject-track-btn" id="moderationRejectBtn">Отклонить</button>
@@ -312,6 +322,29 @@
                 <div class="form-group"><label for="phoneNumber">Номер телефона</label><input type="tel" id="phoneNumber" name="phoneNumber" pattern="\+7[0-9]{10}" placeholder="+79998887766" required></div>
                 <div class="form-group"><label for="email">Почта</label><input type="email" id="email" name="email" required></div>
                 <button type="submit" class="submit-btn">Подать заявку</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeCategoryModalBtn" title="Закрыть">&times;</button>
+            <h2>Создать категорию</h2>
+            <form id="categoryForm">
+                <input type="hidden" id="categoryId" name="categoryId">
+                <div class="form-group">
+                    <label for="categoryName">Название категории</label>
+                    <input type="text" id="categoryName" required>
+                </div>
+                <div class="form-group user-input-wrapper">
+                    <label for="userSearchInput">Пользователи, которые могут публиковать</label>
+                    <div class="user-input-container">
+                        <input type="text" id="userSearchInput" placeholder="Введите имя пользователя..." autocomplete="off">
+                        <span id="userSearchStatus"></span>
+                    </div>
+                </div>
+                <div id="selectedUsersContainer"></div>
+                <button type="submit" class="submit-btn">Сохранить</button>
             </form>
         </div>
     </div>

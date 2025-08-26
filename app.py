@@ -3,6 +3,7 @@ import sqlite3
 import os
 import shutil
 import time
+import random
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 
@@ -109,16 +110,23 @@ def init_db():
             artist TEXT,
             category_id INTEGER,
             plays INTEGER DEFAULT 0,
+            duration REAL,
             FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE SET NULL,
             FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
         )
     ''')
+    # Добавление столбца 'duration' для уже существующей таблицы
+    c.execute("PRAGMA table_info(tracks)")
+    columns = [column[1] for column in c.fetchall()]
+    if 'duration' not in columns:
+        c.execute("ALTER TABLE tracks ADD COLUMN duration REAL")
     c.execute('''
         CREATE TABLE IF NOT EXISTS plays (
             user_id INTEGER NOT NULL,
             track_id INTEGER NOT NULL,
             timestamp INTEGER NOT NULL,
+            listened_duration REAL,
             PRIMARY KEY (user_id, track_id, timestamp),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
@@ -139,28 +147,14 @@ def init_db():
         c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('DomRU', '12345', 'admin'))
 
     # Добавление стандартных жанров
-    genres = ['Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп']
+    genres = ['Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
     for genre in genres:
         c.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (genre,))
     
     # Добавление стандартных категорий
-    categories = ['Общие', 'Популярные', 'Для вас', 'Возможно вам понравится']
+    categories = ['Общие', 'Популярные', 'Для вас', 'Возможно вам понравится', 'Танцевальная', 'Классика', 'Джаз', 'Chill', 'Для спорта', 'Для сна', 'Для учёбы', 'Музыка из игр', 'Саундтреки', 'Для расслабления']
     for category in categories:
         c.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category,))
-
-    # Добавление тестовых треков
-    c.execute("SELECT COUNT(*) FROM tracks")
-    if c.fetchone()[0] == 0:
-        test_tracks = [
-            ('Five Nights at Freddy\'s Song', 'fnaf.mp3', 'fnaf_cover.jpg', 'audio', 1, 1, 'The Living Tombstone', 1),
-            ('Bad Apple!!', 'bad_apple.mp4', 'bad_apple_cover.jpg', 'video', 1, 5, 'Alstroemeria Records', 1),
-            ('Darth Revan Theme', 'revan.mp3', 'revan_cover.jpg', 'audio', 1, 2, 'Star Wars Music', 1),
-            ('Phonk Test Track', 'phonk.mp3', 'phonk_cover.jpg', 'audio', 1, 3, 'Phonk Artist', 1),
-            ('Test Pop Song', 'pop.mp3', 'pop_cover.jpg', 'audio', 1, 4, 'Pop Star', 1),
-            ('Space Funk', 'space_funk.mp3', 'space_funk_cover.jpg', 'audio', 1, 5, 'Cosmic Beats', 1),
-            ('Shadows', 'shadows.mp3', 'shadows_cover.jpg', 'audio', 1, 2, 'Dark Metal Band', 1),
-        ]
-        c.executemany("INSERT INTO tracks (title, file_name, cover_name, type, creator_id, genre_id, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", test_tracks)
     
     conn.commit()
     conn.close()
@@ -260,7 +254,20 @@ def favorites():
 @app.route('/api/tracks')
 def get_tracks():
     conn = get_db_connection()
-    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, g.name as genre, u.username as creator_name, t.artist FROM tracks t LEFT JOIN genres g ON t.genre_id = g.id LEFT JOIN users u ON t.creator_id = u.id").fetchall()
+    genre_id = request.args.get('genreId')
+    category_id = request.args.get('categoryId')
+
+    query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, g.name as genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN genres g ON t.genre_id = g.id LEFT JOIN users u ON t.creator_id = u.id"
+    params = []
+
+    if genre_id:
+        query += " WHERE t.genre_id = ?"
+        params.append(genre_id)
+    elif category_id:
+        query += " WHERE t.category_id = ?"
+        params.append(category_id)
+    
+    tracks = conn.execute(query, params).fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
@@ -306,6 +313,8 @@ def rename_track():
     except Exception as e:
         print(e)
         return jsonify({'message': 'Ошибка при переименовании.'}), 500
+    finally:
+        conn.close()
 
 @app.route('/api/tracks/<int:track_id>', methods=['DELETE'])
 def delete_track(track_id):
@@ -464,7 +473,7 @@ def moderation_upload():
 @app.route('/api/admin/moderation-tracks')
 def admin_moderation_tracks():
     conn = get_db_connection()
-    tracks = conn.execute("SELECT m.id, m.file_name, m.cover_name, m.title, m.type, u.username, m.user_id, m.artist, m.genre_id, g.name as genre_name FROM track_moderation m JOIN users u ON m.user_id = u.id LEFT JOIN genres g ON m.genre_id = g.id WHERE m.status = 'pending'").fetchall()
+    tracks = conn.execute("SELECT m.id, m.file_name, m.cover_name, m.title, m.type, u.username, m.user_id, m.artist, m.genre_id, g.name as genre_name, m.category_id FROM track_moderation m JOIN users u ON m.user_id = u.id LEFT JOIN genres g ON m.genre_id = g.id WHERE m.status = 'pending'").fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
@@ -484,6 +493,7 @@ def approve_track():
     sanitized_title = secure_filename(title.strip())
     media_dir = MUSIC_DIR if track_type == 'audio' else VIDEO_DIR
 
+    conn = None # Добавлена инициализация conn
     try:
         file_ext = os.path.splitext(file_name)[1]
         new_file_name = f"{sanitized_title}{file_ext}"
@@ -503,7 +513,8 @@ def approve_track():
         print(e)
         return jsonify({'message': 'Ошибка при перемещении файлов.'}), 500
     finally:
-        conn.close()
+        if conn: # Добавлена проверка на существование conn
+            conn.close()
 
 @app.route('/api/admin/reject-track/<int:track_id>', methods=['DELETE'])
 def reject_track(track_id):
@@ -550,7 +561,7 @@ def delete_user(user_id):
 @app.route('/api/creator/my-tracks/<int:user_id>')
 def get_creator_tracks(user_id):
     conn = get_db_connection()
-    tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type FROM tracks WHERE creator_id = ?", (user_id,)).fetchall()
+    tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE creator_id = ?", (user_id,)).fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
@@ -586,9 +597,21 @@ def delete_creator_track(track_id):
 @app.route('/api/creator/stats/<int:user_id>')
 def creator_stats(user_id):
     conn = get_db_connection()
-    track_count = conn.execute("SELECT COUNT(*) as trackCount FROM tracks WHERE creator_id = ?", (user_id,)).fetchone()['trackCount']
+    total_plays = conn.execute("SELECT SUM(t.plays) FROM tracks t WHERE t.creator_id = ?", (user_id,)).fetchone()[0] or 0
+
+    two_weeks_ago = int(time.time()) - 14 * 86400
+    daily_plays = conn.execute("SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count FROM plays WHERE track_id IN (SELECT id FROM tracks WHERE creator_id = ?) AND timestamp >= ? GROUP BY date ORDER BY date", (user_id, two_weeks_ago)).fetchall()
+    
+    track_stats = conn.execute("SELECT id, title, plays FROM tracks WHERE creator_id = ? ORDER BY plays DESC LIMIT 5", (user_id,)).fetchall()
+
     conn.close()
-    return jsonify({'trackCount': track_count})
+    
+    return jsonify({
+        'totalPlays': total_plays,
+        'dailyPlays': [dict(row) for row in daily_plays],
+        'trackStats': [dict(row) for row in track_stats]
+    })
+
 
 @app.route('/api/genres')
 def get_genres():
@@ -607,30 +630,37 @@ def get_categories():
 @app.route('/api/creator/my-categories/<int:user_id>')
 def get_creator_categories(user_id):
     conn = get_db_connection()
-    categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ? OR c.name = 'Общие'", (user_id,)).fetchall()
+    # Возвращаем категории, привязанные к пользователю
+    categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ?", (user_id,)).fetchall()
     conn.close()
     return jsonify([dict(row) for row in categories])
 
-@app.route('/api/admin/categories', methods=['POST'])
-def create_category():
-    data = request.json
-    name = data.get('name')
-    allowed_users = data.get('allowedUsers')
-    conn = get_db_connection()
-    try:
-        conn.execute("INSERT INTO categories (name) VALUES (?)", (name,))
-        category_id = conn.execute("SELECT id FROM categories WHERE name = ?", (name,)).fetchone()['id']
-        for user_id in allowed_users:
-            conn.execute("INSERT INTO category_users (category_id, user_id) VALUES (?, ?)", (category_id, user_id))
-        conn.commit()
-        return jsonify({'message': 'Категория успешно создана.'})
-    except sqlite3.IntegrityError:
-        return jsonify({'message': 'Категория с таким именем уже существует.'}), 400
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Ошибка при создании категории.'}), 500
-    finally:
+@app.route('/api/admin/categories', methods=['GET', 'POST'])
+def manage_categories():
+    if request.method == 'GET':
+        conn = get_db_connection()
+        categories = conn.execute("SELECT * FROM categories").fetchall()
         conn.close()
+        return jsonify([dict(row) for row in categories])
+    elif request.method == 'POST':
+        data = request.json
+        name = data.get('name')
+        allowed_users = data.get('allowedUsers')
+        conn = get_db_connection()
+        try:
+            conn.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+            category_id = conn.execute("SELECT id FROM categories WHERE name = ?", (name,)).fetchone()['id']
+            for user_id in allowed_users:
+                conn.execute("INSERT INTO category_users (category_id, user_id) VALUES (?, ?)", (category_id, user_id))
+            conn.commit()
+            return jsonify({'message': 'Категория успешно создана.'})
+        except sqlite3.IntegrityError:
+            return jsonify({'message': 'Категория с таким именем уже существует.'}), 400
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Ошибка при создании категории.'}), 500
+        finally:
+            conn.close()
 
 @app.route('/api/admin/categories/<int:category_id>', methods=['PUT', 'DELETE'])
 def manage_category(category_id):
@@ -662,88 +692,95 @@ def manage_category(category_id):
         finally:
             conn.close()
 
-@app.route('/api/update-plays', methods=['POST'])
-def update_plays():
+@app.route('/api/admin/categories/users', methods=['GET'])
+def get_users_for_categories():
+    query = request.args.get('q', '')
+    conn = get_db_connection()
+    # Возвращаем всех пользователей, а не только креаторов
+    users = conn.execute("SELECT id, username, role FROM users WHERE username LIKE ? LIMIT 10", ('%' + query + '%',)).fetchall()
+    conn.close()
+    return jsonify([dict(user) for user in users])
+
+@app.route('/api/admin/categories/users-in-category/<int:category_id>', methods=['GET'])
+def get_users_in_category(category_id):
+    conn = get_db_connection()
+    users = conn.execute("SELECT u.id, u.username FROM users u JOIN category_users cu ON u.id = cu.user_id WHERE cu.category_id = ?", (category_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(user) for user in users])
+
+@app.route('/api/update-playback', methods=['POST'])
+def update_playback():
     data = request.json
     user_id = data.get('userId')
     track_id = data.get('trackId')
+    current_time = data.get('currentTime')
+    duration = data.get('duration')
     timestamp = int(time.time())
-
+    
     conn = get_db_connection()
     try:
-        # Проверка на лимит прослушиваний (не более 5 раз в день)
-        start_of_day = timestamp - (timestamp % 86400)
-        play_count_today = conn.execute("SELECT COUNT(*) FROM plays WHERE user_id = ? AND track_id = ? AND timestamp >= ?", (user_id, track_id, start_of_day)).fetchone()[0]
+        conn.execute("INSERT INTO plays (user_id, track_id, timestamp, listened_duration) VALUES (?, ?, ?, ?)", (user_id, track_id, timestamp, current_time))
+        conn.execute("UPDATE tracks SET plays = plays + 1, duration = ? WHERE id = ?", (duration, track_id,))
         
-        if play_count_today < 5:
-            conn.execute("INSERT INTO plays (user_id, track_id, timestamp) VALUES (?, ?, ?)", (user_id, track_id, timestamp))
-            conn.execute("UPDATE tracks SET plays = plays + 1 WHERE id = ?", (track_id,))
-            conn.commit()
-            return jsonify({'message': 'Счетчик прослушиваний обновлен.'})
-        else:
-            return jsonify({'message': 'Достигнут лимит прослушиваний на сегодня.'}), 429
+        conn.commit()
+        return jsonify({'message': 'Данные о воспроизведении обновлены.'})
     except Exception as e:
         print(e)
-        return jsonify({'message': 'Ошибка при обновлении счетчика.'}), 500
+        return jsonify({'message': 'Ошибка при обновлении данных о воспроизведении.'}), 500
     finally:
         conn.close()
-
-@app.route('/api/creator/analytics/<int:user_id>')
-def creator_analytics(user_id):
-    conn = get_db_connection()
-    # Общее количество прослушиваний
-    total_plays = conn.execute("SELECT SUM(t.plays) FROM tracks t WHERE t.creator_id = ?", (user_id,)).fetchone()[0] or 0
-
-    # Прослушивания за последние 14 дней
-    two_weeks_ago = int(time.time()) - 14 * 86400
-    daily_plays = conn.execute("SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count FROM plays WHERE track_id IN (SELECT id FROM tracks WHERE creator_id = ?) AND timestamp >= ? GROUP BY date ORDER BY date", (user_id, two_weeks_ago)).fetchall()
-    
-    # Статистика по трекам
-    track_stats = conn.execute("SELECT id, title, plays FROM tracks WHERE creator_id = ? ORDER BY plays DESC", (user_id,)).fetchall()
-
-    conn.close()
-    
-    return jsonify({
-        'totalPlays': total_plays,
-        'dailyPlays': [dict(row) for row in daily_plays],
-        'trackStats': [dict(row) for row in track_stats]
-    })
 
 @app.route('/api/xrecomen/<int:user_id>')
 def get_xrecomen(user_id):
     conn = get_db_connection()
     
-    # Алгоритм рекомендаций
-    # 1. Любимые жанры и исполнители (на основе истории прослушиваний)
-    user_played_tracks = conn.execute("SELECT t.genre_id, t.artist, t.title FROM plays p JOIN tracks t ON p.track_id = t.id WHERE p.user_id = ? GROUP BY t.id ORDER BY COUNT(*) DESC LIMIT 20", (user_id,)).fetchall()
+    # Получаем список избранных треков пользователя
+    user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
+    favorite_media_files = [row['media_file'] for row in user_favorites]
     
-    preferred_genres = [t['genre_id'] for t in user_played_tracks if t['genre_id']]
-    preferred_artists = [t['artist'] for t in user_played_tracks if t['artist']]
-    
-    recomended_tracks = []
-    
-    if user_played_tracks:
-        # Рекомендации "Вам нравятся" (похожие по жанру и названию)
-        liked_tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.artist FROM tracks t WHERE (t.genre_id IN ({}) OR t.artist IN ({}) OR t.title LIKE '%Fnaf version%') AND t.id NOT IN (SELECT track_id FROM plays WHERE user_id = ?) ORDER BY RANDOM() LIMIT 6".format(
-            ','.join(['?'] * len(preferred_genres)),
-            ','.join(['?'] * len(preferred_artists))
-        ), preferred_genres + preferred_artists + [user_id]).fetchall()
-        recomended_tracks.extend([dict(row) for row in liked_tracks])
+    # Формируем список "Вам нравятся" на основе избранного
+    you_like_tracks = []
+    if favorite_media_files:
+        placeholder = ','.join('?' for _ in favorite_media_files)
+        you_like_tracks = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
+        you_like_tracks = [dict(row) for row in you_like_tracks]
 
-    # Если рекомендаций нет или их мало, добавим случайные
-    if len(recomended_tracks) < 6:
-        all_tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.artist FROM tracks t ORDER BY RANDOM() LIMIT 6").fetchall()
-        recomended_tracks = [dict(row) for row in all_tracks]
+    # Определяем предпочтения на основе последних прослушиваний (если нет избранного)
+    user_played_tracks = conn.execute("SELECT p.listened_duration, t.duration, t.genre_id, t.artist, t.id FROM plays p JOIN tracks t ON p.track_id = t.id WHERE p.user_id = ? ORDER BY p.timestamp DESC LIMIT 20", (user_id,)).fetchall()
+    
+    played_track_ids = [t['id'] for t in user_played_tracks]
+    
+    # Если нет избранных треков, берем случайные из общей медиатеки
+    if not you_like_tracks:
+        you_like_tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks ORDER BY RANDOM() LIMIT 5").fetchall()
+        you_like_tracks = [dict(row) for row in you_like_tracks]
 
-    # Любимые подборки (популярные категории, в которых пользователь слушал треки)
+    xrecomen_track = None
+    you_may_like_tracks = []
+
+    # Формируем список "Вам могут понравиться" из случайных треков
+    you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
+    if played_track_ids:
+        you_may_like_query += f" WHERE id NOT IN ({','.join(['?'] * len(played_track_ids))})"
+    you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6", played_track_ids).fetchall()
+    you_may_like_tracks = [dict(row) for row in you_may_like_tracks]
+    
+    if you_may_like_tracks:
+        xrecomen_track = random.choice(you_may_like_tracks)
+        # Удаляем трек из списка, чтобы избежать дублирования
+        you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
+
+    # Формирование "Любимых подборок"
     favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
-
+    favorite_collections = [dict(row) for row in favorite_collections]
+    
     conn.close()
+    
     return jsonify({
-        'xrecomenTrack': recomended_tracks[0] if recomended_tracks else None,
-        'youLike': recomended_tracks[1:7] if len(recomended_tracks) > 1 else [],
-        'youMayLike': [], # Этот блок пока пустой, мы реализуем его позже
-        'favoriteCollections': [dict(row) for row in favorite_collections]
+        'xrecomenTrack': xrecomen_track,
+        'youLike': you_like_tracks,
+        'youMayLike': you_may_like_tracks,
+        'favoriteCollections': favorite_collections
     })
 
 if __name__ == '__main__':
