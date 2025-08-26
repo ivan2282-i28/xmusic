@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Ошибка при получении категорий.');
             const categories = await response.json();
             if (categorySelect) {
-                categorySelect.innerHTML = '<option value="">Общие</option>';
+                categorySelect.innerHTML = '<option value="">Общее</option>';
                 categories.forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat.id;
