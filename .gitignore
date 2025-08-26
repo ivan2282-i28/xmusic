@@ -1,6 +1,10 @@
 # DUMBASS PROTECTION
 *.db
 .env
+fon/
+music/
+temp_uploads/
+video/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
