@@ -1,20 +1,16 @@
+from flask import Flask, request, jsonify, send_from_directory
+import sqlite3
 import os
-import joblib
-import librosa
-import numpy as np
 import shutil
 import time
 import random
-import jwt
-import hashlib
-import sqlite3
-from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
+import jwt
 from functools import wraps
 from dotenv import load_dotenv
+import hashlib
 
-# --- Настройка приложения Flask ---
 load_dotenv()
 
 app = Flask(__name__)
@@ -158,7 +154,7 @@ def init_db():
         c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', 'defaultpassword', 'admin'))
 
     # Добавление стандартных жанров
-    genres = ['Общее', 'Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Диско', 'Техно', 'Хаус']
+    genres = ['Общее','Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
     for genre in genres:
         c.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (genre,))
     
@@ -190,13 +186,18 @@ def auth_required(f):
         
         try:
             token = token.split()[1]  # Remove 'Bearer ' prefix
+            # Decode and verify the token
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            # You can add the decoded data to the request context if needed
             
+
             conn = get_db_connection()
             cursor = conn.cursor()
+            # Query for the specific user ID and username
             cursor.execute("SELECT * FROM users WHERE id = ? AND username = ?", (data["id"], data["username"]))
             user_exists = cursor.fetchone()
             conn.close()
+
 
             if not user_exists:
                 return jsonify({'message': 'Token is invalid'}), 401
@@ -269,12 +270,12 @@ def login():
     username = data.get('username')
     password = data.get('password')
     conn = get_db_connection()
-    user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+    user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
     if user:
-        sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(user['password'].encode('utf-8')).hexdigest()}edf6"}
+        sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(password.encode('utf-8')).hexdigest()}edf6"}
         tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
-        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(user['password'].encode('utf-8')).hexdigest()}c34f"})
+        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(password.encode('utf-8')).hexdigest()}c34f"})
     else:
         return jsonify({'message': 'Неверный логин или пароль.'}), 401
 
@@ -572,7 +573,7 @@ def approve_track():
     sanitized_title = secure_filename(title.strip())
     media_dir = MUSIC_DIR if track_type == 'audio' else VIDEO_DIR
 
-    conn = None 
+    conn = None # Добавлена инициализация conn
     try:
         unique_id = str(int(time.time() * 1000))
         file_ext = os.path.splitext(file_name)[1]
@@ -593,7 +594,7 @@ def approve_track():
         print(e)
         return jsonify({'message': 'Ошибка при перемещении файлов.'}), 500
     finally:
-        if conn:
+        if conn: # Добавлена проверка на существование conn
             conn.close()
 
 @app.route('/api/admin/reject-track/<int:track_id>', methods=['DELETE'])
@@ -725,6 +726,7 @@ def get_categories():
 @role_required(['creator','admin'])
 def get_creator_categories(user_id):
     conn = get_db_connection()
+    # Возвращаем категории, привязанные к пользователю
     categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ?", (user_id,)).fetchall()
     conn.close()
     return jsonify([dict(row) for row in categories])
@@ -797,6 +799,7 @@ def manage_category(category_id):
 def get_users_for_categories():
     query = request.args.get('q', '')
     conn = get_db_connection()
+    # Возвращаем всех пользователей, а не только креаторов
     users = conn.execute("SELECT id, username, role FROM users WHERE username LIKE ? LIMIT 10", ('%' + query + '%',)).fetchall()
     conn.close()
     return jsonify([dict(user) for user in users])
@@ -836,19 +839,23 @@ def update_playback():
 def get_xrecomen(user_id):
     conn = get_db_connection()
     
+    # Получаем список избранных треков пользователя
     user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
     favorite_media_files = [row['media_file'] for row in user_favorites]
     
+    # Формируем список "Вам нравятся" на основе избранного
     you_like_tracks = []
     if favorite_media_files:
         placeholder = ','.join('?' for _ in favorite_media_files)
         you_like_tracks = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
         you_like_tracks = [dict(row) for row in you_like_tracks]
 
+    # Определяем предпочтения на основе последних прослушиваний (если нет избранного)
     user_played_tracks = conn.execute("SELECT p.listened_duration, t.duration, t.genre_id, t.artist, t.id FROM plays p JOIN tracks t ON p.track_id = t.id WHERE p.user_id = ? ORDER BY p.timestamp DESC LIMIT 20", (user_id,)).fetchall()
     
     played_track_ids = [t['id'] for t in user_played_tracks]
     
+    # Если нет избранных треков, берем случайные из общей медиатеки
     if not you_like_tracks:
         you_like_tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks ORDER BY RANDOM() LIMIT 5").fetchall()
         you_like_tracks = [dict(row) for row in you_like_tracks]
@@ -856,6 +863,7 @@ def get_xrecomen(user_id):
     xrecomen_track = None
     you_may_like_tracks = []
 
+    # Формируем список "Вам могут понравиться" из случайных треков
     you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
     if played_track_ids:
         you_may_like_query += f" WHERE id NOT IN ({','.join(['?'] * len(played_track_ids))})"
@@ -864,8 +872,10 @@ def get_xrecomen(user_id):
     
     if you_may_like_tracks:
         xrecomen_track = random.choice(you_may_like_tracks)
+        # Удаляем трек из списка, чтобы избежать дублирования
         you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
 
+    # Формирование "Любимых подборок"
     favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
     favorite_collections = [dict(row) for row in favorite_collections]
     
@@ -880,59 +890,8 @@ def get_xrecomen(user_id):
 
 @app.route('/api/auth_refresh')
 def auth_refresh():
+    #f"d{hashlib.sha256(user["password"].encode("utf-8")).hexdigest()}c34f"
     return jsonify({'message':"NOT INPLEMENTED -Server"}), 418
-
-# Загрузка обученной модели ИИ для классификации жанров
-# Убедитесь, что файл music_genre_model.pkl находится в той же директории
-try:
-    MUSIC_GENRE_MODEL = joblib.load(os.path.join(BASE_DIR, 'music_genre_model.pkl'))
-    print("Модель music_genre_model.pkl успешно загружена.")
-except FileNotFoundError:
-    MUSIC_GENRE_MODEL = None
-    print("Ошибка: файл music_genre_model.pkl не найден. Функционал определения жанров будет недоступен.")
-
-# Список жанров, который соответствует меткам в вашей модели
-GENRES = [
-    "джас", "диско", "инди", "кантри", "метал", "поп", "регги", "рок",
-    "рэп", "соул", "техно", "трэп", "фонк", "хаус", "Хип-хоп", "электронная", "эмбиент"
-]
-
-@app.route('/api/detect_genre', methods=['POST'])
-def detect_genre():
-    if MUSIC_GENRE_MODEL is None:
-        return jsonify({"error": "Модель для определения жанра не загружена."}), 500
-    
-    if 'file' not in request.files:
-        return jsonify({"error": "Файл не найден в запросе."}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "Файл не выбран."}), 400
-        
-    filepath = os.path.join(TEMP_UPLOAD_DIR, secure_filename(file.filename))
-    file.save(filepath)
-    
-    try:
-        y, sr = librosa.load(filepath, mono=True, duration=30)
-        mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
-        mfccs_processed = np.mean(mfccs.T, axis=0).reshape(1, -1)
-        
-        prediction = MUSIC_GENRE_MODEL.predict(mfccs_processed)
-        predicted_genre_index = int(prediction[0])
-        
-        if 0 <= predicted_genre_index < len(GENRES):
-            predicted_genre = GENRES[predicted_genre_index]
-            return jsonify({"genre": predicted_genre}), 200
-        else:
-            return jsonify({"error": "Предсказанный жанр не соответствует списку."}), 500
-            
-    except Exception as e:
-        return jsonify({"error": f"Ошибка при обработке файла: {str(e)}"}), 500
-    finally:
-        if os.path.exists(filepath):
-            os.remove(filepath)
-            
-    return jsonify({"error": "Тип файла не поддерживается."}), 400
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
