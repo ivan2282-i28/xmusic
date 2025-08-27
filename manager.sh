@@ -1,14 +1,16 @@
-#/bin/bash
+#!/bin/bash
 
 SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 cd "$SCRIPT_DIR"
-
+ls
 if [ ! -d "./.venv" ]; then
-    python3.17 -m venv .venv
+    python3.13 -m venv .venv
 fi
 
 source ./.venv/bin/activate
 
+echo "installing requirements"
 pip install -r requirements.txt
 
-python ./app.py
+echo "running program"
+gunicorn -w 4 -b 0.0.0.0:3000 xmusic:app
