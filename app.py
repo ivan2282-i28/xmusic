@@ -9,7 +9,7 @@ from flask_cors import CORS
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
-import pickle
+import joblib  # Использовать joblib вместо pickle для совместимости
 import librosa
 import numpy as np
 
@@ -36,7 +36,7 @@ for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
 # Загрузка модели ИИ
 try:
     with open(MODEL_PATH, 'rb') as model_file:
-        model = pickle.load(model_file)
+        model = joblib.load(model_file)  # Заменено pickle на joblib
 except FileNotFoundError:
     model = None
     print(f"Model file not found at {MODEL_PATH}. AI genre detection will not be available.")
