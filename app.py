@@ -250,6 +250,7 @@ def serve_temp_uploads(filename):
 
 @app.route('/api/register', methods=['POST'])
 def register():
+    return {"message":"Пардон но на нас атуку сделалали "}  418
     data = request.json
     username = data.get('username')
     password = data.get('password')
