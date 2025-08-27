@@ -5,3 +5,5 @@ werkzeug
 python-multipart
 Pyjwt
 python-dotenv
+librosa
+scikit-learn
