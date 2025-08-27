@@ -80,12 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginModal = document.getElementById('loginModal');
     const loginBtn = document.getElementById('loginBtn');
     const loginForm = document.getElementById('loginForm');
-    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
     const closeLoginBtn = loginModal.querySelector('.close-btn');
     const switchToRegisterBtn = document.getElementById('switchToRegister');
     const registerModal = document.getElementById('registerModal');
     const registerForm = document.getElementById('registerForm');
-    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
     const closeRegisterBtn = registerModal.querySelector('.close-btn');
     const switchToLoginBtn = document.getElementById('switchToLogin');
     const favoritesView = document.getElementById('favoritesView');
@@ -174,44 +172,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let playTimer;
     let userSearchTimeout;
 
-    // Глобальные функции reCAPTCHA
-    window.onRecaptchaSuccessLogin = () => {
-        loginSubmitBtn.disabled = false;
-    };
-
-    window.onRecaptchaExpiredLogin = () => {
-        loginSubmitBtn.disabled = true;
-    };
-
-    window.onRecaptchaSuccessRegister = () => {
-        registerSubmitBtn.disabled = false;
-    };
-
-    window.onRecaptchaExpiredRegister = () => {
-        registerSubmitBtn.disabled = true;
-    };
-
-
     async function fetchWithAuth(url, options = {}) {
-        // Get tokens from storage
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
         const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
-        // Set up headers
         options.headers = options.headers || {};
-
-        // Add Authorization header if we have an access token
         if (accessToken) {
             options.headers['Authorization'] = `Bearer ${accessToken}`;
         }
 
-        // Make the request
         let response = await fetch(url, options);
 
-        // If unauthorized and we have a refresh token, try to refresh
         if (response.status === 401 && currentUser) {
             try {
-                // Attempt to refresh the token
                 const refreshResponse = await fetch('/api/auth_refresh', {
                     method: 'POST',
                     headers: {
@@ -222,16 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (refreshResponse.ok) {
                     const tokens = await refreshResponse.json();
-
-                    // Store the new tokens
                     localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
                     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
 
-                    // Retry the original request with the new token
                     options.headers['Authorization'] = `Bearer ${tokens.access_token}`;
                     response = await fetchWithAuth(url, options);
                 } else {
-                    // Refresh failed - clear tokens and redirect to login
                     localStorage.removeItem(ACCESS_TOKEN_KEY);
                     localStorage.removeItem(REFRESH_TOKEN_KEY);
                     alert("Ошибко токено овторизоции")
@@ -239,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateUIForAuth(null);
                     toggleCreatorMode(false);
                     loginModal.style.display = "flex"
-                    // throw new Error('Authentication failed: Please log in again');
                 }
             } catch (error) {
                 console.error('Token refresh failed:', error);
@@ -250,14 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateUIForAuth(null);
                 toggleCreatorMode(false);
                 loginModal.style.display = "flex"
-                // throw error;
             }
         }
 
         return response;
     }
 
-    // Helper functions for token management
     function setTokens(accessToken, refreshToken) {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
         localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
@@ -276,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return localStorage.getItem(REFRESH_TOKEN_KEY);
     }
 
-    // Новая функция для рендеринга результатов поиска
     const renderSearchResults = (mediaToRender, searchTerm) => {
         let searchResultsContainer = document.querySelector('.search-results-container');
         if (searchTerm.length > 0) {
@@ -296,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-
 
     const fetchAndRenderAll = async () => {
         try {
@@ -328,15 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
             const data = await response.json();
 
-            // Проверяем, есть ли рекомендованный трек
             if (data.xrecomenTrack) {
-                // Убеждаемся, что allMedia содержит этот трек перед рендером
                 if (!allMedia.some(t => t.id === data.xrecomenTrack.id)) {
                     allMedia.push(data.xrecomenTrack);
                 }
                 renderXrecomen(data.xrecomenTrack);
             } else {
-                // Если рекомендаций нет, даём случайный трек
                 if (allMedia.length > 0) {
                     const randomIndex = Math.floor(Math.random() * allMedia.length);
                     renderXrecomen(allMedia[randomIndex]);
@@ -345,18 +306,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Добавление: теперь "Вам нравятся" заполняется избранными треками
             if (data.youLike) {
                 const favoriteMedia = allMedia.filter(item => userFavorites.includes(item.file));
                 renderMediaInContainer(youLikeGrid, favoriteMedia.length > 0 ? favoriteMedia : data.youLike, true);
             }
 
-            // Добавление: Теперь "Вам могут понравиться" заполняется данными с сервера
             if (data.youMayLike) {
                 renderMediaInContainer(youMayLikeGrid, data.youMayLike, true);
             }
 
-            // Добавление: Теперь "Любимые подборки" заполняется данными с сервера
             if (data.favoriteCollections) {
                 renderFavoriteCollections(data.favoriteCollections);
             }
@@ -372,7 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
             xrecomenBtn.querySelector('.xrecomen-title').textContent = track.title;
             xrecomenBtn.querySelector('.xrecomen-subtitle').textContent = `От ${track.artist || track.creator_name}`;
         } else {
-            // Если трек не найден или его нет, скрываем кнопку
             if (xrecomenSection) xrecomenSection.style.display = 'none';
         }
     };
@@ -425,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
             if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
-            // Исправлена ошибка: переименовал переменную, чтобы избежать конфликта.
             const categoriesData = await categoriesRes.json();
             if (customCategoriesGrid && popularCategoriesGrid) {
                 customCategoriesGrid.innerHTML = '';
@@ -510,15 +466,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user.role === 'creator' || user.role === 'admin') {
                 if (myTracksBtn) myTracksBtn.style.display = 'flex';
                 if (analyticsBtn) analyticsBtn.style.display = 'flex';
-                // Скрываем кнопку "Главная" для креаторов
                 if (creatorHomeBtn) creatorHomeBtn.style.display = 'none';
                 fetchCreatorCategories();
             } else {
-                // Если пользователь не креатор, показываем кнопку "Главная"
                 if (creatorHomeBtn) creatorHomeBtn.style.display = 'flex';
             }
 
-            // Добавляем видимость кнопок админа, если роль - admin
             if (user.role === 'admin') {
                 document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'flex');
             } else {
@@ -629,7 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         media.forEach((item) => {
-            // Убеждаемся, что все необходимые свойства существуют
             if (!item || !item.title || !item.file) {
                 console.warn("Пропущен трек из-за неполных данных:", item);
                 return;
@@ -640,7 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
             card.dataset.index = globalIndex;
 
-            // Если трек не найден в allMedia, добавляем его в allMedia, чтобы можно было воспроизвести
             if (globalIndex === -1) {
                 allMedia.push(item);
                 card.dataset.index = allMedia.length - 1;
@@ -662,7 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
-            // Проверяем, существует ли player, чтобы не вызывать ошибку
             if (favoritePlayerBtn) {
                 const isCurrentTrackFavorite = userFavorites.includes(item.file);
                 if (isCurrentTrackFavorite) {
@@ -753,7 +703,6 @@ document.addEventListener('DOMContentLoaded', () => {
             favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
         }
 
-        // Отправка данных о прослушивании на сервер
         if (playTimer) clearTimeout(playTimer);
         playTimer = setTimeout(async () => {
             if (currentUser && activeMediaElement.duration) {
@@ -768,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                 });
             }
-        }, 5000); // Отправляем данные через 5 секунд после начала воспроизведения
+        }, 5000);
     };
 
     const fetchMyTracks = async () => {
@@ -920,7 +869,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewToShow = document.getElementById(viewIdToShow);
         if (viewToShow) viewToShow.classList.add('active-view');
 
-        // Показываем или скрываем кнопку "Назад к категориям"
         if (backToCategoriesBtn) {
             backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
         }
@@ -976,7 +924,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (xmusicNav) xmusicNav.style.display = 'none';
             if (xcreatorNav) xcreatorNav.style.display = 'flex';
 
-            // Скрываем все views перед отображением нужного
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (creatorView) creatorView.classList.add('active-view');
             if (homeView) homeView.classList.remove('active-view');
@@ -984,19 +931,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (favoritesView) favoritesView.classList.remove('active-view');
             if (specificCategoryView) specificCategoryView.classList.remove('active-view');
 
-            // Определяем, какой раздел показать по умолчанию
             document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
             const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
             creatorNavButtons.forEach(btn => btn.classList.remove('active'));
 
             if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
-                // Если креатор, сразу показываем аналитику
                 if (analyticsSection) analyticsSection.style.display = 'block';
                 if (analyticsBtn) analyticsBtn.classList.add('active');
                 if (creatorHomeSection) creatorHomeSection.style.display = 'none';
                 fetchCreatorStats();
             } else {
-                // Если не креатор, показываем кнопку подачи заявки
                 if (creatorHomeSection) creatorHomeSection.style.display = 'block';
                 if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
             }
@@ -1011,7 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (playerHeader) player.classList.remove('expanded');
             showVideo();
 
-            // Скрываем все views перед отображением нужного
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (homeView) homeView.classList.add('active-view');
 
@@ -1148,16 +1091,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initEventListeners = () => {
-        // Установка loop = false по умолчанию для всех медиаэлементов
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
             if (el) {
                 el.loop = false;
             }
         });
 
-        // ==========================
-        //  НОВОЕ: Логика переключения полей ввода аудио/видео
-        // ==========================
         if (uploadTypeRadios) {
             uploadTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
@@ -1175,9 +1114,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         }
-        // ==========================
-        //  КОНЕЦ НОВОГО БЛОКА
-        // ==========================
 
         if (navHome) navHome.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1197,7 +1133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Добавлен обработчик для кнопки "Назад к категориям"
         if (backToCategoriesBtn) backToCategoriesBtn.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('categoriesView');
@@ -1256,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAdminCategories();
                 } else {
                     if (creatorHomeSection) creatorHomeSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Creator Studio';
+                    if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
                 }
             });
         });
@@ -1313,10 +1248,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (loginBtn) loginBtn.addEventListener('click', () => {
             if (loginModal) loginModal.style.display = 'flex';
-            // Сбрасываем reCAPTCHA при открытии модального окна
-            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
-            // Отключаем кнопку входа
-            loginSubmitBtn.disabled = true;
         });
         if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => {
             if (loginModal) loginModal.style.display = 'none';
@@ -1327,14 +1258,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => {
             if (loginModal) loginModal.style.display = 'none';
             if (registerModal) registerModal.style.display = 'flex';
-            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
-            registerSubmitBtn.disabled = true;
         });
         if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => {
             if (registerModal) registerModal.style.display = 'none';
             if (loginModal) loginModal.style.display = 'flex';
-            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
-            loginSubmitBtn.disabled = true;
         });
         if (logoutBtn) logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('currentUser');
@@ -1378,7 +1305,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Функционал для нового поля ввода и проверки пользователей
         if (userSearchInput) {
             userSearchInput.addEventListener('input', () => {
                 const query = userSearchInput.value.trim();
@@ -1565,7 +1491,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.error('Не удалось разобрать JSON:', e);
                         }
                     } else {
-                        // Если ответ не JSON (вероятно, HTML-страница ошибки), используем общее сообщение
                         console.error('Сервер вернул не-JSON ответ:', xhr.responseText);
                     }
 
@@ -1585,79 +1510,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (loginForm) loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            const recaptchaResponse = grecaptcha.getResponse();
-
-            if (!recaptchaResponse) {
-                alert('Пожалуйста, пройдите проверку reCAPTCHA.');
+            const recaptchaToken = grecaptcha.getResponse();
+            if (!recaptchaToken) {
+                alert('Пожалуйста, пройдите reCAPTCHA.');
                 return;
             }
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
 
             try {
+                const captchaRes = await fetch(`${api}/api/verify-recaptcha`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recaptcha_token: recaptchaToken })
+                });
+
+                if (!captchaRes.ok) {
+                    const errorData = await captchaRes.json();
+                    alert(`Ошибка reCAPTCHA: ${errorData.message}`);
+                    grecaptcha.reset();
+                    return;
+                }
+
                 const res = await fetchWithAuth(`${api}/api/login`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password,
-                        recaptcha_response: recaptchaResponse
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    setTokens(result.token, result.refresh)
+                    setTokens(result.token, result.refresh);
                     localStorage.setItem('currentUser', JSON.stringify(result.user));
                     updateUIForAuth(result.user);
                     if (loginModal) loginModal.style.display = 'none';
                     alert('Вход успешен!');
                 } else {
                     alert(result.message);
-                    grecaptcha.reset(); // Сбрасываем reCAPTCHA при ошибке
                 }
             } catch (err) {
                 alert('Ошибка входа.');
+            } finally {
                 grecaptcha.reset();
             }
         });
 
         if (registerForm) registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-            const recaptchaResponse = grecaptcha.getResponse();
-
-            if (!recaptchaResponse) {
-                alert('Пожалуйста, пройдите проверку reCAPTCHA.');
+            const recaptchaToken = grecaptcha.getResponse();
+            if (!recaptchaToken) {
+                alert('Пожалуйста, пройдите reCAPTCHA.');
                 return;
             }
 
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
             try {
+                const captchaRes = await fetch(`${api}/api/verify-recaptcha`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recaptcha_token: recaptchaToken })
+                });
+
+                if (!captchaRes.ok) {
+                    const errorData = await captchaRes.json();
+                    alert(`Ошибка reCAPTCHA: ${errorData.message}`);
+                    grecaptcha.reset();
+                    return;
+                }
+
                 const res = await fetchWithAuth(`${api}/api/register`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password,
-                        recaptcha_response: recaptchaResponse
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
                 });
                 const result = await res.json();
                 if (res.ok) {
                     alert(result.message + ' Теперь вы можете войти.');
                     if (registerModal) registerModal.style.display = 'none';
                     if (loginModal) loginModal.style.display = 'flex';
-                    grecaptcha.reset(); // Сбрасываем reCAPTCHA после успешной регистрации
                 } else {
                     alert(result.message);
-                    grecaptcha.reset();
                 }
             } catch (err) {
                 alert('Ошибка регистрации.');
+            } finally {
                 grecaptcha.reset();
             }
         });
@@ -2160,7 +2097,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pauseIcon) pauseIcon.style.display = 'none';
         };
 
-        // Исправлено: Добавлен обработчик события 'ended', чтобы переключать на следующий трек
         const onEnded = () => {
             if (!repeatMode) {
                 const nextIndex = (currentTrackIndex + 1) % allMedia.length;

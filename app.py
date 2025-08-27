@@ -10,14 +10,12 @@ import jwt
 from functools import wraps
 from dotenv import load_dotenv
 import hashlib
-import requests
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
-app.config['RECAPTCHA_SECRET_KEY'] = os.getenv('RECAPTCHA_SECRET_KEY')
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -215,6 +213,7 @@ def auth_required(f):
         return f(*args, **kwargs)
     return decorated
 
+
 def role_required(roless: list):
     def decorator(f):
         @wraps(f)
@@ -224,15 +223,6 @@ def role_required(roless: list):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
-
-def verify_recaptcha(response):
-    payload = {
-        'secret': app.config['RECAPTCHA_SECRET_KEY'],
-        'response': response
-    }
-    r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-    result = r.json()
-    return result['success']
 
 @app.route('/')
 def serve_index():
@@ -260,14 +250,10 @@ def serve_temp_uploads(filename):
 
 @app.route('/api/register', methods=['POST'])
 def register():
+    return {"message":"Пардон но на нас атуку сделалали "},418
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    recaptcha_response = data.get('recaptcha_response')
-
-    if not verify_recaptcha(recaptcha_response):
-        return jsonify({'message': 'Проверка reCAPTCHA не пройдена.'}), 400
-
     conn = get_db_connection()
     try:
         conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -283,11 +269,6 @@ def login():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    recaptcha_response = data.get('recaptcha_response')
-
-    if not verify_recaptcha(recaptcha_response):
-        return jsonify({'message': 'Проверка reCAPTCHA не пройдена.'}), 400
-
     conn = get_db_connection()
     user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
