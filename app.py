@@ -9,15 +9,12 @@ from flask_cors import CORS
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
-import hashlib
-import requests
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '6LfDl7QrAAAAAACx4OeRZ5OIKjD0OtJyvuQXYO_M')
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -198,8 +195,6 @@ def auth_required(f):
 
             if not user_exists:
                 return jsonify({'message': 'Token is invalid'}), 401
-            if data["passphrase"] != f"{hashlib.sha256(user_exists['password'].encode('utf-8')).hexdigest()}edf6":
-                return jsonify({'message': 'Token is invalid'}), 401
             
             request.current_user = user_exists
         except jwt.ExpiredSignatureError:
@@ -245,45 +240,12 @@ def serve_video(filename):
 def serve_temp_uploads(filename):
     return send_from_directory(TEMP_UPLOAD_DIR, filename)
     
-@app.route('/api/verify-recaptcha', methods=['POST'])
-def verify_recaptcha():
-    recaptcha_token = request.json.get('recaptcha_token')
-    if not recaptcha_token:
-        return jsonify({'success': False, 'message': 'reCAPTCHA token is missing.'}), 400
-
-    payload = {
-        'secret': RECAPTCHA_SECRET_KEY,
-        'response': recaptcha_token
-    }
-    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-    result = response.json()
-    
-    if result.get('success'):
-        return jsonify({'success': True, 'message': 'reCAPTCHA verification successful.'})
-    else:
-        return jsonify({'success': False, 'message': 'reCAPTCHA verification failed.', 'errors': result.get('error-codes')}), 400
-
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    recaptcha_token = data.get('recaptcha_token')
     
-    # Проверка reCAPTCHA
-    if not recaptcha_token:
-        return jsonify({'message': 'reCAPTCHA token is missing.'}), 400
-    
-    payload = {
-        'secret': RECAPTCHA_SECRET_KEY,
-        'response': recaptcha_token
-    }
-    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-    result = response.json()
-
-    if not result.get('success'):
-        return jsonify({'message': 'reCAPTCHA verification failed.', 'errors': result.get('error-codes')}), 400
-
     conn = get_db_connection()
     try:
         conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -299,29 +261,14 @@ def login():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    recaptcha_token = data.get('recaptcha_token')
-
-    # Проверка reCAPTCHA
-    if not recaptcha_token:
-        return jsonify({'message': 'reCAPTCHA token is missing.'}), 400
-
-    payload = {
-        'secret': RECAPTCHA_SECRET_KEY,
-        'response': recaptcha_token
-    }
-    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-    result = response.json()
-
-    if not result.get('success'):
-        return jsonify({'message': 'reCAPTCHA verification failed.', 'errors': result.get('error-codes')}), 400
 
     conn = get_db_connection()
     user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
     if user:
-        sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(user['password'].encode('utf-8')).hexdigest()}edf6"}
+        sanuser = {"username":user["username"],"id":user["id"]}
         tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
-        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(user['password'].encode('utf-8')).hexdigest()}c34f"})
+        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend})
     else:
         return jsonify({'message': 'Неверный логин или пароль.'}), 401
 
@@ -933,11 +880,6 @@ def get_xrecomen(user_id):
         'youMayLike': you_may_like_tracks,
         'favoriteCollections': favorite_collections
     })
-
-@app.route('/api/auth_refresh')
-def auth_refresh():
-    #f"d{hashlib.sha256(user["password"].encode("utf-8")).hexdigest()}c34f"
-    return jsonify({'message':"NOT INPLEMENTED -Server"}), 418
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
