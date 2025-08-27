@@ -9,6 +9,8 @@ from functools import wraps
 import joblib  # Использовать joblib вместо pickle для совместимости
 import librosa
 import numpy as np
+import string
+import hashlib
 
 from .api.admin import admin_api
 
@@ -35,7 +37,9 @@ def webserver(app,db,dirs):
 
                 if not user_exists:
                     return jsonify({'message': 'Token is invalid'}), 401
-                
+
+                if data["passphrase"] != f"PASS{hashlib.sha512(hashlib.sha512(user_exists['username']))}{hashlib.sha512(hashlib.sha512(user_exists['password']))}{hashlib.sha512(user_exists['password'])}ASS": return jsonify({'message': 'Token is invalid!'}), 401
+
                 request.current_user = user_exists
             except jwt.ExpiredSignatureError:
                 return jsonify({'message': 'Token has expired!'}), 401
@@ -88,6 +92,17 @@ def webserver(app,db,dirs):
         username = data.get('username')
         password = data.get('password')
         
+        if len(username) < 3: return jsonify({'message': 'Имя короче 3 символов.'}), 400
+        if len(username) > 10: return jsonify({'message': 'Имя длинее 10 символов.'}), 400
+        for i in username: 
+            if i.lower() not in ["_","-",*string.ascii_lowercase*string.digits]: return jsonify({'message': 'Имя содержмит запрещенные символы'}), 400
+        if len(password) < 8: return jsonify({'message': 'Пароль короче 8 символов.'}), 400
+        if len(password) > 16: return jsonify({'message': 'Пароль длинее 16 символов.'}), 400
+        for i in username: 
+            if i.lower() not in [*string.punctuation*string.ascii_lowercase*string.digits]: return jsonify({'message': 'Пароль содержмит запрещенные символы'}), 400
+
+        password = hashlib.sha512(password)
+
         conn = db.get_db_connection()
         try:
             conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -103,14 +118,16 @@ def webserver(app,db,dirs):
         data = request.json
         username = data.get('username')
         password = data.get('password')
+        passwordl = password
+        password = hashlib.sha512(password)
 
         conn = db.get_db_connection()
         user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
         conn.close()
         if user:
-            sanuser = {"username":user["username"],"id":user["id"]}
+            sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"PASS{hashlib.sha512(hashlib.sha512(username))}{hashlib.sha512(hashlib.sha512(passwordl))}{hashlib.sha512(passwordl)}ASS"}
             tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
-            return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend})
+            return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"RFRSH{hashlib.sha256(hashlib.md5(password))}ASS"})
         else:
             return jsonify({'message': 'Неверный логин или пароль.'}), 401
 

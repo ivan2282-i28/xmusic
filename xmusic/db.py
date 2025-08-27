@@ -120,7 +120,7 @@ class database():
         # Добавление админа, если его нет
         c.execute("SELECT * FROM users WHERE username = 'root'")
         if c.fetchone() is None:
-            c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', 'defaultpassword', 'admin'))
+            c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', '2b64f2e3f9fee1942af9ff60d40aa5a719db33b8ba8dd4864bb4f11e25ca2bee00907de32a59429602336cac832c8f2eeff5177cc14c864dd116c8bf6ca5d9a9', 'admin'))
 
         conn.commit()
         conn.close()
