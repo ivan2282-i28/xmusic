@@ -13,6 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeMediaElement = audioPlayer;
     let currentPage = 1;
     const tracksPerPage = 20;
+    
+    // Новые элементы для жанров
+    const determineGenreBtn = document.getElementById('determineGenreBtn');
+    const selectGenreBtn = document.getElementById('selectGenreBtn');
+    const selectedGenreName = document.getElementById('selectedGenreName');
+    const selectedGenreId = document.getElementById('selectedGenreId'); // hidden input to store genre name
+    const genreSelectionModal = document.getElementById('genreSelectionModal');
+    const genreList = document.getElementById('genreList');
 
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
@@ -66,10 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadProgressBar = document.querySelector('.upload-progress-fill');
     const uploadStatusText = document.getElementById('uploadStatusText');
     const uploadSubmitBtn = document.querySelector('#uploadForm button[type="submit"]');
-    const genreSelect = document.getElementById('genreSelect');
     const categorySelect = document.getElementById('categorySelect');
     const artistFields = document.getElementById('artistFields');
     const isForeignArtist = document.getElementById('isForeignArtist');
+    const fileStatusText = document.getElementById('fileStatusText');
 
     const settingsModal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
@@ -265,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         if (!currentUser) {
             if (youLikeSection) youLikeSection.style.display = 'block';
-            if (youMayLikeSection) youMayLikeSection.style.display = 'block';
+            if (youMayLikeSection) youMayLikeSection.style.display = 'none';
             if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
     
             if (xrecomenBtn) {
@@ -281,18 +289,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 favoriteCollectionsGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
             }
     
-            // Заполняем "Вам могут понравиться" случайными треками
-            if (youMayLikeGrid && allMedia.length > 0) {
-                const randomTracks = [...allMedia].sort(() => 0.5 - Math.random()).slice(0, 6);
-                renderMediaInContainer(youMayLikeGrid, randomTracks);
+            const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
+            if (bestTracksResponse.ok) {
+                const bestTracks = await bestTracksResponse.json();
+                renderAllTracks(bestTracks);
             }
+
             return;
         }
     
         // Логика для авторизованных пользователей
         if (xrecomenSection) xrecomenSection.style.display = 'flex';
         if (youLikeSection) youLikeSection.style.display = 'block';
-        if (youMayLikeSection) youMayLikeSection.style.display = 'block';
+        if (youMayLikeSection) youMayLikeSection.style.display = 'none';
         if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
     
         try {
@@ -333,10 +342,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     youLikeGrid.innerHTML = '<p>Добавьте треки в избранное для отображения.</p>';
                 }
             }
-    
-            // Заполнение раздела "Вам могут понравиться"
-            if (youMayLikeGrid && data.youMayLike) {
-                renderMediaInContainer(youMayLikeGrid, data.youMayLike, true);
+
+            const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
+            if (bestTracksResponse.ok) {
+                const bestTracks = await bestTracksResponse.json();
+                renderAllTracks(bestTracks);
             }
     
             // Заполнение раздела "Любимые подборки"
@@ -374,42 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchCategoriesAndGenres = async () => {
+    const fetchCategories = async () => {
         try {
-            const genresRes = await fetchWithAuth(`${api}/api/genres`);
-            if (!genresRes.ok) throw new Error('Ошибка при получении жанров');
-            const genres = await genresRes.json();
-            if (allGenresGrid) {
-                allGenresGrid.innerHTML = '';
-                genres.forEach(genre => {
-                    const genreCard = document.createElement('div');
-                    genreCard.className = 'genre-card';
-                    genreCard.dataset.genreId = genre.id;
-                    genreCard.innerHTML = `<h3>${genre.name}</h3>`;
-                    allGenresGrid.appendChild(genreCard);
-                });
-            }
-
-            if (genreSelect) {
-                genreSelect.innerHTML = '<option value="">Выберите жанр</option>';
-                if (genres.length > 0) {
-                    genres.forEach(g => {
-                        const option = document.createElement('option');
-                        option.value = g.id;
-                        option.textContent = g.name;
-                        genreSelect.appendChild(option);
-                    });
-                } else {
-                    const option = document.createElement('option');
-                    option.textContent = 'Жанры не найдены';
-                    genreSelect.appendChild(option);
-                    genreSelect.disabled = true;
-                }
-            }
-
             const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
             if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
-            // Исправлена ошибка: переименовал переменную, чтобы избежать конфликта.
             const categoriesData = await categoriesRes.json();
             if (customCategoriesGrid && popularCategoriesGrid) {
                 customCategoriesGrid.innerHTML = '';
@@ -431,24 +409,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     customCategoriesGrid.appendChild(catCard);
                 });
             }
-
-            if (moderationGenreSelect) {
-                moderationGenreSelect.innerHTML = '';
-                genres.forEach(g => {
-                    const option = document.createElement('option');
-                    option.value = g.id;
-                    option.textContent = g.name;
-                    moderationGenreSelect.appendChild(option);
-                });
-            }
         } catch (error) {
             console.error('Ошибка:', error);
-            if (genreSelect) {
-                genreSelect.innerHTML = '<option value="">Не удалось загрузить жанры</option>';
-                genreSelect.disabled = true;
-            }
         }
     };
+
 
     const fetchAndRenderCategoryTracks = async (categoryId) => {
         try {
@@ -463,18 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchAndRenderGenreTracks = async (genreId) => {
-        try {
-            const response = await fetchWithAuth(`${api}/api/tracks?genreId=${genreId}`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const genreTracks = await response.json();
-            if (specificCategoryGrid) {
-                renderMediaInContainer(specificCategoryGrid, genreTracks, true);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-        }
-    };
 
     const updateUIForAuth = (user) => {
         if (user) {
@@ -920,7 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (viewTitle) viewTitle.textContent = 'Категории';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             if (player) player.style.display = 'grid';
-            fetchCategoriesAndGenres();
+            fetchCategories();
         } else if (viewIdToShow === 'favoritesView') {
             if (navFavorites) navFavorites.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Избранное';
@@ -1262,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (uploadTrackBtn) uploadTrackBtn.addEventListener('click', () => {
             if (uploadModal) uploadModal.style.display = 'flex';
-            if (uploadManager) uploadManager.style.display = 'none';
+            if (uploadManager) uploadManager.style.display = 'block';
             const submitButton = document.querySelector('#uploadForm button[type="submit"]');
             if (submitButton) submitButton.textContent = 'Отправить на модерацию';
         });
@@ -1273,6 +1226,69 @@ document.addEventListener('DOMContentLoaded', () => {
         if (uploadModal) uploadModal.addEventListener('click', (e) => {
             if (e.target === uploadModal) {
                 uploadModal.style.display = 'none';
+            }
+        });
+        
+        if (determineGenreBtn) determineGenreBtn.addEventListener('click', async () => {
+            const audioFile = document.getElementById('audioFile').files[0];
+            if (!audioFile) {
+                alert('Пожалуйста, выберите аудиофайл.');
+                return;
+            }
+            if (fileStatusText) fileStatusText.textContent = 'Определение жанра...';
+            try {
+                const formData = new FormData();
+                formData.append('file', audioFile);
+                
+                const response = await fetchWithAuth(`${api}/api/determine-genre`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    if (selectedGenreName) selectedGenreName.textContent = result.genre;
+                    if (selectedGenreId) selectedGenreId.value = result.genre;
+                    if (fileStatusText) fileStatusText.textContent = 'Жанр определён успешно.';
+                } else {
+                    alert(result.message);
+                    if (fileStatusText) fileStatusText.textContent = 'Ошибка определения жанра.';
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Сетевая ошибка при определении жанра.');
+                if (fileStatusText) fileStatusText.textContent = 'Сетевая ошибка.';
+            }
+        });
+        
+        if (selectGenreBtn) selectGenreBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetchWithAuth(`${api}/api/genres`);
+                const genres = await response.json();
+                
+                if (genreList) {
+                    genreList.innerHTML = '';
+                    genres.forEach(genre => {
+                        const li = document.createElement('li');
+                        li.textContent = genre;
+                        li.dataset.genre = genre;
+                        li.addEventListener('click', () => {
+                            if (selectedGenreName) selectedGenreName.textContent = genre;
+                            if (selectedGenreId) selectedGenreId.value = genre;
+                            genreSelectionModal.style.display = 'none';
+                        });
+                        genreList.appendChild(li);
+                    });
+                }
+                genreSelectionModal.style.display = 'flex';
+            } catch (error) {
+                console.error(error);
+                alert('Не удалось загрузить список жанров.');
+            }
+        });
+        
+        if (genreSelectionModal) genreSelectionModal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('close-btn') || e.target === genreSelectionModal) {
+                genreSelectionModal.style.display = 'none';
             }
         });
 
@@ -1498,6 +1514,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (uploadForm) uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const audioFile = document.getElementById('audioFile').files[0];
+            const videoFile = document.getElementById('videoFile').files[0];
+            const coverFile = document.getElementById('coverFile').files[0];
+            const genre = document.getElementById('selectedGenreId').value;
+            const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
+
+            if (uploadType === 'audio' && !audioFile) {
+                alert('Пожалуйста, выберите аудиофайл.');
+                return;
+            } else if (uploadType === 'video' && !videoFile) {
+                alert('Пожалуйста, выберите видеофайл.');
+                return;
+            }
+
+            if (!coverFile) {
+                alert('Пожалуйста, выберите файл обложки.');
+                return;
+            }
+            if (!genre) {
+                alert('Пожалуйста, определите или выберите жанр.');
+                return;
+            }
+
             if (uploadManager) uploadManager.style.display = 'block';
             if (uploadProgressBar) uploadProgressBar.style.width = '0%';
             if (uploadStatusText) uploadStatusText.textContent = 'Подготовка к загрузке...';
@@ -1505,6 +1544,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(uploadForm);
             formData.append('userId', currentUser.id);
+            formData.append('genre', genre);
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `${api}/api/moderation/upload`, true);
@@ -1672,7 +1712,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const createCategoryBtn = e.target.closest('.create-category-btn');
             const editCategoryBtn = e.target.closest('.edit-category-btn');
             const deleteCategoryBtn = e.target.closest('.delete-category-btn');
-            const genreCard = e.target.closest('.genre-card');
             const categoryCard = e.target.closest('.category-card');
             const collectionCard = e.target.closest('.collection-card');
 
@@ -1820,8 +1859,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (moderationTitle) moderationTitle.textContent = track.title;
                 if (moderationArtist) moderationArtist.textContent = `Исполнитель: ${track.artist || track.username}`;
-                if (moderationGenre) moderationGenre.textContent = `Жанр: ${track.genre_name}`;
-                if (moderationGenreSelect) moderationGenreSelect.value = track.genre_id;
+                if (moderationGenre) moderationGenre.textContent = `Жанр: ${track.genre}`;
 
                 if (track.type === 'audio') {
                     if (moderationPlayer) moderationPlayer.src = `/temp_uploads/${track.file_name}`;
@@ -1853,6 +1891,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     moderationApproveBtn.dataset.creatorId = track.user_id;
                     moderationApproveBtn.dataset.artist = track.artist;
                     moderationApproveBtn.dataset.categoryId = track.category_id;
+                    moderationApproveBtn.dataset.genre = track.genre;
                 }
 
                 if (moderationRejectBtn) moderationRejectBtn.dataset.trackId = track.id;
@@ -1948,13 +1987,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (card && card.dataset.index) {
                 const index = parseInt(card.dataset.index, 10);
                 if (index >= 0) playMedia(index);
-            } else if (genreCard) {
-                const genreId = genreCard.dataset.genreId;
-                if (viewTitle) viewTitle.textContent = genreCard.textContent;
-                if (categoriesView) categoriesView.classList.remove('active-view');
-                if (specificCategoryView) specificCategoryView.classList.add('active-view');
-                if (allGridContainer) allGridContainer.style.display = 'none';
-                fetchAndRenderGenreTracks(genreId);
             } else if (categoryCard) {
                 const categoryId = categoryCard.dataset.categoryId;
                 if (viewTitle) viewTitle.textContent = categoryCard.textContent;
@@ -1972,7 +2004,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = moderationApproveBtn.dataset.title;
             const type = moderationApproveBtn.dataset.type;
             const creatorId = moderationApproveBtn.dataset.creatorId;
-            const genreId = moderationGenreSelect.value;
+            const genre = moderationApproveBtn.dataset.genre;
             const artist = moderationApproveBtn.dataset.artist;
             const categoryId = moderationApproveBtn.dataset.categoryId;
 
@@ -1989,7 +2021,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title,
                         type,
                         creatorId,
-                        genreId,
+                        genre,
                         artist,
                         categoryId
                     })
@@ -2197,7 +2229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOpacitySetting();
     initEventListeners();
     fetchAndRenderAll();
-    fetchCategoriesAndGenres();
+    fetchCategories();
 
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {

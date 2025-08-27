@@ -684,6 +684,35 @@ body {
     transition: background-color 1.5s ease-in-out, border-color 1.5s ease-in-out;
 }
 
+#uploadModal .modal-content {
+    max-width: 800px;
+}
+
+.upload-form-left {
+    padding-right: 20px;
+    border-right: 1px solid var(--border-color);
+}
+
+.upload-form-right {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#uploadForm {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 20px;
+    width: 100%;
+}
+
+#uploadSubmitBtn {
+    grid-column: span 2;
+}
+
+
 .modal-content h2 {
     margin-top: 0;
     margin-bottom: 25px;
@@ -1734,4 +1763,75 @@ body.creator-mode {
     display: none;
     width: 100%;
     margin-top: 20px;
+}
+
+/* Новые стили для кнопок жанров */
+.genre-control-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.genre-control-container button {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.genre-control-container button:hover {
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+    color: var(--text-primary);
+}
+
+.selected-genre-name {
+    flex-grow: 1;
+    text-align: right;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Стили для модального окна выбора жанров */
+#genreSelectionModal .modal-content {
+    max-width: 400px;
+}
+
+.genre-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#genreList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#genreList li {
+    padding: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 8px;
+}
+
+#genreList li:hover {
+    background-color: var(--card-hover-bg);
+}
+
+/* Стили для статуса загрузки */
+#uploadManager {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#fileStatusText {
+    font-size: 0.9em;
+    color: var(--text-secondary);
 }

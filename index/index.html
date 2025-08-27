@@ -66,9 +66,9 @@
                     <h2 class="section-title">Вам нравятся</h2>
                     <div class="scroll-container" id="youLikeGrid"></div>
                 </section>
-                <section class="section" id="youMayLikeSection">
-                    <h2 class="section-title">Вам могут понравиться</h2>
-                    <div class="scroll-container" id="youMayLikeGrid"></div>
+                <section class="section">
+                    <h2 class="section-title">Лучшее</h2>
+                    <div class="scroll-container" id="allGridContainer"></div>
                 </section>
                 <section class="section" id="favoriteCollectionsSection">
                     <h2 class="section-title">Ваши любимые подборки</h2>
@@ -78,15 +78,11 @@
             
             <div id="categoriesView" class="view">
                 <section class="section">
-                    <h2 class="section-title">Популярные категории</h2>
+                    <h2 class="section-title">Общее</h2>
                     <div class="grid-container" id="popularCategoriesGrid"></div>
                 </section>
                 <section class="section">
-                    <h2 class="section-title">Все жанры</h2>
-                    <div class="grid-container" id="allGenresGrid"></div>
-                </section>
-                <section class="section">
-                    <h2 class="section-title">Другие категории</h2>
+                    <h2 class="section-title">Кастомные категории</h2>
                     <div class="grid-container" id="customCategoriesGrid"></div>
                 </section>
             </div>
@@ -235,40 +231,63 @@
             <h2>Загрузить медиа</h2>
             <p>Ваш трек будет отправлен на модерацию.</p>
             <form id="uploadForm">
-                <div class="upload-type-selector">
-                    <label><input type="radio" name="uploadType" value="audio" checked><span>Аудио</span></label>
-                    <label><input type="radio" name="uploadType" value="video"><span>Видео</span></label>
-                </div>
-                <div class="form-group"><label for="trackTitle">Название</label><input type="text" id="trackTitle" name="title" required></div>
-                <div class="form-group"><label for="coverFile">Файл обложки (обязательно)</label><input type="file" id="coverFile" name="coverFile" accept="image/*" required></div>
-                
-                <div class="form-group"><label for="genreSelect">Жанр</label><select id="genreSelect" name="genreId" required></select></div>
-                <div class="form-group"><label for="categorySelect">Категория</label><select id="categorySelect" name="categoryId"></select></div>
+                <div class="upload-form-left">
+                    <div class="upload-type-selector">
+                        <label><input type="radio" name="uploadType" value="audio" checked><span>Аудио</span></label>
+                        <label><input type="radio" name="uploadType" value="video"><span>Видео</span></label>
+                    </div>
+                    <div class="form-group"><label for="trackTitle">Название</label><input type="text" id="trackTitle" name="title" required></div>
+                    <div class="form-group"><label for="coverFile">Файл обложки (обязательно)</label><input type="file" id="coverFile" name="coverFile" accept="image/*" required></div>
+                    
+                    <div class="form-group">
+                        <label for="genreControl">Жанр</label>
+                        <div class="genre-control-container" id="genreControl">
+                            <button type="button" id="determineGenreBtn">Определить</button>
+                            <button type="button" id="selectGenreBtn">Выбрать</button>
+                            <span id="selectedGenreName" class="selected-genre-name">Жанр не выбран</span>
+                            <input type="hidden" id="selectedGenreId" name="genreId" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group"><label for="categorySelect">Категория</label><select id="categorySelect" name="categoryId"></select></div>
 
-                <div class="form-group">
-                    <label><input type="checkbox" id="isForeignArtist"> Сторонний исполнитель</label>
-                    <div id="artistFields" style="display: none;">
-                        <label for="foreignArtistName">Имя исполнителя</label>
-                        <input type="text" id="foreignArtistName" name="artist">
+                    <div class="form-group">
+                        <label><input type="checkbox" id="isForeignArtist"> Сторонний исполнитель</label>
+                        <div id="artistFields" style="display: none;">
+                            <label for="foreignArtistName">Имя исполнителя</label>
+                            <input type="text" id="foreignArtistName" name="artist">
+                        </div>
+                    </div>
+
+                    <div id="audioFields" class="form-fields-group">
+                        <div class="form-group"><label for="audioFile">Аудиофайл</label><input type="file" id="audioFile" name="audioFile" accept="audio/*" required></div>
+                    </div>
+                    <div id="videoFields" class="form-fields-group" style="display: none;">
+                        <div class="form-group"><label for="videoFile">Видеофайл</label><input type="file" id="videoFile" name="videoFile" accept="video/*"></div>
                     </div>
                 </div>
-
-                <div id="audioFields" class="form-fields-group">
-                    <div class="form-group"><label for="audioFile">Аудиофайл</label><input type="file" id="audioFile" name="audioFile" accept="audio/*" required></div>
-                </div>
-                <div id="videoFields" class="form-fields-group" style="display: none;">
-                    <div class="form-group"><label for="videoFile">Видеофайл</label><input type="file" id="videoFile" name="videoFile" accept="video/*"></div>
+                <div class="upload-form-right">
+                    <div id="uploadManager">
+                        <h3>Статус загрузки</h3>
+                        <p id="uploadStatusText">Ожидание...</p>
+                        <div class="upload-status-bar">
+                            <div class="upload-progress-fill" style="width: 0;"></div>
+                        </div>
+                        <p id="fileStatusText">Файл не выбран</p>
+                    </div>
                 </div>
                 
-                <button type="submit" class="submit-btn">Отправить на модерацию</button>
+                <button type="submit" class="submit-btn" id="uploadSubmitBtn">Отправить на модерацию</button>
             </form>
+        </div>
+    </div>
 
-            <div id="uploadManager" style="display:none; margin-top: 20px;">
-                <h3>Менеджер загрузки</h3>
-                <div class="upload-status-bar">
-                    <div class="upload-progress-fill" style="width: 0;"></div>
-                </div>
-                <p id="uploadStatusText">Ожидание...</p>
+    <div id="genreSelectionModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="close-btn" title="Закрыть">&times;</button>
+            <h2>Выберите жанр</h2>
+            <div class="genre-list-container">
+                <ul id="genreList"></ul>
             </div>
         </div>
     </div>

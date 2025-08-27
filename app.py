@@ -9,6 +9,9 @@ from flask_cors import CORS
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
+import pickle
+import librosa
+import numpy as np
 
 load_dotenv()
 
@@ -23,10 +26,42 @@ FON_DIR = os.path.join(BASE_DIR, 'fon')
 VIDEO_DIR = os.path.join(BASE_DIR, 'video')
 TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
 INDEX_DIR = os.path.join(BASE_DIR, 'index')
+MODEL_PATH = os.path.join(BASE_DIR, 'music_genre_model.pkl')
+
 # Создание директорий, если они не существуют
 for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+# Загрузка модели ИИ
+try:
+    with open(MODEL_PATH, 'rb') as model_file:
+        model = pickle.load(model_file)
+except FileNotFoundError:
+    model = None
+    print(f"Model file not found at {MODEL_PATH}. AI genre detection will not be available.")
+except Exception as e:
+    model = None
+    print(f"Failed to load the model: {e}. AI genre detection will not be available.")
+
+
+# Определение списка жанров
+GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
+
+
+def extract_features(file_path):
+    y, sr = librosa.load(file_path, mono=True, duration=30)
+    S = np.abs(librosa.stft(y))
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
+    chroma = librosa.feature.chroma_stft(S=S, sr=sr)
+    mel = librosa.feature.melspectrogram(y=y, sr=sr)
+    features = np.concatenate((
+        np.mean(mfcc, axis=1),
+        np.mean(chroma, axis=1),
+        np.mean(mel, axis=1)
+    ))
+    return features.reshape(1, -1)
+
 
 # Настройка базы данных
 DB_PATH = os.path.join(BASE_DIR, 'database.db')
@@ -39,6 +74,10 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     c = conn.cursor()
+
+    # Удаление старых таблиц, если они существуют
+    c.execute("DROP TABLE IF EXISTS genres")
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,12 +106,6 @@ def init_db():
         )
     ''')
     c.execute('''
-        CREATE TABLE IF NOT EXISTS genres (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL
-        )
-    ''')
-    c.execute('''
         CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL
@@ -96,11 +129,10 @@ def init_db():
             title TEXT NOT NULL,
             type TEXT NOT NULL,
             status TEXT DEFAULT 'pending',
-            genre_id INTEGER,
+            genre TEXT,
             artist TEXT,
             category_id INTEGER,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE SET NULL,
             FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
         )
     ''')
@@ -112,13 +144,12 @@ def init_db():
             cover_name TEXT NOT NULL,
             type TEXT NOT NULL,
             creator_id INTEGER NOT NULL,
-            genre_id INTEGER,
+            genre TEXT,
             artist TEXT,
             category_id INTEGER,
             plays INTEGER DEFAULT 0,
             duration REAL,
             FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE SET NULL,
             FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
         )
     ''')
@@ -152,16 +183,6 @@ def init_db():
     if c.fetchone() is None:
         c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', 'defaultpassword', 'admin'))
 
-    # Добавление стандартных жанров
-    genres = ['Общее','Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
-    for genre in genres:
-        c.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (genre,))
-    
-    # Добавление стандартных категорий
-    categories = []
-    for category in categories:
-        c.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category,))
-    
     conn.commit()
     conn.close()
 
@@ -239,7 +260,7 @@ def serve_video(filename):
 @app.route('/temp_uploads/<path:filename>')
 def serve_temp_uploads(filename):
     return send_from_directory(TEMP_UPLOAD_DIR, filename)
-    
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
@@ -282,6 +303,7 @@ def get_favorites():
     return jsonify(favorite_files)
 
 @app.route('/api/favorites', methods=['POST', 'DELETE'])
+@auth_required
 def favorites():
     data = request.json
     user_id = data.get('userId')
@@ -305,22 +327,26 @@ def favorites():
 @app.route('/api/tracks')
 def get_tracks():
     conn = get_db_connection()
-    genre_id = request.args.get('genreId')
     category_id = request.args.get('categoryId')
 
-    query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, g.name as genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN genres g ON t.genre_id = g.id LEFT JOIN users u ON t.creator_id = u.id"
+    query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
     params = []
 
-    if genre_id:
-        query += " WHERE t.genre_id = ?"
-        params.append(genre_id)
-    elif category_id:
+    if category_id:
         query += " WHERE t.category_id = ?"
         params.append(category_id)
     
     tracks = conn.execute(query, params).fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
+
+@app.route('/api/tracks/best')
+def get_best_tracks():
+    conn = get_db_connection()
+    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY t.plays DESC LIMIT 30").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in tracks])
+
 
 @auth_required
 @role_required(['admin','creator'])
@@ -370,6 +396,8 @@ def rename_track():
         conn.close()
 
 @app.route('/api/tracks/<int:track_id>', methods=['DELETE'])
+@auth_required
+@role_required(['admin'])
 def delete_track(track_id):
     conn = get_db_connection()
     track = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
@@ -513,7 +541,7 @@ def moderation_upload():
     title = request.form.get('title')
     upload_type = request.form.get('uploadType')
     user_id = request.form.get('userId')
-    genre_id = request.form.get('genreId')
+    genre = request.form.get('genre') or None
     artist = request.form.get('artist') or None
     category_id = request.form.get('categoryId') or None
 
@@ -529,8 +557,8 @@ def moderation_upload():
 
     conn = get_db_connection()
     try:
-        conn.execute("INSERT INTO track_moderation (user_id, file_name, cover_name, title, type, genre_id, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                     (user_id, media_filename, cover_filename, title, upload_type, genre_id, artist, category_id))
+        conn.execute("INSERT INTO track_moderation (user_id, file_name, cover_name, title, type, genre, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                     (user_id, media_filename, cover_filename, title, upload_type, genre, artist, category_id))
         conn.commit()
         return jsonify({'message': 'Трек отправлен на модерацию. Ожидайте одобрения.'}), 201
     except Exception as e:
@@ -544,7 +572,7 @@ def moderation_upload():
 @role_required(['admin'])
 def admin_moderation_tracks():
     conn = get_db_connection()
-    tracks = conn.execute("SELECT m.id, m.file_name, m.cover_name, m.title, m.type, u.username, m.user_id, m.artist, m.genre_id, g.name as genre_name, m.category_id FROM track_moderation m JOIN users u ON m.user_id = u.id LEFT JOIN genres g ON m.genre_id = g.id WHERE m.status = 'pending'").fetchall()
+    tracks = conn.execute("SELECT m.id, m.file_name, m.cover_name, m.title, m.type, u.username, m.user_id, m.artist, m.genre, m.category_id FROM track_moderation m JOIN users u ON m.user_id = u.id WHERE m.status = 'pending'").fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
@@ -559,7 +587,7 @@ def approve_track():
     title = data.get('title')
     track_type = data.get('type')
     creator_id = data.get('creatorId')
-    genre_id = data.get('genreId')
+    genre = data.get('genre')
     artist = data.get('artist')
     category_id = data.get('categoryId')
 
@@ -578,8 +606,8 @@ def approve_track():
         shutil.move(os.path.join(TEMP_UPLOAD_DIR, cover_name), os.path.join(FON_DIR, new_cover_name))
 
         conn = get_db_connection()
-        conn.execute("INSERT INTO tracks (title, file_name, cover_name, type, creator_id, genre_id, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                     (title, new_file_name, new_cover_name, track_type, creator_id, genre_id, artist, category_id))
+        conn.execute("INSERT INTO tracks (title, file_name, cover_name, type, creator_id, genre, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                     (title, new_file_name, new_cover_name, track_type, creator_id, genre, artist, category_id))
         conn.execute("DELETE FROM track_moderation WHERE id = ?", (track_id,))
         conn.commit()
         return jsonify({'message': 'Трек одобрен и добавлен в медиатеку.'})
@@ -701,10 +729,7 @@ def creator_stats(user_id):
 
 @app.route('/api/genres')
 def get_genres():
-    conn = get_db_connection()
-    genres = conn.execute("SELECT * FROM genres").fetchall()
-    conn.close()
-    return jsonify([dict(row) for row in genres])
+    return jsonify(GENRES)
 
 @app.route('/api/categories')
 def get_categories():
@@ -719,7 +744,6 @@ def get_categories():
 @role_required(['creator','admin'])
 def get_creator_categories(user_id):
     conn = get_db_connection()
-    # Возвращаем категории, привязанные к пользователю
     categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ?", (user_id,)).fetchall()
     conn.close()
     return jsonify([dict(row) for row in categories])
@@ -792,7 +816,6 @@ def manage_category(category_id):
 def get_users_for_categories():
     query = request.args.get('q', '')
     conn = get_db_connection()
-    # Возвращаем всех пользователей, а не только креаторов
     users = conn.execute("SELECT id, username, role FROM users WHERE username LIKE ? LIMIT 10", ('%' + query + '%',)).fetchall()
     conn.close()
     return jsonify([dict(user) for user in users])
@@ -807,6 +830,7 @@ def get_users_in_category(category_id):
     return jsonify([dict(user) for user in users])
 
 @app.route('/api/update-playback', methods=['POST'])
+@auth_required
 def update_playback():
     data = request.json
     user_id = data.get('userId')
@@ -829,6 +853,7 @@ def update_playback():
         conn.close()
 
 @app.route('/api/xrecomen/<int:user_id>')
+@auth_required
 def get_xrecomen(user_id):
     conn = get_db_connection()
     
@@ -843,29 +868,16 @@ def get_xrecomen(user_id):
         you_like_tracks = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
         you_like_tracks = [dict(row) for row in you_like_tracks]
 
-    # Определяем предпочтения на основе последних прослушиваний (если нет избранного)
-    user_played_tracks = conn.execute("SELECT p.listened_duration, t.duration, t.genre_id, t.artist, t.id FROM plays p JOIN tracks t ON p.track_id = t.id WHERE p.user_id = ? ORDER BY p.timestamp DESC LIMIT 20", (user_id,)).fetchall()
-    
-    played_track_ids = [t['id'] for t in user_played_tracks]
-    
-    # Если нет избранных треков, берем случайные из общей медиатеки
-    if not you_like_tracks:
-        you_like_tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks ORDER BY RANDOM() LIMIT 5").fetchall()
-        you_like_tracks = [dict(row) for row in you_like_tracks]
-
     xrecomen_track = None
     you_may_like_tracks = []
-
+    
     # Формируем список "Вам могут понравиться" из случайных треков
     you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
-    if played_track_ids:
-        you_may_like_query += f" WHERE id NOT IN ({','.join(['?'] * len(played_track_ids))})"
-    you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6", played_track_ids).fetchall()
+    you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6").fetchall()
     you_may_like_tracks = [dict(row) for row in you_may_like_tracks]
     
     if you_may_like_tracks:
         xrecomen_track = random.choice(you_may_like_tracks)
-        # Удаляем трек из списка, чтобы избежать дублирования
         you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
 
     # Формирование "Любимых подборок"
@@ -880,6 +892,35 @@ def get_xrecomen(user_id):
         'youMayLike': you_may_like_tracks,
         'favoriteCollections': favorite_collections
     })
+
+@app.route('/api/determine-genre', methods=['POST'])
+@auth_required
+@role_required(['creator','admin'])
+def determine_genre():
+    if 'file' not in request.files:
+        return jsonify({'message': 'Нет файла'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'Не выбран файл'}), 400
+
+    if not model:
+        return jsonify({'message': 'Модель ИИ недоступна.'}), 503
+
+    try:
+        temp_path = os.path.join(TEMP_UPLOAD_DIR, secure_filename(file.filename))
+        file.save(temp_path)
+        
+        features = extract_features(temp_path)
+        predicted_genre_index = model.predict(features)[0]
+        predicted_genre = GENRES[predicted_genre_index]
+        
+        os.remove(temp_path)
+        
+        return jsonify({'genre': predicted_genre})
+    except Exception as e:
+        print(f"Error during genre determination: {e}")
+        return jsonify({'message': 'Ошибка при определении жанра.'}), 500
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
