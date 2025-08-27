@@ -134,8 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const xrecomenSection = document.getElementById('xrecomenSection');
     const xrecomenBtn = document.getElementById('xrecomenBtn');
+    const xrecomenTitle = document.querySelector('.xrecomen-title');
+    const xrecomenSubtitle = document.querySelector('.xrecomen-subtitle');
+    const youLikeSection = document.getElementById('youLikeSection');
     const youLikeGrid = document.getElementById('youLikeGrid');
+    const youMayLikeSection = document.getElementById('youMayLikeSection');
     const youMayLikeGrid = document.getElementById('youMayLikeGrid');
+    const favoriteCollectionsSection = document.getElementById('favoriteCollectionsSection');
     const favoriteCollectionsGrid = document.getElementById('favoriteCollectionsGrid');
     const nowPlayingText = document.getElementById('nowPlayingText');
 
@@ -286,62 +291,84 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentUser) {
                 fetchFavorites();
                 fetchXrecomen();
+            } else {
+                fetchXrecomen();
             }
         } catch (error) {
             console.error('Ошибка:', error);
         }
     };
-
+    
     const fetchXrecomen = async () => {
+        const homeSections = [youLikeSection, youMayLikeSection, favoriteCollectionsSection];
         if (!currentUser) {
             if (xrecomenSection) xrecomenSection.style.display = 'flex';
+            if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
+            if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
+            homeSections.forEach(sec => sec.style.display = 'none');
+    
             if (allMedia.length > 0) {
                 const randomIndex = Math.floor(Math.random() * allMedia.length);
-                renderXrecomen(allMedia[randomIndex]);
+                xrecomenBtn.dataset.index = randomIndex;
+                xrecomenBtn.dataset.isRandom = 'true';
             }
             return;
         }
-
+    
         if (xrecomenSection) xrecomenSection.style.display = 'flex';
-
+        homeSections.forEach(sec => sec.style.display = 'block');
+    
         try {
             const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
             const data = await response.json();
-
-            // Проверяем, есть ли рекомендованный трек
+    
+            // Настройка Xrecomen для авторизованных пользователей
             if (data.xrecomenTrack) {
-                // Убеждаемся, что allMedia содержит этот трек перед рендером
                 if (!allMedia.some(t => t.id === data.xrecomenTrack.id)) {
                     allMedia.push(data.xrecomenTrack);
                 }
-                renderXrecomen(data.xrecomenTrack);
+                const index = allMedia.findIndex(t => t.id === data.xrecomenTrack.id);
+                if (xrecomenBtn && index !== -1) {
+                    xrecomenBtn.dataset.index = index;
+                    xrecomenBtn.dataset.isRandom = 'false';
+                    if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
+                    if (xrecomenSubtitle) xrecomenSubtitle.textContent = `Возможно, вам понравится трек "${data.xrecomenTrack.title}"`;
+                }
             } else {
-                // Если рекомендаций нет, даём случайный трек
                 if (allMedia.length > 0) {
                     const randomIndex = Math.floor(Math.random() * allMedia.length);
-                    renderXrecomen(allMedia[randomIndex]);
+                    if (xrecomenBtn) {
+                        xrecomenBtn.dataset.index = randomIndex;
+                        xrecomenBtn.dataset.isRandom = 'true';
+                    }
                 } else {
                     if (xrecomenSection) xrecomenSection.style.display = 'none';
                 }
+                if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
+                if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
             }
-
-            // Добавление: теперь "Вам нравятся" заполняется избранными треками
-            if (data.youLike) {
-                const favoriteMedia = allMedia.filter(item => userFavorites.includes(item.file));
-                renderMediaInContainer(youLikeGrid, favoriteMedia.length > 0 ? favoriteMedia : data.youLike, true);
+    
+            // Заполнение раздела "Вам нравятся"
+            if (youLikeGrid) {
+                if (data.youLike && data.youLike.length > 0) {
+                    renderMediaInContainer(youLikeGrid, data.youLike, true);
+                } else {
+                    youLikeGrid.innerHTML = '<p>Добавьте треки в избранное для отображения.</p>';
+                }
             }
-
-            // Добавление: Теперь "Вам могут понравиться" заполняется данными с сервера
-            if (data.youMayLike) {
+    
+            // Заполнение раздела "Вам могут понравиться"
+            if (youMayLikeGrid && data.youMayLike) {
                 renderMediaInContainer(youMayLikeGrid, data.youMayLike, true);
             }
-
-            // Добавление: Теперь "Любимые подборки" заполняется данными с сервера
-            if (data.favoriteCollections) {
+    
+            // Заполнение раздела "Любимые подборки"
+            if (favoriteCollectionsGrid) {
                 renderFavoriteCollections(data.favoriteCollections);
             }
         } catch (error) {
             console.error('Ошибка при получении рекомендаций:', error);
+            if (xrecomenSection) xrecomenSection.style.display = 'none';
         }
     };
 
@@ -519,6 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.querySelector('.view.active-view').id === 'favoritesView') {
                 switchView('homeView');
             }
+            fetchXrecomen();
         }
     };
 
@@ -910,9 +938,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (viewTitle) viewTitle.textContent = 'Главная';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             if (player) player.style.display = 'grid';
-            if (currentUser) {
-                if (xrecomenSection) xrecomenSection.style.display = 'flex';
-            }
             fetchXrecomen();
         } else if (viewIdToShow === 'categoriesView') {
             if (navCategories) navCategories.classList.add('active');
@@ -1642,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchXrecomen();
             }
         });
-
+        
         if (xrecomenBtn) xrecomenBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const index = parseInt(e.currentTarget.dataset.index, 10);
