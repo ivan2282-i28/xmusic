@@ -40,7 +40,7 @@ try:
         model = joblib.load(model_file)  # Заменено pickle на joblib
 except FileNotFoundError:
     model = None
-    print(f"Model file not found at {dirs["MODEL_PATH"]}. AI genre detection will not be available.")
+    print(f"Model file not found at {dirs['MODEL_PATH']}. AI genre detection will not be available.")
 except Exception as e:
     model = None
     print(f"Failed to load the model: {e}. AI genre detection will not be available.")
