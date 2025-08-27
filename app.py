@@ -6,9 +6,16 @@ import time
 import random
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
+import jwt
+from functools import wraps
+from dotenv import load_dotenv
+import hashlib
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -170,6 +177,53 @@ app.config['UPLOAD_FOLDER'] = {
     'temp_uploads': TEMP_UPLOAD_DIR
 }
 
+def auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'message': 'Token is missing or invalid!'}), 401
+        
+        try:
+            token = token.split()[1]  # Remove 'Bearer ' prefix
+            # Decode and verify the token
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            # You can add the decoded data to the request context if needed
+            
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            # Query for the specific user ID and username
+            cursor.execute("SELECT * FROM users WHERE id = ? AND username = ?", (data["id"], data["username"]))
+            user_exists = cursor.fetchone()
+            conn.close()
+
+
+            if not user_exists:
+                return jsonify({'message': 'Token is invalid'}), 401
+            if data["passphrase"] != f"{hashlib.sha256(user_exists["password"].encode("utf-8")).hexdigest()}edf6":
+                return jsonify({'message': 'Token is invalid'}), 401
+            
+            request.current_user = user_exists
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid!'}), 401
+        
+        return f(*args, **kwargs)
+    return decorated
+
+
+def role_required(roless: list):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not request.current_user["role"] in roless:
+                return jsonify({'message': 'Invalid role'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 @app.route('/')
 def serve_index():
     return send_from_directory(INDEX_DIR, 'index.html')
@@ -217,15 +271,18 @@ def login():
     conn = get_db_connection()
     user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
+    sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(password.encode("utf-8")).hexdigest()}edf6"}
+    tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
     if user:
-        return jsonify({'message': 'Вход выполнен!', 'user': dict(user)})
+        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(password.encode("utf-8")).hexdigest()}c34f"})
     else:
         return jsonify({'message': 'Неверный логин или пароль.'}), 401
 
-@app.route('/api/favorites/<int:user_id>')
-def get_favorites(user_id):
+@app.route('/api/favorites', methods=['GET'])
+@auth_required
+def get_favorites():
     conn = get_db_connection()
-    favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
+    favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (request.current_user["id"],)).fetchall()
     conn.close()
     favorite_files = [row['media_file'] for row in favorites]
     return jsonify(favorite_files)
@@ -271,6 +328,8 @@ def get_tracks():
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
+@auth_required
+@role_required(['admin','creator'])
 @app.route('/api/rename', methods=['POST'])
 def rename_track():
     data = request.json
@@ -338,6 +397,8 @@ def delete_track(track_id):
     finally:
         conn.close()
 
+@auth_required
+@role_required(['user'])
 @app.route('/api/apply-for-creator', methods=['POST'])
 def apply_for_creator():
     data = request.json
@@ -358,6 +419,8 @@ def apply_for_creator():
         conn.close()
 
 @app.route('/api/admin/applications')
+@auth_required
+@role_required(['admin'])
 def admin_applications():
     conn = get_db_connection()
     applications = conn.execute("SELECT a.id, a.full_name, a.phone_number, a.email, a.status, u.username, a.user_id FROM creator_applications a JOIN users u ON a.user_id = u.id WHERE a.status = 'pending'").fetchall()
@@ -365,6 +428,8 @@ def admin_applications():
     return jsonify([dict(row) for row in applications])
 
 @app.route('/api/admin/approve-application', methods=['POST'])
+@auth_required
+@role_required(['admin'])
 def approve_application():
     data = request.json
     user_id = data.get('userId')
@@ -381,6 +446,8 @@ def approve_application():
         conn.close()
 
 @app.route('/api/admin/reject-application', methods=['POST'])
+@auth_required
+@role_required(['admin'])
 def reject_application():
     data = request.json
     app_id = data.get('appId')
@@ -396,6 +463,8 @@ def reject_application():
         conn.close()
 
 @app.route('/api/admin/users')
+@auth_required
+@role_required(['admin'])
 def admin_users():
     conn = get_db_connection()
     users = conn.execute("SELECT id, username, role FROM users").fetchall()
@@ -403,6 +472,8 @@ def admin_users():
     return jsonify([dict(row) for row in users])
 
 @app.route('/api/admin/update-role', methods=['POST'])
+@auth_required
+@role_required(['admin'])
 def update_role():
     data = request.json
     user_id = data.get('userId')
@@ -419,6 +490,8 @@ def update_role():
         conn.close()
 
 @app.route('/api/admin/change-password', methods=['POST'])
+@auth_required
+@role_required(['admin'])
 def change_password():
     data = request.json
     user_id = data.get('userId')
@@ -435,6 +508,8 @@ def change_password():
         conn.close()
 
 @app.route('/api/moderation/upload', methods=['POST'])
+@auth_required
+@role_required(['creator','admin'])
 def moderation_upload():
     if 'coverFile' not in request.files or ('audioFile' not in request.files and 'videoFile' not in request.files):
         return jsonify({'message': 'Не все файлы предоставлены.'}), 400
@@ -471,6 +546,8 @@ def moderation_upload():
         conn.close()
 
 @app.route('/api/admin/moderation-tracks')
+@auth_required
+@role_required(['admin'])
 def admin_moderation_tracks():
     conn = get_db_connection()
     tracks = conn.execute("SELECT m.id, m.file_name, m.cover_name, m.title, m.type, u.username, m.user_id, m.artist, m.genre_id, g.name as genre_name, m.category_id FROM track_moderation m JOIN users u ON m.user_id = u.id LEFT JOIN genres g ON m.genre_id = g.id WHERE m.status = 'pending'").fetchall()
@@ -478,6 +555,8 @@ def admin_moderation_tracks():
     return jsonify([dict(row) for row in tracks])
 
 @app.route('/api/admin/approve-track', methods=['POST'])
+@auth_required
+@role_required(['admin'])
 def approve_track():
     data = request.json
     track_id = data.get('trackId')
@@ -518,6 +597,8 @@ def approve_track():
             conn.close()
 
 @app.route('/api/admin/reject-track/<int:track_id>', methods=['DELETE'])
+@auth_required
+@role_required(['admin'])
 def reject_track(track_id):
     conn = get_db_connection()
     track = conn.execute("SELECT file_name, cover_name FROM track_moderation WHERE id = ?", (track_id,)).fetchone()
@@ -539,6 +620,8 @@ def reject_track(track_id):
         conn.close()
 
 @app.route('/api/admin/stats')
+@auth_required
+@role_required(['admin'])
 def admin_stats():
     conn = get_db_connection()
     user_count = conn.execute("SELECT COUNT(*) as userCount FROM users").fetchone()['userCount']
@@ -547,6 +630,8 @@ def admin_stats():
     return jsonify({'userCount': user_count, 'trackCount': track_count})
 
 @app.route('/api/admin/delete-user/<int:user_id>', methods=['DELETE'])
+@auth_required
+@role_required(['admin'])
 def delete_user(user_id):
     conn = get_db_connection()
     try:
@@ -560,6 +645,8 @@ def delete_user(user_id):
         conn.close()
 
 @app.route('/api/creator/my-tracks/<int:user_id>')
+@auth_required
+@role_required(['creator','admin'])
 def get_creator_tracks(user_id):
     conn = get_db_connection()
     tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE creator_id = ?", (user_id,)).fetchall()
@@ -567,6 +654,8 @@ def get_creator_tracks(user_id):
     return jsonify([dict(row) for row in tracks])
 
 @app.route('/api/creator/my-tracks/<int:track_id>', methods=['DELETE'])
+@auth_required
+@role_required(['creator','admin'])
 def delete_creator_track(track_id):
     data = request.json
     user_id = data.get('userId')
@@ -596,6 +685,8 @@ def delete_creator_track(track_id):
         conn.close()
 
 @app.route('/api/creator/stats/<int:user_id>')
+@auth_required
+@role_required(['creator','admin'])
 def creator_stats(user_id):
     conn = get_db_connection()
     total_plays = conn.execute("SELECT SUM(t.plays) FROM tracks t WHERE t.creator_id = ?", (user_id,)).fetchone()[0] or 0
@@ -628,7 +719,10 @@ def get_categories():
     conn.close()
     return jsonify([dict(row) for row in categories])
 
+
 @app.route('/api/creator/my-categories/<int:user_id>')
+@auth_required
+@role_required(['creator','admin'])
 def get_creator_categories(user_id):
     conn = get_db_connection()
     # Возвращаем категории, привязанные к пользователю
@@ -637,6 +731,8 @@ def get_creator_categories(user_id):
     return jsonify([dict(row) for row in categories])
 
 @app.route('/api/admin/categories', methods=['GET', 'POST'])
+@auth_required
+@role_required(['admin'])
 def manage_categories():
     if request.method == 'GET':
         conn = get_db_connection()
@@ -664,6 +760,8 @@ def manage_categories():
             conn.close()
 
 @app.route('/api/admin/categories/<int:category_id>', methods=['PUT', 'DELETE'])
+@auth_required
+@role_required(['admin'])
 def manage_category(category_id):
     conn = get_db_connection()
     if request.method == 'PUT':
@@ -693,7 +791,10 @@ def manage_category(category_id):
         finally:
             conn.close()
 
+
 @app.route('/api/admin/categories/users', methods=['GET'])
+@auth_required
+@role_required(['creator','admin'])
 def get_users_for_categories():
     query = request.args.get('q', '')
     conn = get_db_connection()
@@ -703,6 +804,8 @@ def get_users_for_categories():
     return jsonify([dict(user) for user in users])
 
 @app.route('/api/admin/categories/users-in-category/<int:category_id>', methods=['GET'])
+@auth_required
+@role_required(['creator','admin'])
 def get_users_in_category(category_id):
     conn = get_db_connection()
     users = conn.execute("SELECT u.id, u.username FROM users u JOIN category_users cu ON u.id = cu.user_id WHERE cu.category_id = ?", (category_id,)).fetchall()
@@ -783,6 +886,11 @@ def get_xrecomen(user_id):
         'youMayLike': you_may_like_tracks,
         'favoriteCollections': favorite_collections
     })
+
+@app.route('/api/auth_refresh')
+def auth_refresh():
+    #f"d{hashlib.sha256(user["password"].encode("utf-8")).hexdigest()}c34f"
+    return jsonify({'message':"NOT INPLEMENTED -Server"}), 418
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)

@@ -3,3 +3,5 @@ flask_cors
 pydantic
 werkzeug
 python-multipart
+Pyjwt
+python-dotenv

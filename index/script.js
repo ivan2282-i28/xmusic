@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     const tracksPerPage = 20;
 
+    const ACCESS_TOKEN_KEY = "access_token"
+    const REFRESH_TOKEN_KEY = "refresh_token"
+
     const mainContent = document.querySelector('.main-content');
     const allGridContainer = document.getElementById('allGridContainer');
     const popularCategoriesGrid = document.getElementById('popularCategoriesGrid');
@@ -169,6 +172,90 @@ document.addEventListener('DOMContentLoaded', () => {
     let playTimer;
     let userSearchTimeout;
 
+    async function fetchWithAuth(url, options = {}) {
+        // Get tokens from storage
+        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+
+        // Set up headers
+        options.headers = options.headers || {};
+
+        // Add Authorization header if we have an access token
+        if (accessToken) {
+            options.headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
+        // Make the request
+        let response = await fetch(url, options);
+
+        // If unauthorized and we have a refresh token, try to refresh
+        if (response.status === 401 && currentUser) {
+            try {
+                // Attempt to refresh the token
+                const refreshResponse = await fetch('/api/auth_refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+
+                if (refreshResponse.ok) {
+                    const tokens = await refreshResponse.json();
+
+                    // Store the new tokens
+                    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+                    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+
+                    // Retry the original request with the new token
+                    options.headers['Authorization'] = `Bearer ${tokens.access_token}`;
+                    response = await fetchWithAuth(url, options);
+                } else {
+                    // Refresh failed - clear tokens and redirect to login
+                    localStorage.removeItem(ACCESS_TOKEN_KEY);
+                    localStorage.removeItem(REFRESH_TOKEN_KEY);
+                    alert("Ошибко токено овторизоции")
+                    localStorage.removeItem('currentUser');
+                    updateUIForAuth(null);
+                    toggleCreatorMode(false);
+                    loginModal.style.display = "flex"
+                    // throw new Error('Authentication failed: Please log in again');
+                }
+            } catch (error) {
+                console.error('Token refresh failed:', error);
+                localStorage.removeItem(ACCESS_TOKEN_KEY);
+                localStorage.removeItem(REFRESH_TOKEN_KEY);
+                alert("Ошибко токено овторизоции")
+                localStorage.removeItem('currentUser');
+                updateUIForAuth(null);
+                toggleCreatorMode(false);
+                loginModal.style.display = "flex"
+                // throw error;
+            }
+        }
+
+        return response;
+    }
+
+    // Helper functions for token management
+    function setTokens(accessToken, refreshToken) {
+        localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+
+    function clearTokens() {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+    }
+
+    function getAccessToken() {
+        return localStorage.getItem(ACCESS_TOKEN_KEY);
+    }
+
+    function getRefreshToken() {
+        return localStorage.getItem(REFRESH_TOKEN_KEY);
+    }
+
     // Новая функция для рендеринга результатов поиска
     const renderSearchResults = (mediaToRender, searchTerm) => {
         let searchResultsContainer = document.querySelector('.search-results-container');
@@ -193,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAndRenderAll = async () => {
         try {
-            const response = await fetch(`${api}/api/tracks`);
+            const response = await fetchWithAuth(`${api}/api/tracks`);
             if (!response.ok) throw new Error('Network response was not ok');
             allMedia = await response.json();
             if (currentUser) {
@@ -218,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (xrecomenSection) xrecomenSection.style.display = 'flex';
 
         try {
-            const response = await fetch(`${api}/api/xrecomen/${currentUser.id}`);
+            const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
             const data = await response.json();
 
             // Проверяем, есть ли рекомендованный трек
@@ -285,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchCategoriesAndGenres = async () => {
         try {
-            const genresRes = await fetch(`${api}/api/genres`);
+            const genresRes = await fetchWithAuth(`${api}/api/genres`);
             if (!genresRes.ok) throw new Error('Ошибка при получении жанров');
             const genres = await genresRes.json();
             if (allGenresGrid) {
@@ -316,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const categoriesRes = await fetch(`${api}/api/categories`);
+            const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
             if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
             // Исправлена ошибка: переименовал переменную, чтобы избежать конфликта.
             const categoriesData = await categoriesRes.json();
@@ -361,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAndRenderCategoryTracks = async (categoryId) => {
         try {
-            const response = await fetch(`${api}/api/tracks?categoryId=${categoryId}`);
+            const response = await fetchWithAuth(`${api}/api/tracks?categoryId=${categoryId}`);
             if (!response.ok) throw new Error('Network response was not ok');
             const categoryTracks = await response.json();
             if (specificCategoryGrid) {
@@ -374,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAndRenderGenreTracks = async (genreId) => {
         try {
-            const response = await fetch(`${api}/api/tracks?genreId=${genreId}`);
+            const response = await fetchWithAuth(`${api}/api/tracks?genreId=${genreId}`);
             if (!response.ok) throw new Error('Network response was not ok');
             const genreTracks = await response.json();
             if (specificCategoryGrid) {
@@ -410,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Если пользователь не креатор, показываем кнопку "Главная"
                 if (creatorHomeBtn) creatorHomeBtn.style.display = 'flex';
             }
-            
+
             // Добавляем видимость кнопок админа, если роль - admin
             if (user.role === 'admin') {
                 document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'flex');
@@ -438,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchCreatorCategories = async () => {
         if (!currentUser) return;
         try {
-            const response = await fetch(`${api}/api/creator/my-categories/${currentUser.id}`);
+            const response = await fetchWithAuth(`${api}/api/creator/my-categories/${currentUser.id}`);
             if (!response.ok) throw new Error('Ошибка при получении категорий.');
             const categories = await response.json();
             if (categorySelect) {
@@ -458,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchFavorites = async () => {
         if (!currentUser) return;
         try {
-            const response = await fetch(`${api}/api/favorites/${currentUser.id}`);
+            const response = await fetchWithAuth(`${api}/api/favorites`);
             if (!response.ok) throw new Error('Ошибка при получении избранного.');
             userFavorites = await response.json();
             renderFavorites();
@@ -650,7 +737,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playTimer) clearTimeout(playTimer);
         playTimer = setTimeout(async () => {
             if (currentUser && activeMediaElement.duration) {
-                await fetch(`${api}/api/update-playback`, {
+                await fetchWithAuth(`${api}/api/update-playback`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -667,7 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchMyTracks = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
         try {
-            const response = await fetch(`${api}/api/creator/my-tracks/${currentUser.id}`);
+            const response = await fetchWithAuth(`${api}/api/creator/my-tracks/${currentUser.id}`);
             if (!response.ok) throw new Error('Network response was not ok');
             myTracks = await response.json();
             if (myTracksSection) {
@@ -726,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchCreatorStats = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
         try {
-            const response = await fetch(`${api}/api/creator/stats/${currentUser.id}`);
+            const response = await fetchWithAuth(`${api}/api/creator/stats/${currentUser.id}`);
             const stats = await response.json();
 
             if (totalPlaysEl) totalPlaysEl.textContent = stats.totalPlays;
@@ -914,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAdminApplications = async () => {
         try {
-            const res = await fetch(`${api}/api/admin/applications`);
+            const res = await fetchWithAuth(`${api}/api/admin/applications`);
             const applications = await res.json();
             if (applicationsList) {
                 applicationsList.innerHTML = '';
@@ -943,7 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAdminCategories = async () => {
         try {
-            const res = await fetch(`${api}/api/admin/categories`);
+            const res = await fetchWithAuth(`${api}/api/admin/categories`);
             const categories = await res.json();
             if (adminCategoriesSection) {
                 const categoriesList = document.getElementById('adminCategoriesList');
@@ -970,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const res = await fetch(`${api}/api/admin/users`);
+            const res = await fetchWithAuth(`${api}/api/admin/users`);
             const users = await res.json();
             if (usersList) {
                 usersList.innerHTML = '';
@@ -994,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchModerationTracks = async () => {
         try {
-            const res = await fetch(`${api}/api/admin/moderation-tracks`);
+            const res = await fetchWithAuth(`${api}/api/admin/moderation-tracks`);
             const tracks = await res.json();
             moderationTracks = tracks;
             if (moderationTracksList) {
@@ -1027,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAdminStats = async () => {
         try {
-            const res = await fetch(`${api}/api/admin/stats`);
+            const res = await fetchWithAuth(`${api}/api/admin/stats`);
             const stats = await res.json();
             if (statsContent) {
                 statsContent.innerHTML = `
@@ -1240,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             moderationVideoPlayer.pause();
             moderationVideoPlayer.currentTime = 0;
         });
-        
+
         if (closeCategoryModalBtn) closeCategoryModalBtn.addEventListener('click', () => {
             if (categoryModal) categoryModal.style.display = 'none';
         });
@@ -1256,13 +1343,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (categoryModal) categoryModal.style.display = 'none';
             }
         });
-        
+
         if (categoryModal) categoryModal.addEventListener('click', (e) => {
             if (e.target === categoryModal) {
                 categoryModal.style.display = 'none';
             }
         });
-        
+
         // Функционал для нового поля ввода и проверки пользователей
         if (userSearchInput) {
             userSearchInput.addEventListener('input', () => {
@@ -1277,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 userSearchTimeout = setTimeout(async () => {
                     try {
-                        const res = await fetch(`${api}/api/admin/categories/users?q=${query}`);
+                        const res = await fetchWithAuth(`${api}/api/admin/categories/users?q=${query}`);
                         const users = await res.json();
                         const user = users.find(u => u.username === query);
                         if (user) {
@@ -1303,7 +1390,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, 500);
             });
-            
+
             userSearchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1324,7 +1411,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        
+
         if (selectedUsersContainer) selectedUsersContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-user')) {
                 const userIdToRemove = parseInt(e.target.dataset.userId, 10);
@@ -1344,10 +1431,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         };
-        
+
         const openCategoryModalForEdit = async (categoryId) => {
             try {
-                const res = await fetch(`${api}/api/admin/categories`);
+                const res = await fetchWithAuth(`${api}/api/admin/categories`);
                 const allCategories = await res.json();
                 const category = allCategories.find(c => c.id == categoryId);
                 if (!category) {
@@ -1355,14 +1442,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const usersRes = await fetch(`${api}/api/admin/categories/users-in-category/${categoryId}`);
+                const usersRes = await fetchWithAuth(`${api}/api/admin/categories/users-in-category/${categoryId}`);
                 const users = await usersRes.json();
-                
+
                 categoryIdInput.value = category.id;
                 categoryNameInput.value = category.name;
                 selectedUsers = users;
                 renderSelectedUsers();
-                
+
                 if (categoryModal) categoryModal.style.display = 'flex';
                 if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Редактировать категорию';
             } catch (err) {
@@ -1386,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = categoryId ? `${api}/api/admin/categories/${categoryId}` : `${api}/api/admin/categories`;
 
             try {
-                const res = await fetch(url, {
+                const res = await fetchWithAuth(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json'
@@ -1453,7 +1540,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Если ответ не JSON (вероятно, HTML-страница ошибки), используем общее сообщение
                         console.error('Сервер вернул не-JSON ответ:', xhr.responseText);
                     }
-                    
+
                     if (uploadStatusText) uploadStatusText.textContent = `Ошибка загрузки: ${result.message}`;
                     if (uploadProgressBar) uploadProgressBar.style.width = '0%';
                     if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
@@ -1473,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             try {
-                const res = await fetch(`${api}/api/login`, {
+                const res = await fetchWithAuth(`${api}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1485,6 +1572,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await res.json();
                 if (res.ok) {
+                    setTokens(result.token, result.refresh)
                     localStorage.setItem('currentUser', JSON.stringify(result.user));
                     updateUIForAuth(result.user);
                     if (loginModal) loginModal.style.display = 'none';
@@ -1502,7 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const username = document.getElementById('registerUsername').value;
             const password = document.getElementById('registerPassword').value;
             try {
-                const res = await fetch(`${api}/api/register`, {
+                const res = await fetchWithAuth(`${api}/api/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1590,7 +1678,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newTitle = prompt('Введите новое название:', track.title);
                 if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
                     try {
-                        const res = await fetch(`${api}/api/rename`, {
+                        const res = await fetchWithAuth(`${api}/api/rename`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1614,7 +1702,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const track = allMedia.find(t => t.id == trackId);
                 if (confirm(`Вы уверены, что хотите удалить "${track.title}"?`)) {
                     try {
-                        const res = await fetch(`${api}/api/tracks/${trackId}`, {
+                        const res = await fetchWithAuth(`${api}/api/tracks/${trackId}`, {
                             method: 'DELETE'
                         });
                         if (res.ok) fetchAndRenderAll();
@@ -1629,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const track = myTracks.find(t => t.id == trackId);
                 if (confirm(`Вы уверены, что хотите удалить трек "${track.title}"?`)) {
                     try {
-                        const res = await fetch(`${api}/api/creator/my-tracks/${trackId}`, {
+                        const res = await fetchWithAuth(`${api}/api/creator/my-tracks/${trackId}`, {
                             method: 'DELETE',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1651,7 +1739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mediaFile = favoriteBtn.dataset.file;
                 const isFavorite = favoriteBtn.classList.contains('favorited');
                 try {
-                    const res = await fetch(`${api}/api/favorites`, {
+                    const res = await fetchWithAuth(`${api}/api/favorites`, {
                         method: isFavorite ? 'DELETE' : 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -1683,7 +1771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const userId = approveAppBtn.dataset.userId;
                 try {
-                    const res = await fetch(`${api}/api/admin/approve-application`, {
+                    const res = await fetchWithAuth(`${api}/api/admin/approve-application`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -1702,7 +1790,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const appId = rejectAppBtn.dataset.appId;
                 try {
-                    const res = await fetch(`${api}/api/admin/reject-application`, {
+                    const res = await fetchWithAuth(`${api}/api/admin/reject-application`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -1733,19 +1821,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (moderationPlayer) moderationPlayer.style.display = 'block';
                     if (moderationPlayerCover) moderationPlayerCover.style.display = 'block';
                     if (moderationVideoPlayer) {
-                         moderationVideoPlayer.style.display = 'none';
-                         moderationVideoPlayer.pause();
+                        moderationVideoPlayer.style.display = 'none';
+                        moderationVideoPlayer.pause();
                     }
                 } else if (track.type === 'video') {
-                     if (moderationPlayer) {
-                         moderationPlayer.style.display = 'none';
-                         moderationPlayer.pause();
+                    if (moderationPlayer) {
+                        moderationPlayer.style.display = 'none';
+                        moderationPlayer.pause();
                     }
-                     if (moderationPlayerCover) moderationPlayerCover.style.display = 'none';
-                     if (moderationVideoPlayer) {
-                         moderationVideoPlayer.src = `/temp_uploads/${track.file_name}`;
-                         moderationVideoPlayer.style.display = 'block';
-                     }
+                    if (moderationPlayerCover) moderationPlayerCover.style.display = 'none';
+                    if (moderationVideoPlayer) {
+                        moderationVideoPlayer.src = `/temp_uploads/${track.file_name}`;
+                        moderationVideoPlayer.style.display = 'block';
+                    }
                 }
 
                 if (moderationApproveBtn) {
@@ -1769,7 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newRole = prompt(`Сменить роль пользователя на: 'user', 'creator' или 'admin'. Текущая роль: ${currentRole}`);
                 if (newRole && ['user', 'creator', 'admin'].includes(newRole)) {
                     try {
-                        const res = await fetch(`${api}/api/admin/update-role`, {
+                        const res = await fetchWithAuth(`${api}/api/admin/update-role`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1792,7 +1880,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newPassword = prompt('Введите новый пароль:');
                 if (newPassword && newPassword.trim()) {
                     try {
-                        const res = await fetch(`${api}/api/admin/change-password`, {
+                        const res = await fetchWithAuth(`${api}/api/admin/change-password`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1814,7 +1902,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userId = deleteUserBtn.dataset.userId;
                 if (confirm('Вы уверены, что хотите удалить этого пользователя? Это действие необратимо.')) {
                     try {
-                        const res = await fetch(`${api}/api/admin/delete-user/${userId}`, {
+                        const res = await fetchWithAuth(`${api}/api/admin/delete-user/${userId}`, {
                             method: 'DELETE'
                         });
                         const result = await res.json();
@@ -1841,7 +1929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const categoryId = deleteCategoryBtn.dataset.categoryId;
                 if (confirm('Вы уверены, что хотите удалить эту категорию? Треки, привязанные к ней, останутся.')) {
                     try {
-                        const res = await fetch(`${api}/api/admin/categories/${categoryId}`, { method: 'DELETE' });
+                        const res = await fetchWithAuth(`${api}/api/admin/categories/${categoryId}`, { method: 'DELETE' });
                         const result = await res.json();
                         alert(result.message);
                         if (res.ok) fetchAdminCategories();
@@ -1881,7 +1969,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoryId = moderationApproveBtn.dataset.categoryId;
 
             try {
-                const res = await fetch(`${api}/api/admin/approve-track`, {
+                const res = await fetchWithAuth(`${api}/api/admin/approve-track`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1916,7 +2004,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const trackId = moderationRejectBtn.dataset.trackId;
             if (confirm('Вы уверены, что хотите отклонить этот трек?')) {
                 try {
-                    const res = await fetch(`${api}/api/admin/reject-track/${trackId}`, {
+                    const res = await fetchWithAuth(`${api}/api/admin/reject-track/${trackId}`, {
                         method: 'DELETE'
                     });
                     const result = await res.json();
@@ -1962,7 +2050,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isFavorite = userFavorites.includes(currentTrack.file);
 
                 try {
-                    const res = await fetch(`${api}/api/favorites`, {
+                    const res = await fetchWithAuth(`${api}/api/favorites`, {
                         method: isFavorite ? 'DELETE' : 'POST',
                         headers: {
                             'Content-Type': 'application/json'
