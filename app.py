@@ -152,7 +152,7 @@ def init_db():
         c.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (genre,))
     
     # Добавление стандартных категорий
-    categories = ['Общее', 'Популярные', 'Для вас', 'Возможно вам понравится', 'Танцевальная', 'Классика', 'Джаз', 'Chill', 'Для спорта', 'Для сна', 'Для учёбы', 'Музыка из игр', 'Саундтреки', 'Для расслабления']
+    categories = []
     for category in categories:
         c.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category,))
     
@@ -495,10 +495,11 @@ def approve_track():
 
     conn = None # Добавлена инициализация conn
     try:
+        unique_id = str(int(time.time() * 1000))
         file_ext = os.path.splitext(file_name)[1]
-        new_file_name = f"{sanitized_title}{file_ext}"
+        new_file_name = f"{unique_id}{file_ext}"
         cover_ext = os.path.splitext(cover_name)[1]
-        new_cover_name = f"{sanitized_title}{cover_ext}"
+        new_cover_name = f"{unique_id}{cover_ext}"
 
         shutil.move(os.path.join(TEMP_UPLOAD_DIR, file_name), os.path.join(media_dir, new_file_name))
         shutil.move(os.path.join(TEMP_UPLOAD_DIR, cover_name), os.path.join(FON_DIR, new_cover_name))
