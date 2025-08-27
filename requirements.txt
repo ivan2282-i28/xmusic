@@ -2,7 +2,10 @@ Flask
 Flask-Cors
 PyJWT
 python-dotenv
-sqlite3
+werkzeug
+pydantic
+python-multipart
+requests
 scikit-learn
 numpy
 librosa
