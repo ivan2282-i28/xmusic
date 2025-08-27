@@ -80,10 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginModal = document.getElementById('loginModal');
     const loginBtn = document.getElementById('loginBtn');
     const loginForm = document.getElementById('loginForm');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
     const closeLoginBtn = loginModal.querySelector('.close-btn');
     const switchToRegisterBtn = document.getElementById('switchToRegister');
     const registerModal = document.getElementById('registerModal');
     const registerForm = document.getElementById('registerForm');
+    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
     const closeRegisterBtn = registerModal.querySelector('.close-btn');
     const switchToLoginBtn = document.getElementById('switchToLogin');
     const favoritesView = document.getElementById('favoritesView');
@@ -171,6 +173,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let chartInstance = null;
     let playTimer;
     let userSearchTimeout;
+
+    // Глобальные функции reCAPTCHA
+    window.onRecaptchaSuccessLogin = () => {
+        loginSubmitBtn.disabled = false;
+    };
+
+    window.onRecaptchaExpiredLogin = () => {
+        loginSubmitBtn.disabled = true;
+    };
+
+    window.onRecaptchaSuccessRegister = () => {
+        registerSubmitBtn.disabled = false;
+    };
+
+    window.onRecaptchaExpiredRegister = () => {
+        registerSubmitBtn.disabled = true;
+    };
+
 
     async function fetchWithAuth(url, options = {}) {
         // Get tokens from storage
@@ -1293,6 +1313,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (loginBtn) loginBtn.addEventListener('click', () => {
             if (loginModal) loginModal.style.display = 'flex';
+            // Сбрасываем reCAPTCHA при открытии модального окна
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+            // Отключаем кнопку входа
+            loginSubmitBtn.disabled = true;
         });
         if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => {
             if (loginModal) loginModal.style.display = 'none';
@@ -1303,10 +1327,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => {
             if (loginModal) loginModal.style.display = 'none';
             if (registerModal) registerModal.style.display = 'flex';
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+            registerSubmitBtn.disabled = true;
         });
         if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => {
             if (registerModal) registerModal.style.display = 'none';
             if (loginModal) loginModal.style.display = 'flex';
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+            loginSubmitBtn.disabled = true;
         });
         if (logoutBtn) logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('currentUser');
@@ -1559,6 +1587,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
+            const recaptchaResponse = grecaptcha.getResponse();
+
+            if (!recaptchaResponse) {
+                alert('Пожалуйста, пройдите проверку reCAPTCHA.');
+                return;
+            }
+
             try {
                 const res = await fetchWithAuth(`${api}/api/login`, {
                     method: 'POST',
@@ -1567,7 +1602,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         username,
-                        password
+                        password,
+                        recaptcha_response: recaptchaResponse
                     })
                 });
                 const result = await res.json();
@@ -1579,9 +1615,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Вход успешен!');
                 } else {
                     alert(result.message);
+                    grecaptcha.reset(); // Сбрасываем reCAPTCHA при ошибке
                 }
             } catch (err) {
                 alert('Ошибка входа.');
+                grecaptcha.reset();
             }
         });
 
@@ -1589,6 +1627,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const username = document.getElementById('registerUsername').value;
             const password = document.getElementById('registerPassword').value;
+            const recaptchaResponse = grecaptcha.getResponse();
+
+            if (!recaptchaResponse) {
+                alert('Пожалуйста, пройдите проверку reCAPTCHA.');
+                return;
+            }
+
             try {
                 const res = await fetchWithAuth(`${api}/api/register`, {
                     method: 'POST',
@@ -1597,7 +1642,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         username,
-                        password
+                        password,
+                        recaptcha_response: recaptchaResponse
                     })
                 });
                 const result = await res.json();
@@ -1605,11 +1651,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(result.message + ' Теперь вы можете войти.');
                     if (registerModal) registerModal.style.display = 'none';
                     if (loginModal) loginModal.style.display = 'flex';
+                    grecaptcha.reset(); // Сбрасываем reCAPTCHA после успешной регистрации
                 } else {
                     alert(result.message);
+                    grecaptcha.reset();
                 }
             } catch (err) {
                 alert('Ошибка регистрации.');
+                grecaptcha.reset();
             }
         });
 
