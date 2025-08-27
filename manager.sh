@@ -4,7 +4,7 @@ SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 cd "$SCRIPT_DIR"
 ls
 if [ ! -d "./.venv" ]; then
-    python3.13 -m venv .venv
+    echo Oh my venv! plz install 3.13 python
 fi
 
 source ./.venv/bin/activate
