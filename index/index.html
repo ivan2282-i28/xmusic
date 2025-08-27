@@ -242,7 +242,24 @@
                 <div class="form-group"><label for="trackTitle">Название</label><input type="text" id="trackTitle" name="title" required></div>
                 <div class="form-group"><label for="coverFile">Файл обложки (обязательно)</label><input type="file" id="coverFile" name="coverFile" accept="image/*" required></div>
                 
-                <div class="form-group"><label for="genreSelect">Жанр</label><select id="genreSelect" name="genreId" required></select></div>
+                <div class="genre-selector-container">
+                    <label>Жанр</label>
+                    <div class="genre-buttons-wrapper">
+                        <button type="button" class="genre-btn" id="detectGenreBtn" disabled>Определить</button>
+                        <button type="button" class="genre-btn" id="selectGenreBtn">Выбрать</button>
+                    </div>
+                </div>
+                
+                <div id="genreSelectionExpanded" class="expanded-genre-selection">
+                    <p class="status-line">Аудио/видео загружено: <span id="fileUploadedStatus">Нет</span></p>
+                    <div class="form-group"><label>Жанр:</label><input type="text" id="selectedGenreDisplay" readonly></div>
+                </div>
+
+                <div id="genreSelectWrapper" class="form-group" style="display: none;">
+                    <label for="genreSelect">Выберите жанр</label>
+                    <select id="genreSelect" name="genreId" required></select>
+                </div>
+
                 <div class="form-group"><label for="categorySelect">Категория</label><select id="categorySelect" name="categoryId"></select></div>
 
                 <div class="form-group">
