@@ -14,4 +14,4 @@ pip install -r requirements.txt
 
 echo "running program"
 rm app.log
-gunicorn -w 4 -b 0.0.0.0:3000 xmusic:app --log-file= app.log
+gunicorn -w 4 -b 0.0.0.0:3000 xmusic:app --error-logfile app.log
