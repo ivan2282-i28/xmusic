@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
     <div class="video-background-container" id="videoBackgroundContainer">
@@ -294,6 +295,7 @@
             <form id="loginForm">
                 <div class="form-group"><label for="loginUsername">Логин</label><input type="text" id="loginUsername" required></div>
                 <div class="form-group"><label for="loginPassword">Пароль</label><input type="password" id="loginPassword" required></div>
+                <div class="g-recaptcha" data-sitekey="6LfDl7QrAAAAALG2gcYm42BZzuCsY_I7edgnMFzJ"></div>
                 <button type="submit" class="submit-btn">Войти</button>
                 <button type="button" class="link-btn" id="switchToRegister">Перейти к регистрации</button>
             </form>
@@ -307,6 +309,7 @@
             <form id="registerForm">
                 <div class="form-group"><label for="registerUsername">Логин</label><input type="text" id="registerUsername" required></div>
                 <div class="form-group"><label for="registerPassword">Пароль</label><input type="password" id="registerPassword" required></div>
+                <div class="g-recaptcha" data-sitekey="6LfDl7QrAAAAALG2gcYm42BZzuCsY_I7edgnMFzJ"></div>
                 <button type="submit" class="submit-btn">Зарегистрироваться</button>
                 <button type="button" class="link-btn" id="switchToLogin">Перейти ко входу</button>
             </form>
