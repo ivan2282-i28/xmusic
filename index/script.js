@@ -245,12 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper functions for token management
     function setTokens(accessToken, refreshToken) {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        localStorage.setItem(REFRESH_TOKEN, refreshToken);
     }
 
     function clearTokens() {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN);
     }
 
     function getAccessToken() {
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getRefreshToken() {
-        return localStorage.getItem(REFRESH_TOKEN_KEY);
+        return localStorage.getItem(REFRESH_TOKEN);
     }
 
     // Новая функция для рендеринга результатов поиска
@@ -300,23 +300,44 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const fetchXrecomen = async () => {
-        const homeSections = [youLikeSection, youMayLikeSection, favoriteCollectionsSection];
-        if (!currentUser) {
-            if (xrecomenSection) xrecomenSection.style.display = 'flex';
-            if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-            if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
-            homeSections.forEach(sec => sec.style.display = 'none');
+        const youLikeSection = document.getElementById('youLikeSection');
+        const youMayLikeSection = document.getElementById('youMayLikeSection');
+        const favoriteCollectionsSection = document.getElementById('favoriteCollectionsSection');
+        const youLikeGrid = document.getElementById('youLikeGrid');
+        const youMayLikeGrid = document.getElementById('youMayLikeGrid');
+        const favoriteCollectionsGrid = document.getElementById('favoriteCollectionsGrid');
     
-            if (allMedia.length > 0) {
-                const randomIndex = Math.floor(Math.random() * allMedia.length);
-                xrecomenBtn.dataset.index = randomIndex;
-                xrecomenBtn.dataset.isRandom = 'true';
+        if (!currentUser) {
+            if (youLikeSection) youLikeSection.style.display = 'block';
+            if (youMayLikeSection) youMayLikeSection.style.display = 'block';
+            if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
+    
+            if (xrecomenBtn) {
+                if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
+                if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
+            }
+    
+            if (youLikeGrid) {
+                youLikeGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
+            }
+    
+            if (favoriteCollectionsGrid) {
+                favoriteCollectionsGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
+            }
+    
+            // Заполняем "Вам могут понравиться" случайными треками
+            if (youMayLikeGrid && allMedia.length > 0) {
+                const randomTracks = [...allMedia].sort(() => 0.5 - Math.random()).slice(0, 6);
+                renderMediaInContainer(youMayLikeGrid, randomTracks);
             }
             return;
         }
     
+        // Логика для авторизованных пользователей
         if (xrecomenSection) xrecomenSection.style.display = 'flex';
-        homeSections.forEach(sec => sec.style.display = 'block');
+        if (youLikeSection) youLikeSection.style.display = 'block';
+        if (youMayLikeSection) youMayLikeSection.style.display = 'block';
+        if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
     
         try {
             const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
