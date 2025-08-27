@@ -10,15 +10,12 @@ import jwt
 from functools import wraps
 from dotenv import load_dotenv
 import hashlib
-import requests # Добавляем импорт requests
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-# Загружаем секретный ключ reCAPTCHA из .env файла
-RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -227,19 +224,6 @@ def role_required(roless: list):
         return decorated_function
     return decorator
 
-# ---- Добавлена функция для проверки reCAPTCHA v3 ----
-def verify_recaptcha(recaptcha_token):
-    """Проверяет reCAPTCHA токен с помощью сервиса Google."""
-    payload = {
-        'secret': RECAPTCHA_SECRET_KEY,
-        'response': recaptcha_token
-    }
-    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-    result = response.json()
-    # Возвращаем True, если проверка успешна, и оценка больше 0.5 (стандартная для v3)
-    return result.get('success', False) and result.get('score', 0) > 0.5
-
-# ---- Маршруты для статических файлов ----
 @app.route('/')
 def serve_index():
     return send_from_directory(INDEX_DIR, 'index.html')
@@ -264,18 +248,12 @@ def serve_video(filename):
 def serve_temp_uploads(filename):
     return send_from_directory(TEMP_UPLOAD_DIR, filename)
 
-# ---- Маршрут для регистрации ----
 @app.route('/api/register', methods=['POST'])
 def register():
+    return {"message":"Пардон но на нас атуку сделалали "},418
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    recaptcha_token = data.get('recaptcha_token')
-
-    # Проверяем reCAPTCHA токен
-    if not recaptcha_token or not verify_recaptcha(recaptcha_token):
-        return jsonify({'message': 'Проверка reCAPTCHA не пройдена.'}), 400
-
     conn = get_db_connection()
     try:
         conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -286,18 +264,11 @@ def register():
     finally:
         conn.close()
 
-# ---- Маршрут для входа ----
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    recaptcha_token = data.get('recaptcha_token')
-
-    # Проверяем reCAPTCHA токен
-    if not recaptcha_token or not verify_recaptcha(recaptcha_token):
-        return jsonify({'message': 'Проверка reCAPTCHA не пройдена.'}), 400
-
     conn = get_db_connection()
     user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
@@ -308,7 +279,6 @@ def login():
     else:
         return jsonify({'message': 'Неверный логин или пароль.'}), 401
 
-# ---- Остальные маршруты (без изменений) ----
 @app.route('/api/favorites', methods=['GET'])
 @auth_required
 def get_favorites():
