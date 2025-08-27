@@ -180,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchWithAuth(url, options = {}) {
         // Get tokens from storage
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
         // Set up headers
         options.headers = options.headers || {};
@@ -194,71 +193,28 @@ document.addEventListener('DOMContentLoaded', () => {
         let response = await fetch(url, options);
 
         // If unauthorized and we have a refresh token, try to refresh
-        if (response.status === 401 && currentUser) {
-            try {
-                // Attempt to refresh the token
-                const refreshResponse = await fetch('/api/auth_refresh', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ refresh_token: refreshToken })
-                });
-
-                if (refreshResponse.ok) {
-                    const tokens = await refreshResponse.json();
-
-                    // Store the new tokens
-                    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
-                    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
-
-                    // Retry the original request with the new token
-                    options.headers['Authorization'] = `Bearer ${tokens.access_token}`;
-                    response = await fetchWithAuth(url, options);
-                } else {
-                    // Refresh failed - clear tokens and redirect to login
-                    localStorage.removeItem(ACCESS_TOKEN_KEY);
-                    localStorage.removeItem(REFRESH_TOKEN_KEY);
-                    alert("Ошибко токено овторизоции")
-                    localStorage.removeItem('currentUser');
-                    updateUIForAuth(null);
-                    toggleCreatorMode(false);
-                    loginModal.style.display = "flex"
-                    // throw new Error('Authentication failed: Please log in again');
-                }
-            } catch (error) {
-                console.error('Token refresh failed:', error);
-                localStorage.removeItem(ACCESS_TOKEN_KEY);
-                localStorage.removeItem(REFRESH_TOKEN_KEY);
-                alert("Ошибко токено овторизоции")
-                localStorage.removeItem('currentUser');
-                updateUIForAuth(null);
-                toggleCreatorMode(false);
-                loginModal.style.display = "flex"
-                // throw error;
-            }
+        if (response.status === 401) {
+             // Refresh failed - clear tokens and redirect to login
+            localStorage.removeItem(ACCESS_TOKEN_KEY);
+            localStorage.removeItem(REFRESH_TOKEN_KEY);
+            alert("Ошибко токено овторизоции")
+            localStorage.removeItem('currentUser');
+            updateUIForAuth(null);
+            toggleCreatorMode(false);
+            loginModal.style.display = "flex"
         }
 
         return response;
     }
 
     // Helper functions for token management
-    function setTokens(accessToken, refreshToken) {
+    function setTokens(accessToken) {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-        localStorage.setItem(REFRESH_TOKEN, refreshToken);
     }
 
     function clearTokens() {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN);
-    }
-
-    function getAccessToken() {
-        return localStorage.getItem(ACCESS_TOKEN_KEY);
-    }
-
-    function getRefreshToken() {
-        return localStorage.getItem(REFRESH_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
     }
 
     // Новая функция для рендеринга результатов поиска
@@ -881,7 +837,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: dates,
                     datasets: [{
                         label: 'Прослушивания',
-                        data: plays,
                         borderColor: '#9147FF',
                         backgroundColor: 'rgba(145, 71, 255, 0.2)',
                         borderWidth: 2,
@@ -1618,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    setTokens(result.token, result.refresh)
+                    setTokens(result.token)
                     localStorage.setItem('currentUser', JSON.stringify(result.user));
                     updateUIForAuth(result.user);
                     if (loginModal) loginModal.style.display = 'none';
