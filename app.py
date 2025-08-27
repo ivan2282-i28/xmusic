@@ -149,9 +149,9 @@ def init_db():
     ''')
 
     # Добавление админа, если его нет
-    c.execute("SELECT * FROM users WHERE username = 'root'")
+    c.execute("SELECT * FROM users WHERE username = 'SuperAdmin'")
     if c.fetchone() is None:
-        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', '12345', 'admin'))
+        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('SuperAdmin', '212345', 'admin'))
 
     # Добавление стандартных жанров
     genres = ['Общее','Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
@@ -490,8 +490,8 @@ def update_role():
         conn.close()
 
 @app.route('/api/admin/change-password', methods=['POST'])
-# @auth_required
-# @role_required(['admin'])
+@auth_required
+@role_required(['admin'])
 def change_password():
     data = request.json
     user_id = data.get('userId')
