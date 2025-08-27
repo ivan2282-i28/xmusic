@@ -10,12 +10,14 @@ import jwt
 from functools import wraps
 from dotenv import load_dotenv
 import hashlib
+import requests
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '6LfDl7QrAAAAAACx4OeRZ5OIKjD0OtJyvuQXYO_M')
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -185,19 +187,14 @@ def auth_required(f):
             return jsonify({'message': 'Token is missing or invalid!'}), 401
         
         try:
-            token = token.split()[1]  # Remove 'Bearer ' prefix
-            # Decode and verify the token
+            token = token.split()[1]
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            # You can add the decoded data to the request context if needed
             
-
             conn = get_db_connection()
             cursor = conn.cursor()
-            # Query for the specific user ID and username
             cursor.execute("SELECT * FROM users WHERE id = ? AND username = ?", (data["id"], data["username"]))
             user_exists = cursor.fetchone()
             conn.close()
-
 
             if not user_exists:
                 return jsonify({'message': 'Token is invalid'}), 401
@@ -247,13 +244,46 @@ def serve_video(filename):
 @app.route('/temp_uploads/<path:filename>')
 def serve_temp_uploads(filename):
     return send_from_directory(TEMP_UPLOAD_DIR, filename)
+    
+@app.route('/api/verify-recaptcha', methods=['POST'])
+def verify_recaptcha():
+    recaptcha_token = request.json.get('recaptcha_token')
+    if not recaptcha_token:
+        return jsonify({'success': False, 'message': 'reCAPTCHA token is missing.'}), 400
+
+    payload = {
+        'secret': RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_token
+    }
+    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+    result = response.json()
+    
+    if result.get('success'):
+        return jsonify({'success': True, 'message': 'reCAPTCHA verification successful.'})
+    else:
+        return jsonify({'success': False, 'message': 'reCAPTCHA verification failed.', 'errors': result.get('error-codes')}), 400
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    return {"message":"Пардон но на нас атуку сделалали "},418
     data = request.json
     username = data.get('username')
     password = data.get('password')
+    recaptcha_token = data.get('recaptcha_token')
+    
+    # Проверка reCAPTCHA
+    if not recaptcha_token:
+        return jsonify({'message': 'reCAPTCHA token is missing.'}), 400
+    
+    payload = {
+        'secret': RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_token
+    }
+    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+    result = response.json()
+
+    if not result.get('success'):
+        return jsonify({'message': 'reCAPTCHA verification failed.', 'errors': result.get('error-codes')}), 400
+
     conn = get_db_connection()
     try:
         conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
@@ -269,13 +299,29 @@ def login():
     data = request.json
     username = data.get('username')
     password = data.get('password')
+    recaptcha_token = data.get('recaptcha_token')
+
+    # Проверка reCAPTCHA
+    if not recaptcha_token:
+        return jsonify({'message': 'reCAPTCHA token is missing.'}), 400
+
+    payload = {
+        'secret': RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_token
+    }
+    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+    result = response.json()
+
+    if not result.get('success'):
+        return jsonify({'message': 'reCAPTCHA verification failed.', 'errors': result.get('error-codes')}), 400
+
     conn = get_db_connection()
-    user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+    user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
     if user:
-        sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(password.encode('utf-8')).hexdigest()}edf6"}
+        sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(user['password'].encode('utf-8')).hexdigest()}edf6"}
         tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
-        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(password.encode('utf-8')).hexdigest()}c34f"})
+        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(user['password'].encode('utf-8')).hexdigest()}c34f"})
     else:
         return jsonify({'message': 'Неверный логин или пароль.'}), 401
 
@@ -573,7 +619,7 @@ def approve_track():
     sanitized_title = secure_filename(title.strip())
     media_dir = MUSIC_DIR if track_type == 'audio' else VIDEO_DIR
 
-    conn = None # Добавлена инициализация conn
+    conn = None
     try:
         unique_id = str(int(time.time() * 1000))
         file_ext = os.path.splitext(file_name)[1]
@@ -594,7 +640,7 @@ def approve_track():
         print(e)
         return jsonify({'message': 'Ошибка при перемещении файлов.'}), 500
     finally:
-        if conn: # Добавлена проверка на существование conn
+        if conn:
             conn.close()
 
 @app.route('/api/admin/reject-track/<int:track_id>', methods=['DELETE'])
