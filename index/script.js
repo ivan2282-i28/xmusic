@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+\document.addEventListener('DOMContentLoaded', () => {
     const api = '';
     let allMedia = [];
     let myTracks = [];
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchBarWrapper = document.querySelector('.search-bar-wrapper');
     const searchInput = document.getElementById('searchInput');
     const navHome = document.getElementById('navHome');
-    const navCategories = document.getElementById('navCategories');
+    const navCategories = document('navCategories');
     const navFavorites = document.getElementById('navFavorites');
     const views = document.querySelectorAll('.view');
     const viewTitle = document.getElementById('viewTitle');
@@ -1519,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const res = await fetchWithAuth(`${api}/api/login`, {
+                const res = await fetch(`${api}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password, recaptcha_token: recaptchaToken })
@@ -1553,7 +1553,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('registerPassword').value;
 
             try {
-                const res = await fetchWithAuth(`${api}/api/register`, {
+                const res = await fetch(`${api}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password, recaptcha_token: recaptchaToken })
@@ -1711,7 +1711,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     if (res.ok) {
                         if (isFavorite) {
-                            userFavorites = userFavorites.filter(f => f !== mediaFile);
+                            userFavorites = userFavorites.filter(f => f !== currentTrack.file);
                             favoritePlayerBtn.classList.remove('favorited');
                             favoritePlayerBtn.title = 'Добавить в избранное';
                             fetchXrecomen();
