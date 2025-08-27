@@ -22,305 +22,350 @@
             <nav class="main-nav" id="xmusicNav">
                 <a href="#" id="navHome" class="nav-link active"><span>Главная</span></a>
                 <a href="#" id="navCategories" class="nav-link"><span>Категории</span></a>
-                <a href="#" id="navFavorites" class="nav-link" style="display: none;"><span>Избранное</span></a>
-                <a class="nav-link" id="creatorStudioBtn" style="display: none;"><span>Creator Studio</span></a>
-                <a class="nav-link" id="settingsBtn"><span>Настройки</span></a>
+                <a href="#" id="navFavorites" class="nav-link"><span>Избранное</span></a>
+                <a href="#" id="navVideos" class="nav-link"><span>Видео</span></a>
+                <a href="#" id="navHistory" class="nav-link"><span>История</span></a>
             </nav>
-            <nav class="main-nav" id="xcreatorNav" style="display: none;">
-                <a class="go-back-btn" id="backToXMusicBtn"><span>&#8592; Назад в XMusic</span></a>
-                <a class="creator-nav-btn active" id="creatorHomeBtn" style="display: none;"><span>Главная</span></a>
-                <a class="creator-nav-btn" id="myTracksBtn" style="display: none;"><span>Мои треки</span></a>
-                <a class="creator-nav-btn" id="analyticsBtn" style="display: none;"><span>Аналитика</span></a>
-                <a class="creator-nav-btn admin-section" id="adminApplicationsBtn" style="display: none;"><span>Заявки в Creator</span></a>
-                <a class="creator-nav-btn admin-section" id="adminUsersBtn" style="display: none;"><span>Аккаунты</span></a>
-                <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display: none;"><span>Треки на модерации</span></a>
-                <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display: none;"><span>Статистика</span></a>
-                <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
+            <nav class="creator-nav" id="xcreatorNav" style="display: none;">
+                <a href="#" id="navCreatorDashboard" class="nav-link active"><span>Панель управления</span></a>
+                <a href="#" id="navCreatorUpload" class="nav-link"><span>Загрузить</span></a>
+                <a href="#" id="navCreatorAnalytics" class="nav-link"><span>Аналитика</span></a>
+                <a href="#" id="navModeration" class="nav-link"><span>Модерация</span></a>
+                <a href="#" id="navAdmin" class="nav-link"><span>Админ-панель</span></a>
             </nav>
             <div class="sidebar-footer">
-                <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
+                <button id="toggleCreatorModeBtn" class="creator-btn">Включить Creator Studio</button>
+                <button id="settingsBtn" class="settings-btn">Настройки</button>
+                <button id="logoutBtn" class="logout-btn" style="display: none;">Выйти</button>
             </div>
         </aside>
 
         <main class="main-content">
-            <header class="main-header">
-                <h1 id="viewTitle">Главная</h1>
-                <div class="header-controls">
-                    <div class="search-bar-wrapper">
-                        <input type="text" id="searchInput" placeholder="Поиск...">
-                    </div>
-                    <button class="login-btn" id="loginBtn"><span>Войти</span></button>
-                    <span id="welcomeMessage" style="display: none; margin-left: 20px;"></span>
+            <div class="main-header" id="mainHeader">
+                <h1 id="pageTitle">Главная</h1>
+                <div class="search-bar-wrapper">
+                    <input type="text" id="searchInput" placeholder="Поиск музыки, артистов...">
                 </div>
-            </header>
+                <div class="header-controls">
+                    <button id="loginBtn" class="login-btn">Войти</button>
+                </div>
+            </div>
 
             <div id="homeView" class="view active-view">
-                <section class="section xrecomen-section" id="xrecomenSection" style="display: none;">
-                    <p id="nowPlayingText" class="now-playing-text"></p>
-                    <button id="xrecomenBtn">
-                        <span class="xrecomen-title">Xrecomen</span>
-                        <span class="xrecomen-subtitle">Возможно, вам понравится</span>
-                    </button>
-                </section>
-                <section class="section" id="youLikeSection">
-                    <h2 class="section-title">Вам нравятся</h2>
-                    <div class="scroll-container" id="youLikeGrid"></div>
-                </section>
-                <section class="section" id="youMayLikeSection">
-                    <h2 class="section-title">Вам могут понравиться</h2>
-                    <div class="scroll-container" id="youMayLikeGrid"></div>
-                </section>
-                <section class="section" id="favoriteCollectionsSection">
-                    <h2 class="section-title">Ваши любимые подборки</h2>
-                    <div class="scroll-container" id="favoriteCollectionsGrid"></div>
-                </section>
-            </div>
-            
-            <div id="categoriesView" class="view">
-                <section class="section">
-                    <h2 class="section-title">Популярные категории</h2>
-                    <div class="grid-container" id="popularCategoriesGrid"></div>
-                </section>
-                <section class="section">
-                    <h2 class="section-title">Все жанры</h2>
-                    <div class="grid-container" id="allGenresGrid"></div>
-                </section>
-                <section class="section">
-                    <h2 class="section-title">Другие категории</h2>
-                    <div class="grid-container" id="customCategoriesGrid"></div>
-                </section>
-            </div>
-            
-            <div id="specificCategoryView" class="view">
-                <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn"><span>&#8592; К категориям</span></button>
-                <h2 class="section-title" id="specificCategoryTitle">Название категории</h2>
-                <div class="grid-container" id="specificCategoryGrid"></div>
-            </div>
-
-            <div id="favoritesView" class="view">
-                <div class="grid-container" id="favoritesGridContainer"></div>
-            </div>
-
-            <div id="creatorView" class="view">
-                <div id="creatorHomeSection" class="creator-main-section">
-                    <div class="creator-main-screen">
-                        <h2>Добро пожаловать в XCreator Studio</h2>
-                        <p>Здесь вы можете опубликовать свои творения и наблюдать за ними.</p>
-                        <p>Чтобы публиковать треки, подайте заявку.</p>
-                        <button class="apply-btn" id="applyBtn">Подать заявку</button>
+                <div id="xrecomenView">
+                    <div class="xrecomen-section">
+                        <button id="xrecomenBtn">XRecomen</button>
+                        <p class="xrecomen-subtitle">Рекомендуем вам музыку на основе ваших предпочтений</p>
                     </div>
                 </div>
-                <div id="myTracksSection" class="creator-main-section" style="display: none;">
-                    <button class="submit-btn" id="uploadTrackBtn">Загрузить трек</button>
+
+                <div class="section">
+                    <h2 class="section-title">Вам понравится</h2>
+                    <div id="youLikeContainer" class="grid-container"></div>
                 </div>
-                <div id="analyticsSection" class="creator-main-section" style="display: none;">
-                    <h2>Ваша статистика</h2>
-                    <div class="analytics-container">
-                        <div class="analytics-block">
-                            <h3>Общее количество прослушиваний</h3>
-                            <p class="stat-value" id="totalPlays">0</p>
-                        </div>
-                        <div class="analytics-block">
-                            <h3>Прослушивания за последние 7 дней</h3>
-                            <div class="chart-container">
-                                <canvas id="analyticsChart"></canvas>
+
+                <div class="section">
+                    <h2 class="section-title">Вы можете это слушать</h2>
+                    <div id="youMayLikeContainer" class="grid-container"></div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">Любимые подборки</h2>
+                    <div id="favoriteCollectionsContainer" class="grid-container"></div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">Свежие релизы</h2>
+                    <div id="newReleasesContainer" class="grid-container"></div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">Популярные категории</h2>
+                    <div id="popularCategoriesGrid" class="grid-container"></div>
+                </div>
+            </div>
+
+            <div id="categoriesView" class="view">
+                <div class="main-header">
+                    <button id="backToCategoriesBtn" class="go-back-btn" style="display: none;">Назад</button>
+                    <h1 id="categoriesPageTitle">Категории</h1>
+                    <button id="createCategoryBtn" class="submit-btn" style="display: none;">Создать</button>
+                </div>
+                <div id="allCategoriesGrid" class="grid-container"></div>
+                <div id="specificCategoryView" style="display: none;">
+                    <h2 id="specificCategoryTitle"></h2>
+                    <div id="specificCategoryGrid" class="grid-container"></div>
+                </div>
+            </div>
+
+            <div id="videosView" class="view">
+                <h1 id="videosPageTitle">Видео</h1>
+                <div id="videosGrid" class="grid-container"></div>
+            </div>
+
+            <div id="historyView" class="view">
+                <h1 id="historyPageTitle">История</h1>
+                <div id="historyGrid" class="grid-container"></div>
+            </div>
+            
+            <div id="favoritesView" class="view">
+                <h1 id="favoritesPageTitle">Избранное</h1>
+                <div class="favorites-container">
+                    <div id="favoriteTracksGrid" class="grid-container"></div>
+                </div>
+            </div>
+            
+            <div id="creatorStudioView" class="view">
+                <div id="creatorDashboard" class="creator-container">
+                    <div class="creator-panel">
+                        <h3>Панель управления</h3>
+                        <p>Здесь будет отображаться статистика и важные уведомления для создателя.</p>
+                        <p>Всего загружено треков: <span id="totalTracksCount">0</span></p>
+                        <p>Всего прослушиваний: <span id="totalPlaysCount">0</span></p>
+                        <p>Среднее количество прослушиваний: <span id="avgPlaysCount">0</span></p>
+                    </div>
+                </div>
+
+                <div id="creatorUpload" class="creator-container" style="display: none;">
+                    <div class="creator-panel">
+                        <h3>Загрузка нового трека</h3>
+                        <form id="uploadForm">
+                            <div class="form-group">
+                                <label for="uploadTitle">Название трека</label>
+                                <input type="text" id="uploadTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="uploadArtist">Исполнитель</label>
+                                <input type="text" id="uploadArtist" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="uploadAlbum">Альбом (необязательно)</label>
+                                <input type="text" id="uploadAlbum">
+                            </div>
+                            <div class="form-group">
+                                <label for="uploadCategory">Категория</label>
+                                <select id="uploadCategory" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="uploadFile">Файл трека (MP3 или MP4)</label>
+                                <input type="file" id="uploadFile" accept=".mp3,.mp4" required>
+                            </div>
+                            <button type="submit" class="submit-btn">Загрузить</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="creatorAnalytics" class="creator-container" style="display: none;">
+                    <div class="creator-panel">
+                        <h3>Аналитика</h3>
+                        <div class="analytics-container">
+                            <div class="analytics-block">
+                                <h3>Топ-5 ваших треков</h3>
+                                <div class="chart-container"><canvas id="topTracksChart"></canvas></div>
+                            </div>
+                            <div class="analytics-block">
+                                <h3>Прослушивания по дням</h3>
+                                <div class="chart-container"><canvas id="playsByDayChart"></canvas></div>
+                            </div>
+                            <div class="analytics-block">
+                                <h3>Топ-5 пользователей, которые слушают вас</h3>
+                                <div class="analytics-table-container">
+                                    <table id="topListenersTable" class="analytics-table">
+                                        <thead><tr><th>Пользователь</th><th>Прослушивания</th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="analytics-block full-width">
+                                <h3>Все ваши треки</h3>
+                                <div class="analytics-table-container">
+                                    <table id="myTracksTable" class="analytics-table">
+                                        <thead><tr><th>Название</th><th>Прослушивания</th><th>Дата загрузки</th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <div class="analytics-block">
-                            <h3>Топ-5 популярных треков</h3>
-                            <table class="analytics-table">
-                                <thead>
-                                    <tr>
-                                        <th>Трек</th>
-                                        <th>Прослушивания</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="analyticsTrackTableBody"></tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
-                <div id="adminApplicationsSection" class="creator-main-section" style="display: none;">
-                    <h2 class="section-title">Заявки в Creator</h2>
-                    <div id="applicationsList"></div>
+
+                <div id="moderationPanel" class="creator-container" style="display: none;">
+                    <div class="creator-panel">
+                        <h3>Модерация треков</h3>
+                        <div id="moderationList"></div>
+                    </div>
                 </div>
-                <div id="adminUsersSection" class="creator-main-section" style="display: none;">
-                    <h2 class="section-title">Аккаунты</h2>
-                    <div id="usersList"></div>
+
+                <div id="adminPanel" class="creator-container" style="display: none;">
+                    <div class="creator-panel">
+                        <h3>Панель администратора</h3>
+                        <h4>Заявки на категорию</h4>
+                        <div id="applicationList"></div>
+                        <hr>
+                        <h4>Управление пользователями</h4>
+                        <div id="userManagementList"></div>
+                    </div>
                 </div>
-                <div id="adminModerationSection" class="creator-main-section" style="display: none;">
-                    <h2 class="section-title">Треки на модерации</h2>
-                    <div id="moderationTracksList" class="grid-container"></div>
-                </div>
-                <div id="adminStatsSection" class="creator-main-section" style="display: none;">
-                    <h2 class="section-title">Статистика</h2>
-                    <div id="statsContent"></div>
-                </div>
-                <div id="adminCategoriesSection" class="creator-main-section" style="display: none;">
-                    <h2 class="section-title">Категории</h2>
-                    <button class="submit-btn create-category-btn" id="createCategoryBtn">Создать категорию</button>
-                    <div class="categories-list-container" id="adminCategoriesList"></div>
-                </div>
+
             </div>
         </main>
     </div>
 
-    <div class="player">
+    <div class="music-player" id="musicPlayer">
         <div class="player-header">
+            <img src="placeholder-cover.jpg" alt="Обложка" id="playerCover">
             <div class="track-info">
-                <img src="default.svg" alt="Track Art" id="playerCover">
-                <div>
-                    <span class="title" id="playerTitle">Выберите медиа</span>
-                    <span class="artist" id="playerArtist"></span>
-                </div>
+                <div class="title" id="playerTitle">Нет трека</div>
+                <div class="artist" id="playerArtist">Исполнитель</div>
             </div>
         </div>
-        
         <div class="control-buttons-and-progress">
             <div class="control-buttons">
-                <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-                <button id="prevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button class="play-button" id="playPauseBtn" title="Воспроизвести"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
-                <button id="nextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">❤</button>
+                <button class="control-btn" id="prevBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                <button class="play-button" id="playPauseBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="pauseIcon" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+                <button class="control-btn" id="nextBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zm-8.5 6l8.5-6V6z"/></svg></button>
+                <button class="control-btn" id="repeatBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+                <button class="control-btn" id="expandBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4v2h3.59L3 17.59 4.41 19 16 7.41V11h2V4z"/></svg></button>
             </div>
-            
             <div class="progress-bar">
                 <span id="currentTime">0:00</span>
-                <div class="progress-bar-container">
+                <div class="progress-bar-container" id="progressBarContainer">
                     <div class="progress-track"></div>
-                    <div class="progress-filled"></div>
+                    <div class="progress-filled" id="progressBar"></div>
                     <div class="progress-thumb"></div>
                 </div>
                 <span id="duration">0:00</span>
             </div>
         </div>
-        
         <div class="volume-controls">
-            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            <input type="range" id="volumeBar" class="slider" min="0" max="1" step="0.01" value="1">
-        </div>
-    </div>
-    
-    <div id="videoModal" class="video-modal" style="display: none;">
-        <div class="video-modal-content">
-            <button class="close-btn" id="closeVideoBtn">&times;</button>
-            <video id="videoPlayerModal" controls></video>
-        </div>
-    </div>
-    
-    <div id="moderationModal" class="moderation-modal" style="display: none;">
-        <div class="modal-content">
-            <button class="close-btn" id="closeModerationBtn">&times;</button>
-            <h2>Проверка трека</h2>
-            <div class="moderation-info">
-                <img id="moderationPlayerCover" src="default.svg" alt="Обложка">
-                <h3 id="moderationTitle">Название</h3>
-                <p id="moderationArtist">Исполнитель:</p>
-                <p id="moderationGenre">Жанр:</p>
-                <select id="moderationGenreSelect"></select>
-            </div>
-            <audio id="moderationPlayer" controls></audio>
-            <video id="moderationVideoPlayer" controls></video>
-            <div class="moderation-actions">
-                <button class="approve-track-btn" id="moderationApproveBtn">Одобрить</button>
-                <button class="reject-track-btn" id="moderationRejectBtn">Отклонить</button>
-            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="volumeIcon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.81 5 3.54 5 6.71s-2.11 5.9-5 6.71v2.06c4.01-.91 7-4.43 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1">
         </div>
     </div>
 
     <div id="uploadModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
-            <h2>Загрузить медиа</h2>
-            <p>Ваш трек будет отправлен на модерацию.</p>
-            <form id="uploadForm">
+            <button class="close-btn" id="closeUploadModalBtn">&times;</button>
+            <h2>Загрузить трек</h2>
+            <form id="uploadTrackForm">
                 <div class="upload-type-selector">
-                    <label><input type="radio" name="uploadType" value="audio" checked><span>Аудио</span></label>
-                    <label><input type="radio" name="uploadType" value="video"><span>Видео</span></label>
+                    <input type="radio" id="uploadTypeFile" name="uploadType" value="file" checked>
+                    <label for="uploadTypeFile"><span>Файл</span></label>
+                    <input type="radio" id="uploadTypeLink" name="uploadType" value="link">
+                    <label for="uploadTypeLink"><span>Ссылка</span></label>
                 </div>
-                <div class="form-group"><label for="trackTitle">Название</label><input type="text" id="trackTitle" name="title" required></div>
-                <div class="form-group"><label for="coverFile">Файл обложки (обязательно)</label><input type="file" id="coverFile" name="coverFile" accept="image/*" required></div>
+
+                <div id="fileUploadSection">
+                    <div class="form-group">
+                        <label for="trackFile">Выберите файл</label>
+                        <div class="drag-and-drop-area" id="dragAndDropArea">
+                            <p>Перетащите файл сюда или нажмите, чтобы выбрать</p>
+                        </div>
+                        <input type="file" id="trackFile" name="trackFile" accept=".mp3,.mp4" style="display: none;">
+                    </div>
+                </div>
                 
-                <div class="form-group"><label for="genreSelect">Жанр</label><select id="genreSelect" name="genreId" required></select></div>
-                <div class="form-group"><label for="categorySelect">Категория</label><select id="categorySelect" name="categoryId"></select></div>
+                <div id="linkUploadSection" style="display: none;">
+                    <div class="form-group">
+                        <label for="trackLink">URL-адрес трека</label>
+                        <input type="url" id="trackLink" name="trackLink" placeholder="Например, https://example.com/track.mp3">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="trackTitle">Название трека</label>
+                    <input type="text" id="trackTitle" name="trackTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="trackArtist">Исполнитель</label>
+                    <input type="text" id="trackArtist" name="trackArtist" required>
+                </div>
 
                 <div class="form-group">
-                    <label><input type="checkbox" id="isForeignArtist"> Сторонний исполнитель</label>
-                    <div id="artistFields" style="display: none;">
-                        <label for="foreignArtistName">Имя исполнителя</label>
-                        <input type="text" id="foreignArtistName" name="artist">
+                    <label for="trackCategory">Категория</label>
+                    <select id="trackCategory" name="trackCategory" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Жанр</label>
+                    <div class="genre-buttons">
+                        <button type="button" id="determineGenreBtn">Определить жанр</button>
+                        <button type="button" id="selectGenreBtn">Выбрать вручную</button>
+                    </div>
+                    <div id="extendedPanel" style="display: none;">
+                        <p><strong>Статус:</strong> <span id="panelStatusText">Ожидание...</span></p>
+                        <p><strong>Жанр:</strong> <span id="panelGenreText">Неизвестно</span></p>
+                        <div class="form-group inline-group" id="genreManualSelect" style="display: none;">
+                            <label for="trackGenreManual">Выбрать жанр:</label>
+                            <select id="trackGenreManual"></select>
+                        </div>
                     </div>
                 </div>
 
-                <div id="audioFields" class="form-fields-group">
-                    <div class="form-group"><label for="audioFile">Аудиофайл</label><input type="file" id="audioFile" name="audioFile" accept="audio/*" required></div>
-                </div>
-                <div id="videoFields" class="form-fields-group" style="display: none;">
-                    <div class="form-group"><label for="videoFile">Видеофайл</label><input type="file" id="videoFile" name="videoFile" accept="video/*"></div>
-                </div>
-                
-                <button type="submit" class="submit-btn">Отправить на модерацию</button>
+                <button type="submit" class="submit-btn" id="submitUploadBtn">Загрузить</button>
             </form>
+        </div>
+    </div>
 
-            <div id="uploadManager" style="display:none; margin-top: 20px;">
-                <h3>Менеджер загрузки</h3>
-                <div class="upload-status-bar">
-                    <div class="upload-progress-fill" style="width: 0;"></div>
-                </div>
-                <p id="uploadStatusText">Ожидание...</p>
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeVideoModalBtn">&times;</button>
+            <video id="videoPlayerModal" controls></video>
+        </div>
+    </div>
+
+    <div id="moderationModal" class="modal">
+        <div class="moderation-content">
+            <button class="close-btn" id="closeModerationModalBtn">&times;</button>
+            <h2>Просмотр трека</h2>
+            <div class="moderation-info">
+                <img id="moderationCover" src="placeholder-cover.jpg" alt="Обложка" style="width: 150px; height: 150px; border-radius: 8px;">
+                <h3 id="moderationTitle">Название трека</h3>
+                <p id="moderationArtist">Исполнитель</p>
+                <p>Категория: <span id="moderationCategory"></span></p>
+            </div>
+            <audio id="moderationPlayer" controls style="width: 100%;"></audio>
+            <video id="moderationVideoPlayer" controls style="display: none; width: 100%;"></video>
+            <div class="moderation-player-controls">
+                <button class="approve-btn" id="approveBtn">Одобрить</button>
+                <button class="reject-btn" id="rejectBtn">Отклонить</button>
             </div>
         </div>
     </div>
 
-    <div id="settingsModal" class="modal">
+    <div id="authModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
-            <h2>Настройки</h2>
-            <div class="form-group">
-                <label for="opacitySlider">Непрозрачность интерфейса</label>
-                <div class="slider-wrapper">
-                    <input type="range" id="opacitySlider" min="0.1" max="1" step="0.05">
-                    <span id="opacityValue">50%</span>
+            <button class="close-btn" id="closeAuthModalBtn">&times;</button>
+            <h2 id="authTitle">Войти</h2>
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="authUsername">Имя пользователя</label>
+                    <input type="text" id="authUsername" name="username" required>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
-            <h2>Вход</h2>
-            <form id="loginForm">
-                <div class="form-group"><label for="loginUsername">Логин</label><input type="text" id="loginUsername" required></div>
-                <div class="form-group"><label for="loginPassword">Пароль</label><input type="password" id="loginPassword" required></div>
-                <button type="submit" class="submit-btn">Войти</button>
-                <button type="button" class="link-btn" id="switchToRegister">Перейти к регистрации</button>
+                <div class="form-group">
+                    <label for="authPassword">Пароль</label>
+                    <input type="password" id="authPassword" name="password" required>
+                </div>
+                <button type="submit" class="submit-btn" id="authSubmitBtn">Войти</button>
             </form>
+            <button class="link-btn" id="toggleAuthMode">Нет аккаунта? Зарегистрироваться</button>
         </div>
     </div>
 
-    <div id="registerModal" class="modal">
+    <div id="applyModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
-            <h2>Регистрация</h2>
-            <form id="registerForm">
-                <div class="form-group"><label for="registerUsername">Логин</label><input type="text" id="registerUsername" required></div>
-                <div class="form-group"><label for="registerPassword">Пароль</label><input type="password" id="registerPassword" required></div>
-                <button type="submit" class="submit-btn">Зарегистрироваться</button>
-                <button type="button" class="link-btn" id="switchToLogin">Перейти ко входу</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="applicationModal" class="modal">
-        <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
-            <h2>Подать заявку в Creator Studio</h2>
-            <form id="applicationForm">
-                <div class="form-group"><label for="fullName">Имя и Фамилия</label><input type="text" id="fullName" name="fullName" required></div>
-                <div class="form-group"><label for="phoneNumber">Номер телефона</label><input type="tel" id="phoneNumber" name="phoneNumber" pattern="\+7[0-9]{10}" placeholder="+79998887766" required></div>
-                <div class="form-group"><label for="email">Почта</label><input type="email" id="email" name="email" required></div>
+            <button class="close-btn" id="closeApplyModalBtn">&times;</button>
+            <h2>Заявка в Creator Studio</h2>
+            <form id="applyForm">
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Почта</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
                 <button type="submit" class="submit-btn">Подать заявку</button>
             </form>
         </div>

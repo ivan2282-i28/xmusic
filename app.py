@@ -10,12 +10,15 @@ import jwt
 from functools import wraps
 from dotenv import load_dotenv
 import hashlib
+import librosa
+import joblib
+import numpy as np
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +27,8 @@ FON_DIR = os.path.join(BASE_DIR, 'fon')
 VIDEO_DIR = os.path.join(BASE_DIR, 'video')
 TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
 INDEX_DIR = os.path.join(BASE_DIR, 'index')
+# Путь к файлу модели
+MODEL_PATH = os.path.join(BASE_DIR, 'music_genre_model.pkl')
 # Создание директорий, если они не существуют
 for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
     if not os.path.exists(directory):
@@ -157,12 +162,12 @@ def init_db():
     genres = ['Общее','Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
     for genre in genres:
         c.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (genre,))
-    
+
     # Добавление стандартных категорий
     categories = []
     for category in categories:
         c.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category,))
-    
+
     conn.commit()
     conn.close()
 
@@ -892,6 +897,73 @@ def get_xrecomen(user_id):
 def auth_refresh():
     #f"d{hashlib.sha256(user["password"].encode("utf-8")).hexdigest()}c34f"
     return jsonify({'message':"NOT INPLEMENTED -Server"}), 418
+
+# --- НОВЫЙ ФУНКЦИОНАЛ ОПРЕДЕЛЕНИЯ ЖАНРА ---
+
+def extract_features(file_path):
+    """Извлекает MFCC признаки из аудиофайла."""
+    try:
+        y, sr = librosa.load(file_path, mono=True, duration=30)
+        mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
+        mfccs_mean = np.mean(mfccs.T, axis=0)
+        return mfccs_mean
+    except Exception as e:
+        print(f"Ошибка при извлечении признаков: {e}")
+        return None
+
+@app.route('/api/determine_genre', methods=['POST'])
+@auth_required
+@role_required(['creator', 'admin'])
+def determine_genre():
+    """Эндпоинт для автоматического определения жанра."""
+    if 'file' not in request.files:
+        return jsonify({'message': 'Файл не предоставлен.'}), 400
+
+    uploaded_file = request.files['file']
+    if uploaded_file.filename == '':
+        return jsonify({'message': 'Файл не выбран.'}), 400
+
+    temp_file_path = os.path.join(TEMP_UPLOAD_DIR, secure_filename(uploaded_file.filename))
+    uploaded_file.save(temp_file_path)
+
+    try:
+        if not os.path.exists(MODEL_PATH):
+            return jsonify({'message': 'Файл модели music_genre_model.pkl не найден.'}), 500
+
+        # Загрузка обученной модели
+        model = joblib.load(MODEL_PATH)
+        
+        # Извлечение признаков из загруженного файла
+        features = extract_features(temp_file_path)
+
+        if features is None:
+            return jsonify({'message': 'Не удалось обработать аудиофайл.'}), 500
+
+        # Предсказание жанра
+        predicted_genre = model.predict([features])[0]
+        
+        # Получение ID жанра из базы данных
+        conn = get_db_connection()
+        genre_row = conn.execute("SELECT id, name FROM genres WHERE name = ?", (predicted_genre,)).fetchone()
+        conn.close()
+        
+        if not genre_row:
+            return jsonify({'message': f'Жанр "{predicted_genre}" не найден в базе данных.'}), 500
+        
+        return jsonify({
+            'genreName': genre_row['name'],
+            'genreId': genre_row['id']
+        })
+
+    except Exception as e:
+        print(f"Ошибка при определении жанра: {e}")
+        return jsonify({'message': 'Произошла внутренняя ошибка сервера при обработке файла.'}), 500
+    finally:
+        # Удаление временного файла
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+# --- КОНЕЦ НОВОГО ФУНКЦИОНАЛА ---
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
