@@ -149,9 +149,9 @@ def init_db():
     ''')
 
     # Добавление админа, если его нет
-    c.execute("SELECT * FROM users WHERE username = 'rooddddddddddddddddddddddddddddddddddddddddd'")
+    c.execute("SELECT * FROM users WHERE username = 'root'")
     if c.fetchone() is None:
-        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('radadada', '12345', 'admin'))
+        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', '12345', 'admin'))
 
     # Добавление стандартных жанров
     genres = ['Общее','Рок', 'Метал', 'Фонк', 'Поп', 'Электронная', 'Хип-хоп', 'Джаз', 'Классика', 'Эмбиент', 'Инди', 'Рэп', 'Трэп', 'Ритм-н-блюз', 'Соул', 'Кантри', 'Регги', 'Блюз', 'Диско', 'Техно', 'Хаус']
