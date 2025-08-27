@@ -1,4 +1,4 @@
-\document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const api = '';
     let allMedia = [];
     let myTracks = [];
@@ -29,7 +29,7 @@
     const searchBarWrapper = document.querySelector('.search-bar-wrapper');
     const searchInput = document.getElementById('searchInput');
     const navHome = document.getElementById('navHome');
-    const navCategories = document('navCategories');
+    const navCategories = document.getElementById('navCategories');
     const navFavorites = document.getElementById('navFavorites');
     const views = document.querySelectorAll('.view');
     const viewTitle = document.getElementById('viewTitle');
@@ -351,7 +351,7 @@
         try {
             const genresRes = await fetchWithAuth(`${api}/api/genres`);
             if (!genresRes.ok) throw new Error('Ошибка при получении жанров');
-            const genres = await genresRes.json();
+            const genres = await genres.json();
             if (allGenresGrid) {
                 allGenresGrid.innerHTML = '';
                 genres.forEach(genre => {
