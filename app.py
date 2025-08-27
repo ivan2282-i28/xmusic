@@ -201,7 +201,7 @@ def auth_required(f):
 
             if not user_exists:
                 return jsonify({'message': 'Token is invalid'}), 401
-            if data["passphrase"] != f"{hashlib.sha256(user_exists["password"].encode("utf-8")).hexdigest()}edf6":
+            if data["passphrase"] != f"{hashlib.sha256(user_exists['password'].encode('utf-8')).hexdigest()}edf6":
                 return jsonify({'message': 'Token is invalid'}), 401
             
             request.current_user = user_exists
