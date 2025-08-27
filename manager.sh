@@ -4,7 +4,7 @@ SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 cd "$SCRIPT_DIR"
 
 if [ ! -d "./.venv" ]; then
-    python3.17 -m venv .venv
+    python3.13 -m venv .venv
 fi
 
 source ./.venv/bin/activate
