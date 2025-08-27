@@ -1519,23 +1519,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const captchaRes = await fetch(`${api}/api/verify-recaptcha`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ recaptcha_token: recaptchaToken })
-                });
-
-                if (!captchaRes.ok) {
-                    const errorData = await captchaRes.json();
-                    alert(`Ошибка reCAPTCHA: ${errorData.message}`);
-                    grecaptcha.reset();
-                    return;
-                }
-
                 const res = await fetchWithAuth(`${api}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password, recaptcha_token: recaptchaToken })
                 });
                 const result = await res.json();
                 if (res.ok) {
@@ -1566,23 +1553,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('registerPassword').value;
 
             try {
-                const captchaRes = await fetch(`${api}/api/verify-recaptcha`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ recaptcha_token: recaptchaToken })
-                });
-
-                if (!captchaRes.ok) {
-                    const errorData = await captchaRes.json();
-                    alert(`Ошибка reCAPTCHA: ${errorData.message}`);
-                    grecaptcha.reset();
-                    return;
-                }
-
                 const res = await fetchWithAuth(`${api}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password, recaptcha_token: recaptchaToken })
                 });
                 const result = await res.json();
                 if (res.ok) {
