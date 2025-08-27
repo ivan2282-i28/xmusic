@@ -271,9 +271,9 @@ def login():
     conn = get_db_connection()
     user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
     conn.close()
-    sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(password.encode('utf-8')).hexdigest()}edf6"}
-    tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
     if user:
+        sanuser = {"username":user["username"],"id":user["id"],"passphrase":f"{hashlib.sha256(password.encode('utf-8')).hexdigest()}edf6"}
+        tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
         return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend, 'refresh':f"d{hashlib.sha256(password.encode('utf-8')).hexdigest()}c34f"})
     else:
         return jsonify({'message': 'Неверный логин или пароль.'}), 401
