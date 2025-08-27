@@ -1509,6 +1509,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `${api}/api/moderation/upload`, true);
 
+            // <-- ИСПРАВЛЕНИЕ: ДОБАВЛЯЕМ ТОКЕН АВТОРИЗАЦИИ -->
+            const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+            if (accessToken) {
+                xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+            }
+            // <-- КОНЕЦ ИСПРАВЛЕНИЯ -->
+
             xhr.upload.addEventListener('progress', (event) => {
                 if (event.lengthComputable) {
                     const percent = Math.round((event.loaded / event.total) * 100);
