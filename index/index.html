@@ -3,41 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMusic</title>
+    <title>Spherify</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="video-background-container" id="videoBackgroundContainer">
-        <video id="backgroundVideo" loop></video>
-    </div>
+    <div class="background-sphere"></div>
 
     <div class="app-container">
         <aside class="sidebar">
-            <div class="logo" id="xmusicLogo">XMusic</div>
-            <div class="logo" id="xcreatorLogo" style="display: none;">XCreator</div>
+            <div class="logo-container">
+                <div class="logo" id="xmusicLogo">Spherify</div>
+                <div class="logo" id="xcreatorLogo" style="display: none;">Spherify Studio</div>
+            </div>
             <nav class="main-nav" id="xmusicNav">
-                <a href="#" id="navHome" class="nav-link active"><span>Главная</span></a>
-                <a href="#" id="navCategories" class="nav-link"><span>Категории</span></a>
-                <a href="#" id="navFavorites" class="nav-link" style="display: none;"><span>Избранное</span></a>
-                <a class="nav-link" id="creatorStudioBtn" style="display: none;"><span>Creator Studio</span></a>
-                <a class="nav-link" id="settingsBtn"><span>Настройки</span></a>
+                <a href="#" id="navHome" class="nav-link active"><i class="fas fa-home"></i><span>Главная</span></a>
+                <a href="#" id="navCategories" class="nav-link"><i class="fas fa-tags"></i><span>Категории</span></a>
+                <a href="#" id="navFavorites" class="nav-link" style="display: none;"><i class="fas fa-heart"></i><span>Избранное</span></a>
             </nav>
             <nav class="main-nav" id="xcreatorNav" style="display: none;">
-                <a class="go-back-btn" id="backToXMusicBtn"><span>&#8592; Назад в XMusic</span></a>
-                <a class="creator-nav-btn active" id="creatorHomeBtn" style="display: none;"><span>Главная</span></a>
-                <a class="creator-nav-btn" id="myTracksBtn" style="display: none;"><span>Мои треки</span></a>
-                <a class="creator-nav-btn" id="analyticsBtn" style="display: none;"><span>Аналитика</span></a>
-                <a class="creator-nav-btn admin-section" id="adminApplicationsBtn" style="display: none;"><span>Заявки в Creator</span></a>
-                <a class="creator-nav-btn admin-section" id="adminUsersBtn" style="display: none;"><span>Аккаунты</span></a>
-                <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display: none;"><span>Треки на модерации</span></a>
-                <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display: none;"><span>Статистика</span></a>
-                <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
+                <a class="go-back-btn" id="backToXMusicBtn"><i class="fas fa-arrow-left"></i><span>Назад в Spherify</span></a>
+                <a class="creator-nav-btn active" id="creatorHomeBtn" style="display: none;"><i class="fas fa-star"></i><span>Главная</span></a>
+                <a class="creator-nav-btn" id="myTracksBtn" style="display: none;"><i class="fas fa-music"></i><span>Мои треки</span></a>
+                <a class="creator-nav-btn" id="analyticsBtn" style="display: none;"><i class="fas fa-chart-line"></i><span>Аналитика</span></a>
+                <a class="creator-nav-btn admin-section" id="adminApplicationsBtn" style="display: none;"><i class="fas fa-file-alt"></i><span>Заявки</span></a>
+                <a class="creator-nav-btn admin-section" id="adminUsersBtn" style="display: none;"><i class="fas fa-users-cog"></i><span>Пользователи</span></a>
+                <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display: none;"><i class="fas fa-check-double"></i><span>Модерация</span></a>
+                <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display: none;"><i class="fas fa-chart-bar"></i><span>Статистика</span></a>
+                <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="fas fa-folder-plus"></i><span>Категории</span></a>
             </nav>
             <div class="sidebar-footer">
+                <a class="nav-link" id="settingsBtn"><i class="fas fa-cog"></i><span>Настройки</span></a>
+                <a class="nav-link" id="creatorStudioBtn" style="display: none;"><i class="fas fa-tools"></i><span>Creator Studio</span></a>
             </div>
         </aside>
 
@@ -46,10 +47,14 @@
                 <h1 id="viewTitle">Главная</h1>
                 <div class="header-controls">
                     <div class="search-bar-wrapper">
-                        <input type="text" id="searchInput" placeholder="Поиск...">
+                        <input type="text" id="searchInput" placeholder="Поиск по медиа...">
+                        <i class="fas fa-search search-icon"></i>
                     </div>
-                    <button class="login-btn" id="loginBtn"><span>Войти</span></button>
-                    <span id="welcomeMessage" style="display: none; margin-left: 20px;"></span>
+                    <div class="user-control-container">
+                        <button class="login-btn" id="loginBtn"><span>Войти</span></button>
+                        <span id="welcomeMessage" class="welcome-message" style="display: none;"></span>
+                        <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
+                    </div>
                 </div>
             </header>
 
@@ -57,19 +62,19 @@
                 <section class="section xrecomen-section" id="xrecomenSection">
                     <p id="nowPlayingText" class="now-playing-text"></p>
                     <button id="xrecomenBtn">
-                        <span class="xrecomen-title">Xrecomen</span>
-                        <span class="xrecomen-subtitle">Возможно, вам понравится</span>
+                        <div class="xrecomen-title">Spherify Recommends</div>
+                        <div class="xrecomen-subtitle">Возможно, вам понравится</div>
                     </button>
-                </section>
-                <section class="section" id="youLikeSection">
-                    <h2 class="section-title">Вам нравятся</h2>
-                    <div class="scroll-container" id="youLikeGrid"></div>
                 </section>
                 <section class="section">
                     <h2 class="section-title">Лучшее</h2>
                     <div class="scroll-container" id="allGridContainer"></div>
                 </section>
-                <section class="section" id="favoriteCollectionsSection">
+                <section class="section" id="youLikeSection" style="display: none;">
+                    <h2 class="section-title">Плейлисты для вас</h2>
+                    <div class="scroll-container" id="youLikeGrid"></div>
+                </section>
+                <section class="section" id="favoriteCollectionsSection" style="display: none;">
                     <h2 class="section-title">Ваши любимые подборки</h2>
                     <div class="scroll-container" id="favoriteCollectionsGrid"></div>
                 </section>
@@ -91,7 +96,7 @@
             </div>
             
             <div id="specificCategoryView" class="view">
-                <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn"><span>&#8592; К категориям</span></button>
+                <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn"><span><i class="fas fa-arrow-left"></i> К категориям</span></button>
                 <h2 class="section-title" id="specificCategoryTitle">Название категории</h2>
                 <div class="grid-container" id="specificCategoryGrid"></div>
             </div>
@@ -103,30 +108,33 @@
             <div id="creatorView" class="view">
                 <div id="creatorHomeSection" class="creator-main-section">
                     <div class="creator-main-screen">
-                        <h2>Добро пожаловать в XCreator Studio</h2>
-                        <p>Здесь вы можете опубликовать свои творения и наблюдать за ними.</p>
-                        <p>Чтобы публиковать треки, подайте заявку.</p>
+                        <h2>Добро пожаловать в Spherify Studio</h2>
+                        <p>Публикуйте свои произведения и следите за статистикой. Заявки обрабатываются вручную, дождитесь ответа.</p>
                         <button class="apply-btn" id="applyBtn">Подать заявку</button>
                     </div>
                 </div>
                 <div id="myTracksSection" class="creator-main-section" style="display: none;">
-                    <button class="submit-btn" id="uploadTrackBtn">Загрузить трек</button>
+                    <div class="creator-section-header">
+                        <h2 class="section-title">Мои треки</h2>
+                        <button class="submit-btn" id="uploadTrackBtn">Загрузить трек</button>
+                    </div>
+                    <div id="myTracksGrid" class="grid-container"></div>
                 </div>
                 <div id="analyticsSection" class="creator-main-section" style="display: none;">
-                    <h2>Ваша статистика</h2>
+                    <h2 class="section-title">Ваша статистика</h2>
                     <div class="analytics-container">
                         <div class="analytics-block">
-                            <h3>Общее количество прослушиваний</h3>
+                            <h3 class="stat-label">Общее количество прослушиваний</h3>
                             <p class="stat-value" id="totalPlays">0</p>
                         </div>
-                        <div class="analytics-block">
-                            <h3>Прослушивания за последние 7 дней</h3>
+                        <div class="analytics-block full-width">
+                            <h3 class="stat-label">Прослушивания за последние 7 дней</h3>
                             <div class="chart-container">
                                 <canvas id="analyticsChart"></canvas>
                             </div>
                         </div>
                         <div class="analytics-block">
-                            <h3>Топ-5 популярных треков</h3>
+                            <h3 class="stat-label">Топ-5 популярных треков</h3>
                             <table class="analytics-table">
                                 <thead>
                                     <tr>
@@ -156,8 +164,10 @@
                     <div id="statsContent"></div>
                 </div>
                 <div id="adminCategoriesSection" class="creator-main-section" style="display: none;">
-                    <h2 class="section-title">Категории</h2>
-                    <button class="submit-btn create-category-btn" id="createCategoryBtn">Создать категорию</button>
+                    <div class="creator-section-header">
+                        <h2 class="section-title">Категории</h2>
+                        <button class="submit-btn create-category-btn" id="createCategoryBtn">Создать категорию</button>
+                    </div>
                     <div class="categories-list-container" id="adminCategoriesList"></div>
                 </div>
             </div>
@@ -177,11 +187,11 @@
         
         <div class="control-buttons-and-progress">
             <div class="control-buttons">
-                <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-                <button id="prevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button class="play-button" id="playPauseBtn" title="Воспроизвести"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
-                <button id="nextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">❤</button>
+                <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор"><i class="fas fa-redo"></i></button>
+                <button id="prevBtn" class="control-btn" title="Назад"><i class="fas fa-step-backward"></i></button>
+                <button class="play-button" id="playPauseBtn" title="Воспроизвести"><i id="playIcon" class="fas fa-play"></i><i id="pauseIcon" class="fas fa-pause" style="display: none;"></i></button>
+                <button id="nextBtn" class="control-btn" title="Вперед"><i class="fas fa-step-forward"></i></button>
+                <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное"><i class="far fa-heart"></i></button>
             </div>
             
             <div class="progress-bar">
@@ -196,21 +206,22 @@
         </div>
         
         <div class="volume-controls">
-            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <i class="fas fa-volume-down volume-icon"></i>
             <input type="range" id="volumeBar" class="slider" min="0" max="1" step="0.01" value="1">
+            <i class="fas fa-volume-up volume-icon"></i>
         </div>
     </div>
     
     <div id="videoModal" class="video-modal" style="display: none;">
         <div class="video-modal-content">
-            <button class="close-btn" id="closeVideoBtn">&times;</button>
+            <button class="close-btn" id="closeVideoBtn"><i class="fas fa-times"></i></button>
             <video id="videoPlayerModal" controls></video>
         </div>
     </div>
     
     <div id="moderationModal" class="moderation-modal" style="display: none;">
         <div class="modal-content">
-            <button class="close-btn" id="closeModerationBtn">&times;</button>
+            <button class="close-btn" id="closeModerationBtn"><i class="fas fa-times"></i></button>
             <h2>Проверка трека</h2>
             <div class="moderation-info">
                 <img id="moderationPlayerCover" src="default.svg" alt="Обложка">
@@ -228,14 +239,14 @@
 
     <div id="uploadModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
+            <button class="close-btn" title="Закрыть"><i class="fas fa-times"></i></button>
             <h2>Загрузить медиа</h2>
-            <p>Ваш трек будет отправлен на модерацию.</p>
+            <p class="modal-subtitle">Ваш трек будет отправлен на модерацию.</p>
             <form id="uploadForm">
                 <div class="upload-form-left">
                     <div class="upload-type-selector">
-                        <label><input type="radio" name="uploadType" value="audio" checked><span>Аудио</span></label>
-                        <label><input type="radio" name="uploadType" value="video"><span>Видео</span></label>
+                        <label><input type="radio" name="uploadType" value="audio" checked><span><i class="fas fa-music"></i> Аудио</span></label>
+                        <label><input type="radio" name="uploadType" value="video"><span><i class="fas fa-video"></i> Видео</span></label>
                     </div>
                     <div class="form-group"><label for="trackTitle">Название</label><input type="text" id="trackTitle" name="title" required></div>
                     <div class="form-group"><label for="coverFile">Файл обложки (обязательно)</label><input type="file" id="coverFile" name="coverFile" accept="image/*" required></div>
@@ -278,7 +289,7 @@
 
     <div id="settingsModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
+            <button class="close-btn" title="Закрыть"><i class="fas fa-times"></i></button>
             <h2>Настройки</h2>
             <div class="form-group">
                 <label for="opacitySlider">Непрозрачность интерфейса</label>
@@ -294,39 +305,39 @@
                     <span class="slider round"></span>
                 </label>
             </div>
-            <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
+            <button class="logout-btn" id="logoutBtn" style="display: none;"><span><i class="fas fa-sign-out-alt"></i> Выйти</span></button>
         </div>
     </div>
 
     <div id="loginModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
+            <button class="close-btn" title="Закрыть"><i class="fas fa-times"></i></button>
             <h2>Вход</h2>
             <form id="loginForm">
                 <div class="form-group"><label for="loginUsername">Логин</label><input type="text" id="loginUsername" required></div>
                 <div class="form-group"><label for="loginPassword">Пароль</label><input type="password" id="loginPassword" required></div>
                 <button type="submit" class="submit-btn">Войти</button>
-                <button type="button" class="link-btn" id="switchToRegister">Перейти к регистрации</button>
+                <button type="button" class="link-btn" id="switchToRegister">Нет аккаунта? Зарегистрироваться</button>
             </form>
         </div>
     </div>
 
     <div id="registerModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
+            <button class="close-btn" title="Закрыть"><i class="fas fa-times"></i></button>
             <h2>Регистрация</h2>
             <form id="registerForm">
                 <div class="form-group"><label for="registerUsername">Логин</label><input type="text" id="registerUsername" required></div>
                 <div class="form-group"><label for="registerPassword">Пароль</label><input type="password" id="registerPassword" required></div>
                 <button type="submit" class="submit-btn">Зарегистрироваться</button>
-                <button type="button" class="link-btn" id="switchToLogin">Перейти ко входу</button>
+                <button type="button" class="link-btn" id="switchToLogin">Уже есть аккаунт? Войти</button>
             </form>
         </div>
     </div>
 
     <div id="applicationModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
+            <button class="close-btn" title="Закрыть"><i class="fas fa-times"></i></button>
             <h2>Подать заявку в Creator Studio</h2>
             <form id="applicationForm">
                 <div class="form-group"><label for="fullName">Имя и Фамилия</label><input type="text" id="fullName" name="fullName" required></div>
@@ -339,7 +350,7 @@
 
     <div id="categoryModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" id="closeCategoryModalBtn" title="Закрыть">&times;</button>
+            <button class="close-btn" id="closeCategoryModalBtn" title="Закрыть"><i class="fas fa-times"></i></button>
             <h2>Создать категорию</h2>
             <form id="categoryForm">
                 <input type="hidden" id="categoryId" name="categoryId">
