@@ -118,7 +118,6 @@ body {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr auto auto;
     align-items: center;
-    justify-items: center;
     gap: 15px;
     padding: 20px;
     z-index: 3;
@@ -1244,6 +1243,8 @@ body.creator-mode {
 }
 
 .player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
     width: 16px;
     height: 16px;
     background: var(--text-primary);
