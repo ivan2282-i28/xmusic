@@ -156,12 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModerationBtn = document.getElementById('closeModerationBtn');
     const moderationTitle = document.getElementById('moderationTitle');
     const moderationArtist = document.getElementById('moderationArtist');
-    const moderationGenre = document.getElementById('moderationGenre');
     const moderationPlayer = document.getElementById('moderationPlayer');
     const moderationPlayerCover = document.getElementById('moderationPlayerCover');
     const moderationApproveBtn = document.getElementById('moderationApproveBtn');
     const moderationRejectBtn = document.getElementById('moderationRejectBtn');
-    const moderationGenreSelect = document.getElementById('moderationGenreSelect');
     const moderationVideoPlayer = document.getElementById('moderationVideoPlayer');
 
     const analyticsChart = document.getElementById('analyticsChart');
@@ -1229,69 +1227,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        if (determineGenreBtn) determineGenreBtn.addEventListener('click', async () => {
-            const audioFile = document.getElementById('audioFile').files[0];
-            if (!audioFile) {
-                alert('Пожалуйста, выберите аудиофайл.');
-                return;
-            }
-            if (fileStatusText) fileStatusText.textContent = 'Определение жанра...';
-            try {
-                const formData = new FormData();
-                formData.append('file', audioFile);
-                
-                const response = await fetchWithAuth(`${api}/api/determine-genre`, {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    if (selectedGenreName) selectedGenreName.textContent = result.genre;
-                    if (selectedGenreId) selectedGenreId.value = result.genre;
-                    if (fileStatusText) fileStatusText.textContent = 'Жанр определён успешно.';
-                } else {
-                    alert(result.message);
-                    if (fileStatusText) fileStatusText.textContent = 'Ошибка определения жанра.';
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Сетевая ошибка при определении жанра.');
-                if (fileStatusText) fileStatusText.textContent = 'Сетевая ошибка.';
-            }
-        });
-        
-        if (selectGenreBtn) selectGenreBtn.addEventListener('click', async () => {
-            try {
-                const response = await fetchWithAuth(`${api}/api/genres`);
-                const genres = await response.json();
-                
-                if (genreList) {
-                    genreList.innerHTML = '';
-                    genres.forEach(genre => {
-                        const li = document.createElement('li');
-                        li.textContent = genre;
-                        li.dataset.genre = genre;
-                        li.addEventListener('click', () => {
-                            if (selectedGenreName) selectedGenreName.textContent = genre;
-                            if (selectedGenreId) selectedGenreId.value = genre;
-                            genreSelectionModal.style.display = 'none';
-                        });
-                        genreList.appendChild(li);
-                    });
-                }
-                genreSelectionModal.style.display = 'flex';
-            } catch (error) {
-                console.error(error);
-                alert('Не удалось загрузить список жанров.');
-            }
-        });
-        
-        if (genreSelectionModal) genreSelectionModal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('close-btn') || e.target === genreSelectionModal) {
-                genreSelectionModal.style.display = 'none';
-            }
-        });
-
         if (isForeignArtist) isForeignArtist.addEventListener('change', () => {
             if (artistFields) artistFields.style.display = isForeignArtist.checked ? 'block' : 'none';
         });
@@ -1517,7 +1452,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const audioFile = document.getElementById('audioFile').files[0];
             const videoFile = document.getElementById('videoFile').files[0];
             const coverFile = document.getElementById('coverFile').files[0];
-            const genre = document.getElementById('selectedGenreId').value;
             const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
 
             if (uploadType === 'audio' && !audioFile) {
@@ -1532,10 +1466,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Пожалуйста, выберите файл обложки.');
                 return;
             }
-            if (!genre) {
-                alert('Пожалуйста, определите или выберите жанр.');
-                return;
-            }
+            
 
             if (uploadManager) uploadManager.style.display = 'block';
             if (uploadProgressBar) uploadProgressBar.style.width = '0%';
@@ -1544,7 +1475,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(uploadForm);
             formData.append('userId', currentUser.id);
-            formData.append('genre', genre);
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `${api}/api/moderation/upload`, true);
@@ -1859,7 +1789,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (moderationTitle) moderationTitle.textContent = track.title;
                 if (moderationArtist) moderationArtist.textContent = `Исполнитель: ${track.artist || track.username}`;
-                if (moderationGenre) moderationGenre.textContent = `Жанр: ${track.genre}`;
 
                 if (track.type === 'audio') {
                     if (moderationPlayer) moderationPlayer.src = `/temp_uploads/${track.file_name}`;
@@ -1891,7 +1820,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     moderationApproveBtn.dataset.creatorId = track.user_id;
                     moderationApproveBtn.dataset.artist = track.artist;
                     moderationApproveBtn.dataset.categoryId = track.category_id;
-                    moderationApproveBtn.dataset.genre = track.genre;
                 }
 
                 if (moderationRejectBtn) moderationRejectBtn.dataset.trackId = track.id;
@@ -2004,7 +1932,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = moderationApproveBtn.dataset.title;
             const type = moderationApproveBtn.dataset.type;
             const creatorId = moderationApproveBtn.dataset.creatorId;
-            const genre = moderationApproveBtn.dataset.genre;
             const artist = moderationApproveBtn.dataset.artist;
             const categoryId = moderationApproveBtn.dataset.categoryId;
 
@@ -2021,7 +1948,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         title,
                         type,
                         creatorId,
-                        genre,
                         artist,
                         categoryId
                     })

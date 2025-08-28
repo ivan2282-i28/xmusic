@@ -1718,6 +1718,10 @@ body.creator-mode {
 }
 
 /* Стили для нового функционала */
+.user-input-wrapper {
+    margin-bottom: 10px;
+}
+
 .user-input-container {
     position: relative;
     display: flex;
@@ -1763,64 +1767,6 @@ body.creator-mode {
     display: none;
     width: 100%;
     margin-top: 20px;
-}
-
-/* Новые стили для кнопок жанров */
-.genre-control-container {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.genre-control-container button {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    background-color: transparent;
-    color: var(--text-secondary);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.genre-control-container button:hover {
-    background-color: var(--card-hover-bg);
-    border-color: var(--accent-color);
-    color: var(--text-primary);
-}
-
-.selected-genre-name {
-    flex-grow: 1;
-    text-align: right;
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-/* Стили для модального окна выбора жанров */
-#genreSelectionModal .modal-content {
-    max-width: 400px;
-}
-
-.genre-list-container {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-#genreList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#genreList li {
-    padding: 12px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    border-radius: 8px;
-}
-
-#genreList li:hover {
-    background-color: var(--card-hover-bg);
 }
 
 /* Стили для статуса загрузки */

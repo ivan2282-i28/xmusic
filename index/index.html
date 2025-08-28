@@ -213,8 +213,6 @@
                 <img id="moderationPlayerCover" src="default.svg" alt="Обложка">
                 <h3 id="moderationTitle">Название</h3>
                 <p id="moderationArtist">Исполнитель:</p>
-                <p id="moderationGenre">Жанр:</p>
-                <select id="moderationGenreSelect"></select>
             </div>
             <audio id="moderationPlayer" controls></audio>
             <video id="moderationVideoPlayer" controls></video>
@@ -240,16 +238,9 @@
                     <div class="form-group"><label for="coverFile">Файл обложки (обязательно)</label><input type="file" id="coverFile" name="coverFile" accept="image/*" required></div>
                     
                     <div class="form-group">
-                        <label for="genreControl">Жанр</label>
-                        <div class="genre-control-container" id="genreControl">
-                            <button type="button" id="determineGenreBtn">Определить</button>
-                            <button type="button" id="selectGenreBtn">Выбрать</button>
-                            <span id="selectedGenreName" class="selected-genre-name">Жанр не выбран</span>
-                            <input type="hidden" id="selectedGenreId" name="genreId" required>
-                        </div>
+                        <label for="categorySelect">Категория</label>
+                        <select id="categorySelect" name="categoryId"></select>
                     </div>
-                    
-                    <div class="form-group"><label for="categorySelect">Категория</label><select id="categorySelect" name="categoryId"></select></div>
 
                     <div class="form-group">
                         <label><input type="checkbox" id="isForeignArtist"> Сторонний исполнитель</label>
@@ -279,16 +270,6 @@
                 
                 <button type="submit" class="submit-btn" id="uploadSubmitBtn">Отправить на модерацию</button>
             </form>
-        </div>
-    </div>
-
-    <div id="genreSelectionModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <button class="close-btn" title="Закрыть">&times;</button>
-            <h2>Выберите жанр</h2>
-            <div class="genre-list-container">
-                <ul id="genreList"></ul>
-            </div>
         </div>
     </div>
 
