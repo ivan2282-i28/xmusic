@@ -1341,13 +1341,20 @@ body.creator-mode {
     padding: 20px;
     position: relative;
     color: white;
-    font-size: 4em;
-    font-weight: 800;
     text-shadow: none;
     transition: color 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #xrecomenBtn:hover {
+    color: var(--text-primary);
+}
+
+.xrecomen-title {
+    font-size: 4em;
+    font-weight: 800;
     color: var(--text-primary);
 }
 
