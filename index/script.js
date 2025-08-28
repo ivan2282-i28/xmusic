@@ -1148,7 +1148,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (applicationModal) applicationModal.style.display = 'flex';
         });
-
+        
+        // ОБРАБОТЧИК ДЛЯ ОТПРАВКИ ФОРМЫ ЗАЯВКИ
+        if (applicationForm) {
+            applicationForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fullName = document.getElementById('fullName').value;
+                const phoneNumber = document.getElementById('phoneNumber').value;
+                const email = document.getElementById('email').value;
+                
+                try {
+                    const res = await fetchWithAuth(`${api}/api/apply-for-creator`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            userId: currentUser.id,
+                            fullName,
+                            phoneNumber,
+                            email
+                        })
+                    });
+                    const result = await res.json();
+                    alert(result.message);
+                    if (res.ok) {
+                        if (applicationModal) applicationModal.style.display = 'none';
+                        applicationForm.reset();
+                    }
+                } catch (err) {
+                    alert('Ошибка при подаче заявки.');
+                }
+            });
+        }
+        
         if (closeApplicationBtn) closeApplicationBtn.addEventListener('click', () => {
             if (applicationModal) applicationModal.style.display = 'none';
         });
