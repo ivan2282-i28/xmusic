@@ -36,6 +36,7 @@
                 <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display: none;"><span>Треки на модерации</span></a>
                 <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display: none;"><span>Статистика</span></a>
                 <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
+                <a class="creator-nav-btn admin-section" id="adminPanelBtn" style="display: none;"><span>Админ-панель</span></a>
             </nav>
             <div class="sidebar-footer">
             </div>
@@ -159,6 +160,35 @@
                     <h2 class="section-title">Категории</h2>
                     <button class="submit-btn create-category-btn" id="createCategoryBtn">Создать категорию</button>
                     <div class="categories-list-container" id="adminCategoriesList"></div>
+                </div>
+                <div id="adminPanelView" class="creator-main-section" style="display: none;">
+                    <h2 class="section-title">Админ-панель</h2>
+                    <div class="admin-panel-container">
+                        <div class="admin-panel-group">
+                            <h3>Управление регистрацией</h3>
+                            <label class="switch">
+                                <input type="checkbox" id="registrationToggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span id="registrationStatusText"></span>
+                        </div>
+                        <div class="admin-panel-group">
+                            <h3>Очистка модерации</h3>
+                            <p>Удалить все треки, находящиеся на модерации.</p>
+                            <button class="submit-btn" id="clearModerationBtn">Удалить все треки</button>
+                        </div>
+                        <div class="admin-panel-group">
+                            <h3>Резервное копирование</h3>
+                            <p>Создать полную резервную копию файлов и базы данных.</p>
+                            <button class="submit-btn" id="createBackupBtn">Создать бэкап</button>
+                            <div class="backup-status" id="backupStatus"></div>
+                            <hr>
+                            <h4>История бэкапов</h4>
+                            <div class="backup-list-container">
+                                <ul id="backupList"></ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>

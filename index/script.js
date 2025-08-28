@@ -122,11 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminModerationBtn = document.getElementById('adminModerationBtn');
     const adminStatsBtn = document.getElementById('adminStatsBtn');
     const adminCategoriesBtn = document.getElementById('adminCategoriesBtn');
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
     const adminApplicationsSection = document.getElementById('adminApplicationsSection');
     const adminUsersSection = document.getElementById('adminUsersSection');
     const adminModerationSection = document.getElementById('adminModerationSection');
     const adminStatsSection = document.getElementById('adminStatsSection');
     const adminCategoriesSection = document.getElementById('adminCategoriesSection');
+    const adminPanelView = document.getElementById('adminPanelView');
     const applicationsList = document.getElementById('applicationsList');
     const usersList = document.getElementById('usersList');
     const moderationTracksList = document.getElementById('moderationTracksList');
@@ -181,6 +183,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSearchStatus = document.getElementById('userSearchStatus');
     const selectedUsersContainer = document.getElementById('selectedUsersContainer');
     let selectedUsers = [];
+    
+    // Новые элементы админ-панели
+    const registrationToggle = document.getElementById('registrationToggle');
+    const registrationStatusText = document.getElementById('registrationStatusText');
+    const clearModerationBtn = document.getElementById('clearModerationBtn');
+    const createBackupBtn = document.getElementById('createBackupBtn');
+    const backupList = document.getElementById('backupList');
+    const backupStatus = document.getElementById('backupStatus');
 
     let chartInstance = null;
     let playTimer;
@@ -778,8 +788,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadBlurSetting = () => {
-        const savedBlur = localStorage.getItem(BLUR_KEY) === 'true';
-        applyBlur(savedBlur);
+        const savedBlur = localStorage.getItem(BLUR_KEY);
+        if (savedBlur === null) {
+            applyBlur(true); // Устанавливаем размытие по умолчанию, если настройка не найдена
+            saveBlurSetting(true);
+        } else {
+            applyBlur(savedBlur === 'true');
+        }
     };
 
 
@@ -1032,6 +1047,50 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(err);
         }
     };
+    
+    const fetchAdminConfig = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/config/registration`);
+            if (res.ok) {
+                const config = await res.json();
+                registrationToggle.checked = config.registration_enabled;
+                updateRegistrationStatusText(config.registration_enabled);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const updateRegistrationStatusText = (enabled) => {
+        if (registrationStatusText) {
+            registrationStatusText.textContent = enabled ? 'Регистрация разрешена' : 'Регистрация запрещена';
+            registrationStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
+        }
+    };
+
+    const fetchBackups = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/backup/list`);
+            const backups = await res.json();
+            if (backupList) {
+                backupList.innerHTML = '';
+                if (backups.length === 0) {
+                    backupList.innerHTML = '<p>Нет резервных копий.</p>';
+                    return;
+                }
+                backups.forEach(backup => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${backup}</span>
+                        <button class="backup-restore-btn" data-backup-name="${backup}">Загрузить</button>
+                    `;
+                    backupList.appendChild(li);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const initEventListeners = () => {
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
@@ -1132,6 +1191,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (adminCategoriesSection) adminCategoriesSection.style.display = 'block';
                     if (viewTitle) viewTitle.textContent = 'Категории';
                     fetchAdminCategories();
+                } else if (btn.id === 'adminPanelBtn') {
+                    if (adminPanelView) adminPanelView.style.display = 'block';
+                    if (viewTitle) viewTitle.textContent = 'Админ-панель';
+                    fetchAdminConfig();
+                    fetchBackups();
                 } else {
                     if (creatorHomeSection) creatorHomeSection.style.display = 'block';
                     if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
@@ -1598,6 +1662,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteCategoryBtn = e.target.closest('.delete-category-btn');
             const categoryCard = e.target.closest('.category-card');
             const collectionCard = e.target.closest('.collection-card');
+            const restoreBackupBtn = e.target.closest('.backup-restore-btn');
 
             if (renameBtn) {
                 e.stopPropagation();
@@ -1866,6 +1931,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Ошибка при удалении категории.');
                     }
                 }
+            } else if (restoreBackupBtn) {
+                const backupName = restoreBackupBtn.dataset.backupName;
+                if (confirm(`Вы уверены, что хотите восстановить данные из резервной копии "${backupName}"? Сервер будет перезагружен.`)) {
+                    try {
+                        const res = await fetchWithAuth(`${api}/api/admin/backup/restore`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ backupName })
+                        });
+                        const result = await res.json();
+                        alert(result.message);
+                    } catch (err) {
+                        alert('Ошибка при восстановлении.');
+                    }
+                }
             } else if (card && card.dataset.index) {
                 const index = parseInt(card.dataset.index, 10);
                 if (index >= 0) playMedia(index);
@@ -2099,6 +2179,67 @@ document.addEventListener('DOMContentLoaded', () => {
             audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
             saveVolumeSetting(volumeBar.value);
         });
+
+        // Event listeners для новых функций админ-панели
+        if (registrationToggle) {
+            registrationToggle.addEventListener('change', async (e) => {
+                const enabled = e.target.checked;
+                try {
+                    const res = await fetchWithAuth(`${api}/api/admin/config/registration`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled })
+                    });
+                    const result = await res.json();
+                    alert(result.message);
+                    updateRegistrationStatusText(result.registration_enabled);
+                } catch (err) {
+                    alert('Ошибка при обновлении настройки.');
+                    registrationToggle.checked = !enabled;
+                }
+            });
+        }
+
+        if (clearModerationBtn) {
+            clearModerationBtn.addEventListener('click', async () => {
+                if (confirm('Вы уверены, что хотите удалить ВСЕ треки на модерации? Это действие необратимо.')) {
+                    try {
+                        const res = await fetchWithAuth(`${api}/api/admin/moderation/clear`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const result = await res.json();
+                        alert(result.message);
+                        if (res.ok) {
+                            fetchModerationTracks();
+                        }
+                    } catch (err) {
+                        alert('Ошибка при очистке модерации.');
+                    }
+                }
+            });
+        }
+
+        if (createBackupBtn) {
+            createBackupBtn.addEventListener('click', async () => {
+                if (confirm('Вы уверены, что хотите создать резервную копию? Это может занять некоторое время.')) {
+                    try {
+                        const res = await fetchWithAuth(`${api}/api/admin/backup`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const result = await res.json();
+                        alert(result.message);
+                        if (res.ok) {
+                            backupStatus.textContent = result.message;
+                            fetchBackups();
+                        }
+                    } catch (err) {
+                        alert('Ошибка при создании резервной копии.');
+                    }
+                }
+            });
+        }
     };
 
     loadOpacitySetting();

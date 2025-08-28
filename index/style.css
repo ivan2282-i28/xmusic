@@ -1765,3 +1765,92 @@ input:checked + .slider:before {
 .slider.round:before {
     border-radius: 50%;
 }
+
+/* Новые стили для админ-панели */
+.admin-panel-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.admin-panel-group {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.admin-panel-group h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+.admin-panel-group p {
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.admin-panel-group .submit-btn {
+    width: auto;
+    padding: 10px 20px;
+}
+
+.backup-list-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--dark-bg);
+    padding: 10px;
+    margin-top: 15px;
+}
+
+#backupList {
+    list-style: none;
+    padding: 0;
+}
+
+#backupList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+#backupList li:last-child {
+    border-bottom: none;
+}
+
+.backup-restore-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.backup-restore-btn:hover {
+    background-color: var(--primary-hover-color);
+}
+
+.backup-status {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: var(--card-hover-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9em;
+    color: var(--text-primary);
+}
+
+.registration-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
