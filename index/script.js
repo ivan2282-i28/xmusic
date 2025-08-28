@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.querySelector('.main-content');
     const allGridContainer = document.getElementById('allGridContainer');
     const popularCategoriesGrid = document.getElementById('popularCategoriesGrid');
-    const allGenresGrid = document.getElementById('allGenresGrid');
+    const allCategoriesGrid = document.getElementById('allCategoriesGrid');
     const customCategoriesGrid = document.getElementById('customCategoriesGrid');
     const specificCategoryView = document.getElementById('specificCategoryView');
     const specificCategoryTitle = document.getElementById('specificCategoryTitle');
@@ -251,25 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchAndRenderHistory = async () => {
-        if (!currentUser) return;
-        try {
-            const response = await fetchWithAuth(`${api}/api/history/${currentUser.id}`);
-            if (!response.ok) throw new Error('Ошибка при получении истории.');
-            const historyTracks = await response.json();
-            if (specificCategoryGrid) {
-                renderMediaInContainer(specificCategoryGrid, historyTracks, false, false);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            if (specificCategoryGrid) specificCategoryGrid.innerHTML = `<p>Не удалось загрузить историю прослушиваний.</p>`;
-        }
-    };
-
     const fetchXrecomen = async () => {
         if (!currentUser) {
             if (youLikeSection) youLikeSection.style.display = 'block';
-            if (youMayLikeSection) youMayLikeSection.style.display = 'none';
             if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
 
             if (xrecomenBtn) {
@@ -295,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (xrecomenSection) xrecomenSection.style.display = 'flex';
         if (youLikeSection) youLikeSection.style.display = 'block';
-        if (youMayLikeSection) youMayLikeSection.style.display = 'none';
         if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
 
         try {
@@ -379,34 +362,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
             if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
             const categoriesData = await categoriesRes.json();
-            if (customCategoriesGrid && popularCategoriesGrid) {
-                popularCategoriesGrid.innerHTML = '';
+            if (allCategoriesGrid) {
+                allCategoriesGrid.innerHTML = '';
                 const allTracksCard = document.createElement('div');
                 allTracksCard.className = 'category-card';
                 allTracksCard.dataset.categoryId = 'all';
                 allTracksCard.innerHTML = `<h3>Все треки</h3>`;
-                popularCategoriesGrid.appendChild(allTracksCard);
-                const historyCard = document.createElement('div');
-                historyCard.className = 'category-card';
-                historyCard.dataset.categoryId = 'history';
-                historyCard.innerHTML = `<h3>История прослушиваний</h3>`;
-                popularCategoriesGrid.appendChild(historyCard);
+                allCategoriesGrid.appendChild(allTracksCard);
 
-                customCategoriesGrid.innerHTML = '';
-                const otherCategories = categoriesData.filter(c => !['Популярные', 'Для вас', 'Возможно вам понравится'].includes(c.name));
-                otherCategories.forEach(cat => {
+                categoriesData.forEach(cat => {
                     const catCard = document.createElement('div');
                     catCard.className = 'category-card';
                     catCard.dataset.categoryId = cat.id;
                     catCard.innerHTML = `<h3>${cat.name}</h3>`;
-                    customCategoriesGrid.appendChild(catCard);
+                    allCategoriesGrid.appendChild(catCard);
                 });
             }
         } catch (error) {
             console.error('Ошибка:', error);
         }
     };
-
 
     const fetchAndRenderCategoryTracks = async (categoryId) => {
         try {
@@ -420,7 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Ошибка:', error);
         }
     };
-
 
     const updateUIForAuth = (user) => {
         if (user) {
@@ -1678,13 +1652,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (res.ok) {
                         if (isFavorite) {
                             userFavorites = userFavorites.filter(f => f !== mediaFile);
-                            if (favoritePlayerBtn) favoritePlayerBtn.classList.remove('favorited');
-                            if (favoritePlayerBtn) favoritePlayerBtn.title = 'Добавить в избранное';
+                            favoritePlayerBtn.classList.remove('favorited');
+                            favoritePlayerBtn.title = 'Добавить в избранное';
                             fetchXrecomen();
                         } else {
                             userFavorites.push(currentTrack.file);
-                            if (favoritePlayerBtn) favoritePlayerBtn.classList.add('favorited');
-                            if (favoritePlayerBtn) favoritePlayerBtn.title = 'Удалить из избранного';
+                            favoritePlayerBtn.classList.add('favorited');
+                            favoritePlayerBtn.title = 'Удалить из избранного';
                             fetchXrecomen();
                         }
                     } else {
@@ -1864,30 +1838,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (card && card.dataset.index) {
                 const index = parseInt(card.dataset.index, 10);
                 if (index >= 0) playMedia(index);
-            } else if (categoryCard) {
-                const categoryId = categoryCard.dataset.categoryId;
+            } else if (categoryCard || collectionCard) {
+                const targetCard = categoryCard || collectionCard;
+                const categoryId = targetCard.dataset.categoryId;
                 if (categoryId === 'all') {
                     if (viewTitle) viewTitle.textContent = 'Все треки';
-                    if (categoriesView) categoriesView.classList.remove('active-view');
-                    if (specificCategoryView) specificCategoryView.classList.add('active-view');
+                    switchView('specificCategoryView');
                     if (allGridContainer) allGridContainer.style.display = 'grid';
                     if (specificCategoryGrid) specificCategoryGrid.style.display = 'none';
                     fetchAndRenderAll();
-                } else if (categoryId === 'history') {
-                    if (viewTitle) viewTitle.textContent = 'История прослушиваний';
-                    if (categoriesView) categoriesView.classList.remove('active-view');
-                    if (specificCategoryView) specificCategoryView.classList.add('active-view');
-                    if (allGridContainer) allGridContainer.style.display = 'none';
-                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'grid';
-                    if (currentUser) {
-                        fetchAndRenderHistory();
-                    } else {
-                        specificCategoryGrid.innerHTML = `<p>Для просмотра истории прослушиваний необходимо войти в аккаунт.</p>`;
-                    }
                 } else {
-                    if (viewTitle) viewTitle.textContent = categoryCard.textContent;
-                    if (categoriesView) categoriesView.classList.remove('active-view');
-                    if (specificCategoryView) specificCategoryView.classList.add('active-view');
+                    if (viewTitle) viewTitle.textContent = targetCard.querySelector('h3').textContent;
+                    switchView('specificCategoryView');
                     if (allGridContainer) allGridContainer.style.display = 'none';
                     if (specificCategoryGrid) specificCategoryGrid.style.display = 'grid';
                     fetchAndRenderCategoryTracks(categoryId);
@@ -2016,7 +1978,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        
+
         const onPlay = () => {
             if (playIcon) playIcon.style.display = 'none';
             if (pauseIcon) pauseIcon.style.display = 'block';
