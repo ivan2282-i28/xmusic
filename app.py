@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 import joblib
 import librosa
 import numpy as np
+import warnings
+
+# Подавление предупреждений numba
+warnings.filterwarnings("ignore")
 
 load_dotenv()
 
@@ -34,6 +38,9 @@ for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+# Определение списка жанров (обновлено на русские названия)
+GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
+
 # Загрузка модели ИИ и нормализатора
 try:
     with open(MODEL_PATH, 'rb') as model_file:
@@ -48,9 +55,6 @@ except Exception as e:
     model = None
     scaler = None
     print(f"Failed to load the model or scaler: {e}. AI genre detection will not be available.")
-
-# Определение списка жанров (обновлено на русские названия)
-GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
 
 
 def extract_features(file_path):
