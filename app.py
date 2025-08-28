@@ -9,7 +9,7 @@ from flask_cors import CORS
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
-import joblib  # Использовать joblib вместо pickle для совместимости
+import joblib
 import librosa
 import numpy as np
 
@@ -27,25 +27,29 @@ VIDEO_DIR = os.path.join(BASE_DIR, 'video')
 TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
 INDEX_DIR = os.path.join(BASE_DIR, 'index')
 MODEL_PATH = os.path.join(BASE_DIR, 'music_genre_model.pkl')
+SCALER_PATH = os.path.join(BASE_DIR, 'scaler.pkl')
 
 # Создание директорий, если они не существуют
 for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-# Загрузка модели ИИ
+# Загрузка модели ИИ и нормализатора
 try:
     with open(MODEL_PATH, 'rb') as model_file:
-        model = joblib.load(model_file)  # Заменено pickle на joblib
+        model = joblib.load(model_file)
+    with open(SCALER_PATH, 'rb') as scaler_file:
+        scaler = joblib.load(scaler_file)
 except FileNotFoundError:
     model = None
-    print(f"Model file not found at {MODEL_PATH}. AI genre detection will not be available.")
+    scaler = None
+    print("Model or scaler file not found. AI genre detection will not be available.")
 except Exception as e:
     model = None
-    print(f"Failed to load the model: {e}. AI genre detection will not be available.")
+    scaler = None
+    print(f"Failed to load the model or scaler: {e}. AI genre detection will not be available.")
 
-
-# Определение списка жанров
+# Определение списка жанров (обновлено на русские названия)
 GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
 
 
@@ -904,7 +908,7 @@ def determine_genre():
     if file.filename == '':
         return jsonify({'message': 'Не выбран файл'}), 400
 
-    if not model:
+    if not model or not scaler:
         return jsonify({'message': 'Модель ИИ недоступна.'}), 503
 
     try:
@@ -912,7 +916,11 @@ def determine_genre():
         file.save(temp_path)
         
         features = extract_features(temp_path)
-        predicted_genre_index = model.predict(features)[0]
+        
+        # Применяем нормализацию к извлеченным признакам
+        scaled_features = scaler.transform(features)
+
+        predicted_genre_index = model.predict(scaled_features)[0]
         predicted_genre = GENRES[predicted_genre_index]
         
         os.remove(temp_path)
