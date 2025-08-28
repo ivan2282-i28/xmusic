@@ -939,7 +939,6 @@ body.creator-mode {
     background-color: transparent;
 }
 
-/* Обновленный стиль для плеера в режиме Creator Studio */
 .creator-mode .player {
     background-color: var(--creator-card-bg);
     border: 1px solid var(--creator-border-color);
@@ -994,17 +993,6 @@ body.creator-mode {
     align-items: center;
     gap: 10px;
     width: 100%;
-}
-
-/* Добавленное исправление */
-.player:not(.creator-mode) {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 450px;
-    height: 200px;
-    left: auto;
 }
 
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
@@ -1710,7 +1698,7 @@ body.creator-mode {
 }
 
 .user-input-container #userSearchInput {
-    padding-right: 40px; /* Чтобы освободить место для иконки */
+    padding-right: 40px;
 }
 
 #userSearchStatus {
