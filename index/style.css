@@ -14,7 +14,6 @@
     --text-secondary: #A0A0A0;
     --border-color: #404040;
     --font-family: 'Inter', sans-serif;
-    --blur-value: 8px;
 
     /* Новые цвета для Creator Studio */
     --creator-primary-color: #4A90E2;
@@ -83,8 +82,8 @@ body {
 
 .sidebar {
     background-color: rgba(var(--sidebar-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -94,8 +93,8 @@ body {
 
 .main-content {
     background-color: rgba(var(--main-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 24px 40px;
     overflow-y: auto;
     height: 100vh;
@@ -109,8 +108,8 @@ body {
     width: 450px;
     height: 200px;
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border-color);
     border-radius: 16px;
     left: auto;
@@ -899,8 +898,8 @@ body {
 
 .logout-btn {
     width: 100%;
-    background-color: var(--card-bg);
-    color: var(--text-primary);
+    background-color: transparent;
+    color: var(--text-secondary);
     border: 2px solid transparent;
     border-radius: 8px;
     padding: 12px;
@@ -909,7 +908,7 @@ body {
     cursor: pointer;
     text-align: center;
     transition: border-color 0.3s ease, color 0.3s ease;
-    margin-top: 10px;
+    margin-top: auto;
 }
 
 .logout-btn:hover {
@@ -1708,60 +1707,4 @@ body.creator-mode {
 #fileStatusText {
     font-size: 0.9em;
     color: var(--text-secondary);
-}
-
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 28px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: var(--primary-color);
-}
-
-input:focus + .slider {
-    box-shadow: 0 0 1px var(--primary-color);
-}
-
-input:checked + .slider:before {
-    transform: translateX(20px);
-}
-
-/* Rounded sliders */
-.slider.round {
-    border-radius: 28px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
 }
