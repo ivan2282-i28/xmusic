@@ -855,5 +855,14 @@ def get_xrecomen(user_id):
         'favoriteCollections': favorite_collections
     })
 
+@app.route('/api/history/<int:user_id>')
+@auth_required
+def get_history(user_id):
+    conn = get_db_connection()
+    history = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist FROM plays p JOIN tracks t ON p.track_id = t.id JOIN users u ON t.creator_id = u.id WHERE p.user_id = ? GROUP BY t.id ORDER BY MAX(p.timestamp) DESC", (user_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in history])
+
+
 if __name__ == '__main__':
     app.run(port=3000, debug=True)

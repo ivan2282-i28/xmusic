@@ -251,6 +251,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const fetchAndRenderHistory = async () => {
+        if (!currentUser) return;
+        try {
+            const response = await fetchWithAuth(`${api}/api/history/${currentUser.id}`);
+            if (!response.ok) throw new Error('Ошибка при получении истории.');
+            const historyTracks = await response.json();
+            if (specificCategoryGrid) {
+                renderMediaInContainer(specificCategoryGrid, historyTracks, false, false);
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            if (specificCategoryGrid) specificCategoryGrid.innerHTML = `<p>Не удалось загрузить историю прослушиваний.</p>`;
+        }
+    };
+
     const fetchXrecomen = async () => {
         if (!currentUser) {
             if (youLikeSection) youLikeSection.style.display = 'block';
@@ -1125,7 +1140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAdminCategories();
                 } else {
                     if (creatorHomeSection) creatorHomeSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Creator Studio';
+                    if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
                 }
             });
         });
@@ -1856,17 +1871,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (categoriesView) categoriesView.classList.remove('active-view');
                     if (specificCategoryView) specificCategoryView.classList.add('active-view');
                     if (allGridContainer) allGridContainer.style.display = 'grid';
+                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'none';
                     fetchAndRenderAll();
                 } else if (categoryId === 'history') {
                     if (viewTitle) viewTitle.textContent = 'История прослушиваний';
                     if (categoriesView) categoriesView.classList.remove('active-view');
                     if (specificCategoryView) specificCategoryView.classList.add('active-view');
-                    if (specificCategoryGrid) specificCategoryGrid.innerHTML = `<p>Функция истории прослушиваний пока не реализована. Возвращайтесь позже!</p>`;
+                    if (allGridContainer) allGridContainer.style.display = 'none';
+                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'grid';
+                    if (currentUser) {
+                        fetchAndRenderHistory();
+                    } else {
+                        specificCategoryGrid.innerHTML = `<p>Для просмотра истории прослушиваний необходимо войти в аккаунт.</p>`;
+                    }
                 } else {
                     if (viewTitle) viewTitle.textContent = categoryCard.textContent;
                     if (categoriesView) categoriesView.classList.remove('active-view');
                     if (specificCategoryView) specificCategoryView.classList.add('active-view');
                     if (allGridContainer) allGridContainer.style.display = 'none';
+                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'grid';
                     fetchAndRenderCategoryTracks(categoryId);
                 }
             }
