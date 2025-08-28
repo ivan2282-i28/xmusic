@@ -12,3 +12,5 @@ librosa
 numba
 joblib
 pydub
+gunicorn
+
