@@ -14,7 +14,6 @@
     --text-secondary: #A0A0A0;
     --border-color: #404040;
     --font-family: 'Inter', sans-serif;
-    --blur-value: 8px;
 
     /* Новые цвета для Creator Studio */
     --creator-primary-color: #4A90E2;
@@ -83,8 +82,8 @@ body {
 
 .sidebar {
     background-color: rgba(var(--sidebar-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -94,8 +93,8 @@ body {
 
 .main-content {
     background-color: rgba(var(--main-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 24px 40px;
     overflow-y: auto;
     height: 100vh;
@@ -109,15 +108,16 @@ body {
     width: 450px;
     height: 200px;
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border-color);
     border-radius: 16px;
     left: auto;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto;
     align-items: center;
-    justify-content: center;
+    justify-items: center;
     gap: 15px;
     padding: 20px;
     z-index: 3;
@@ -505,29 +505,22 @@ body {
     color: var(--text-secondary);
 }
 
-.player-header {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.control-buttons-and-progress {
+.player-controls {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    width: 100%;
+    justify-content: center;
+    gap: 8px;
 }
 
 .control-buttons {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 20px;
     width: 100%;
     margin-top: -15px;
+    /* Обновлено для центрирования кнопок */
+    justify-content: center;
+    gap: 20px;
 }
 
 .control-btn, .play-button {
@@ -634,7 +627,7 @@ body {
 .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 10px;
     width: 100%;
     margin-top: 5px;
@@ -1046,7 +1039,7 @@ body.creator-mode {
 }
 
 .creator-mode .upload-type-selector {
-    background-color: var(--dark-bg);
+    background-color: var(--creator-bg);
 }
 
 .creator-mode .upload-type-selector input:checked + span {
@@ -1220,10 +1213,22 @@ body.creator-mode {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.control-buttons-and-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.player .progress-bar {
+    width: 100%;
+}
+
 .player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 10px;
     width: 100%;
     margin-top: 5px;
@@ -1238,13 +1243,19 @@ body.creator-mode {
 }
 
 .player .volume-controls input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
     width: 16px;
     height: 16px;
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
+}
+
+.player-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
@@ -1696,61 +1707,4 @@ body.creator-mode {
 #fileStatusText {
     font-size: 0.9em;
     color: var(--text-secondary);
-}
-
-/* Добавлены стили для переключателя "Размытие" */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--border-color);
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: var(--primary-color);
-}
-
-input:focus + .slider {
-    box-shadow: 0 0 1px var(--primary-color);
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-
-/* Rounded sliders */
-.slider.round {
-    border-radius: 34px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
 }
