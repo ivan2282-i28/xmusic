@@ -25,6 +25,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 # Настройка директорий
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'database.db')
 MUSIC_DIR = os.path.join(BASE_DIR, 'music')
 FON_DIR = os.path.join(BASE_DIR, 'fon')
 VIDEO_DIR = os.path.join(BASE_DIR, 'video')
@@ -72,8 +73,6 @@ def extract_features(file_path):
 
 
 # Настройка базы данных
-DB_PATH = os.path.join(BASE_DIR, 'database.db')
-
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -245,13 +244,17 @@ def role_required(roless: list):
         return decorated_function
     return decorator
 
+# Измененные маршруты для обслуживания файлов
 @app.route('/')
 def serve_index():
-    return send_from_directory(INDEX_DIR, 'index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
+    if filename.startswith('style.css') or filename.startswith('script.js'):
+        return send_from_directory(BASE_DIR, filename)
     return send_from_directory(INDEX_DIR, filename)
+
 
 @app.route('/music/<path:filename>')
 def serve_music(filename):
