@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeMediaElement = audioPlayer;
     let currentPage = 1;
     const tracksPerPage = 20;
-    
+
     // Новые элементы для жанров
     const determineGenreBtn = document.getElementById('determineGenreBtn');
     const selectGenreBtn = document.getElementById('selectGenreBtn');
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
+    const VOLUME_KEY = "volume_level"
 
     const mainContent = document.querySelector('.main-content');
     const allGridContainer = document.getElementById('allGridContainer');
@@ -182,25 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let chartInstance = null;
     let playTimer;
     let userSearchTimeout;
+    let currentTrack = null;
 
     async function fetchWithAuth(url, options = {}) {
-        // Get tokens from storage
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-
-        // Set up headers
         options.headers = options.headers || {};
-
-        // Add Authorization header if we have an access token
         if (accessToken) {
             options.headers['Authorization'] = `Bearer ${accessToken}`;
         }
-
-        // Make the request
         let response = await fetch(url, options);
-
-        // If unauthorized and we have a refresh token, try to refresh
         if (response.status === 401) {
-             // Refresh failed - clear tokens and redirect to login
             localStorage.removeItem(ACCESS_TOKEN_KEY);
             localStorage.removeItem(REFRESH_TOKEN_KEY);
             alert("Ошибко токено овторизоции")
@@ -209,11 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleCreatorMode(false);
             loginModal.style.display = "flex"
         }
-
         return response;
     }
 
-    // Helper functions for token management
     function setTokens(accessToken) {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     }
@@ -223,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem(REFRESH_TOKEN_KEY);
     }
 
-    // Новая функция для рендеринга результатов поиска
     const renderSearchResults = (mediaToRender, searchTerm) => {
         let searchResultsContainer = document.querySelector('.search-results-container');
         if (searchTerm.length > 0) {
@@ -256,57 +245,48 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 fetchXrecomen();
             }
+            renderAllTracks(allMedia);
         } catch (error) {
             console.error('Ошибка:', error);
         }
     };
-    
+
     const fetchXrecomen = async () => {
-        const youLikeSection = document.getElementById('youLikeSection');
-        const youMayLikeSection = document.getElementById('youMayLikeSection');
-        const favoriteCollectionsSection = document.getElementById('favoriteCollectionsSection');
-        const youLikeGrid = document.getElementById('youLikeGrid');
-        const youMayLikeGrid = document.getElementById('youMayLikeGrid');
-        const favoriteCollectionsGrid = document.getElementById('favoriteCollectionsGrid');
-    
         if (!currentUser) {
             if (youLikeSection) youLikeSection.style.display = 'block';
             if (youMayLikeSection) youMayLikeSection.style.display = 'none';
             if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
-    
+
             if (xrecomenBtn) {
                 if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
                 if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
             }
-    
+
             if (youLikeGrid) {
                 youLikeGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
             }
-    
+
             if (favoriteCollectionsGrid) {
                 favoriteCollectionsGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
             }
-    
+
             const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
             if (bestTracksResponse.ok) {
                 const bestTracks = await bestTracksResponse.json();
                 renderAllTracks(bestTracks);
             }
-
             return;
         }
-    
-        // Логика для авторизованных пользователей
+
         if (xrecomenSection) xrecomenSection.style.display = 'flex';
         if (youLikeSection) youLikeSection.style.display = 'block';
         if (youMayLikeSection) youMayLikeSection.style.display = 'none';
         if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
-    
+
         try {
             const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
             const data = await response.json();
-    
-            // Настройка Xrecomen для авторизованных пользователей
+
             if (data.xrecomenTrack) {
                 if (!allMedia.some(t => t.id === data.xrecomenTrack.id)) {
                     allMedia.push(data.xrecomenTrack);
@@ -331,8 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
                 if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
             }
-    
-            // Заполнение раздела "Вам нравятся"
+
             if (youLikeGrid) {
                 if (data.youLike && data.youLike.length > 0) {
                     renderMediaInContainer(youLikeGrid, data.youLike, true);
@@ -346,8 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bestTracks = await bestTracksResponse.json();
                 renderAllTracks(bestTracks);
             }
-    
-            // Заполнение раздела "Любимые подборки"
+
             if (favoriteCollectionsGrid) {
                 renderFavoriteCollections(data.favoriteCollections);
             }
@@ -364,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
             xrecomenBtn.querySelector('.xrecomen-title').textContent = track.title;
             xrecomenBtn.querySelector('.xrecomen-subtitle').textContent = `От ${track.artist || track.creator_name}`;
         } else {
-            // Если трек не найден или его нет, скрываем кнопку
             if (xrecomenSection) xrecomenSection.style.display = 'none';
         }
     };
@@ -388,17 +365,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
             const categoriesData = await categoriesRes.json();
             if (customCategoriesGrid && popularCategoriesGrid) {
-                customCategoriesGrid.innerHTML = '';
-                const popularCategories = categoriesData.filter(c => ['Популярные', 'Для вас', 'Возможно вам понравится'].includes(c.name));
                 popularCategoriesGrid.innerHTML = '';
-                popularCategories.forEach(cat => {
-                    const catCard = document.createElement('div');
-                    catCard.className = 'category-card';
-                    catCard.dataset.categoryId = cat.id;
-                    catCard.innerHTML = `<h3>${cat.name}</h3>`;
-                    popularCategoriesGrid.appendChild(catCard);
-                });
-                const otherCategories = categoriesData.filter(c => !popularCategories.map(p => p.id).includes(c.id));
+                const allTracksCard = document.createElement('div');
+                allTracksCard.className = 'category-card';
+                allTracksCard.dataset.categoryId = 'all';
+                allTracksCard.innerHTML = `<h3>Все треки</h3>`;
+                popularCategoriesGrid.appendChild(allTracksCard);
+                const historyCard = document.createElement('div');
+                historyCard.className = 'category-card';
+                historyCard.dataset.categoryId = 'history';
+                historyCard.innerHTML = `<h3>История прослушиваний</h3>`;
+                popularCategoriesGrid.appendChild(historyCard);
+
+                customCategoriesGrid.innerHTML = '';
+                const otherCategories = categoriesData.filter(c => !['Популярные', 'Для вас', 'Возможно вам понравится'].includes(c.name));
                 otherCategories.forEach(cat => {
                     const catCard = document.createElement('div');
                     catCard.className = 'category-card';
@@ -445,15 +425,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user.role === 'creator' || user.role === 'admin') {
                 if (myTracksBtn) myTracksBtn.style.display = 'flex';
                 if (analyticsBtn) analyticsBtn.style.display = 'flex';
-                // Скрываем кнопку "Главная" для креаторов
                 if (creatorHomeBtn) creatorHomeBtn.style.display = 'none';
                 fetchCreatorCategories();
             } else {
-                // Если пользователь не креатор, показываем кнопку "Главная"
                 if (creatorHomeBtn) creatorHomeBtn.style.display = 'flex';
             }
 
-            // Добавляем видимость кнопок админа, если роль - admin
             if (user.role === 'admin') {
                 document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'flex');
             } else {
@@ -529,35 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const renderHomePage = (media) => {
-        if (media.length === 0) {
-            return;
-        }
-
-        const youLike = document.getElementById('youLikeGrid');
-        const youMayLike = document.getElementById('youMayLikeGrid');
-        const favoriteCollections = document.getElementById('favoriteCollectionsGrid');
-
-        if (youLike) {
-            const youLikeMedia = [...media].sort(() => 0.5 - Math.random()).slice(0, 5);
-            renderMediaInContainer(youLike, youLikeMedia, false);
-        }
-
-        if (youMayLike) {
-            const youMayLikeMedia = [...media].sort(() => 0.5 - Math.random()).slice(0, 5);
-            renderMediaInContainer(youMayLike, youMayLikeMedia, false);
-        }
-
-        if (favoriteCollections) {
-            const collections = [
-                { id: 1, name: 'Мои любимые', track_count: 10 },
-                { id: 2, name: 'Фонк', track_count: 15 },
-                { id: 3, name: 'Рок', track_count: 8 }
-            ];
-            renderFavoriteCollections(collections);
-        }
-    };
-
     const renderMediaInContainer = (container, media, isAllTracksView, isFavoritesView = false) => {
         container.innerHTML = '';
         if (media.length === 0) {
@@ -565,7 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         media.forEach((item) => {
-            // Убеждаемся, что все необходимые свойства существуют
             if (!item || !item.title || !item.file) {
                 console.warn("Пропущен трек из-за неполных данных:", item);
                 return;
@@ -576,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
             card.dataset.index = globalIndex;
 
-            // Если трек не найден в allMedia, добавляем его в allMedia, чтобы можно было воспроизвести
             if (globalIndex === -1) {
                 allMedia.push(item);
                 card.dataset.index = allMedia.length - 1;
@@ -598,7 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
-            // Проверяем, существует ли player, чтобы не вызывать ошибку
             if (favoritePlayerBtn) {
                 const isCurrentTrackFavorite = userFavorites.includes(item.file);
                 if (isCurrentTrackFavorite) {
@@ -648,11 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const playMedia = async (index) => {
         if (index < 0 || index >= allMedia.length) return;
-
-        if (player && player.classList.contains('expanded')) {
-            player.classList.remove('expanded');
-            if (playerHeader) playerHeader.classList.remove('expanded');
-        }
+        currentTrack = allMedia[index];
 
         hideVideo();
         activeMediaElement.pause();
@@ -689,7 +630,6 @@ document.addEventListener('DOMContentLoaded', () => {
             favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
         }
 
-        // Отправка данных о прослушивании на сервер
         if (playTimer) clearTimeout(playTimer);
         playTimer = setTimeout(async () => {
             if (currentUser && activeMediaElement.duration) {
@@ -704,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                 });
             }
-        }, 5000); // Отправляем данные через 5 секунд после начала воспроизведения
+        }, 5000);
     };
 
     const fetchMyTracks = async () => {
@@ -834,6 +774,19 @@ document.addEventListener('DOMContentLoaded', () => {
         applyOpacity(savedOpacity);
     };
 
+    const saveVolumeSetting = (value) => {
+        localStorage.setItem(VOLUME_KEY, value);
+    };
+
+    const loadVolumeSetting = () => {
+        const savedVolume = localStorage.getItem(VOLUME_KEY) || 1;
+        const volumeValue = parseFloat(savedVolume);
+        if (volumeBar) {
+            volumeBar.value = volumeValue;
+            audioPlayer.volume = videoPlayer.volume = volumeValue;
+        }
+    };
+
     const showVideo = () => {
         if (videoBackgroundContainer) videoBackgroundContainer.classList.add('visible');
     };
@@ -855,7 +808,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewToShow = document.getElementById(viewIdToShow);
         if (viewToShow) viewToShow.classList.add('active-view');
 
-        // Показываем или скрываем кнопку "Назад к категориям"
         if (backToCategoriesBtn) {
             backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
         }
@@ -908,7 +860,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (xmusicNav) xmusicNav.style.display = 'none';
             if (xcreatorNav) xcreatorNav.style.display = 'flex';
 
-            // Скрываем все views перед отображением нужного
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (creatorView) creatorView.classList.add('active-view');
             if (homeView) homeView.classList.remove('active-view');
@@ -916,19 +867,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (favoritesView) favoritesView.classList.remove('active-view');
             if (specificCategoryView) specificCategoryView.classList.remove('active-view');
 
-            // Определяем, какой раздел показать по умолчанию
             document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
             const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
             creatorNavButtons.forEach(btn => btn.classList.remove('active'));
 
             if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
-                // Если креатор, сразу показываем аналитику
                 if (analyticsSection) analyticsSection.style.display = 'block';
                 if (analyticsBtn) analyticsBtn.classList.add('active');
                 if (creatorHomeSection) creatorHomeSection.style.display = 'none';
                 fetchCreatorStats();
             } else {
-                // Если не креатор, показываем кнопку подачи заявки
                 if (creatorHomeSection) creatorHomeSection.style.display = 'block';
                 if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
             }
@@ -939,11 +887,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (xmusicLogo) xmusicLogo.style.display = 'block';
             if (xmusicNav) xmusicNav.style.display = 'flex';
 
-            if (player) player.classList.remove('expanded');
-            if (playerHeader) player.classList.remove('expanded');
             showVideo();
 
-            // Скрываем все views перед отображением нужного
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (homeView) homeView.classList.add('active-view');
 
@@ -1080,16 +1025,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initEventListeners = () => {
-        // Установка loop = false по умолчанию для всех медиаэлементов
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
             if (el) {
                 el.loop = false;
             }
         });
 
-        // ==========================
-        //  НОВОЕ: Логика переключения полей ввода аудио/видео
-        // ==========================
         if (uploadTypeRadios) {
             uploadTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
@@ -1107,9 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         }
-        // ==========================
-        //  КОНЕЦ НОВОГО БЛОКА
-        // ==========================
 
         if (navHome) navHome.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1129,7 +1067,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Добавлен обработчик для кнопки "Назад к категориям"
         if (backToCategoriesBtn) backToCategoriesBtn.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('categoriesView');
@@ -1211,6 +1148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        const uploadTrackBtn = document.getElementById('uploadTrackBtn');
         if (uploadTrackBtn) uploadTrackBtn.addEventListener('click', () => {
             if (uploadModal) uploadModal.style.display = 'flex';
             if (uploadManager) uploadManager.style.display = 'block';
@@ -1226,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadModal.style.display = 'none';
             }
         });
-        
+
         if (isForeignArtist) isForeignArtist.addEventListener('change', () => {
             if (artistFields) artistFields.style.display = isForeignArtist.checked ? 'block' : 'none';
         });
@@ -1302,7 +1240,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Функционал для нового поля ввода и проверки пользователей
         if (userSearchInput) {
             userSearchInput.addEventListener('input', () => {
                 const query = userSearchInput.value.trim();
@@ -1466,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Пожалуйста, выберите файл обложки.');
                 return;
             }
-            
+
 
             if (uploadManager) uploadManager.style.display = 'block';
             if (uploadProgressBar) uploadProgressBar.style.width = '0%';
@@ -1479,12 +1416,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `${api}/api/moderation/upload`, true);
 
-            // <-- ИСПРАВЛЕНИЕ: ДОБАВЛЯЕМ ТОКЕН АВТОРИЗАЦИИ -->
             const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
             if (accessToken) {
                 xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
             }
-            // <-- КОНЕЦ ИСПРАВЛЕНИЯ -->
 
             xhr.upload.addEventListener('progress', (event) => {
                 if (event.lengthComputable) {
@@ -1515,7 +1450,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.error('Не удалось разобрать JSON:', e);
                         }
                     } else {
-                        // Если ответ не JSON (вероятно, HTML-страница ошибки), используем общее сообщение
                         console.error('Сервер вернул не-JSON ответ:', xhr.responseText);
                     }
 
@@ -1620,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchXrecomen();
             }
         });
-        
+
         if (xrecomenBtn) xrecomenBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const index = parseInt(e.currentTarget.dataset.index, 10);
@@ -1729,13 +1663,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (res.ok) {
                         if (isFavorite) {
                             userFavorites = userFavorites.filter(f => f !== mediaFile);
-                            favoritePlayerBtn.classList.remove('favorited');
-                            favoritePlayerBtn.title = 'Добавить в избранное';
+                            if (favoritePlayerBtn) favoritePlayerBtn.classList.remove('favorited');
+                            if (favoritePlayerBtn) favoritePlayerBtn.title = 'Добавить в избранное';
                             fetchXrecomen();
                         } else {
                             userFavorites.push(currentTrack.file);
-                            favoritePlayerBtn.classList.add('favorited');
-                            favoritePlayerBtn.title = 'Удалить из избранного';
+                            if (favoritePlayerBtn) favoritePlayerBtn.classList.add('favorited');
+                            if (favoritePlayerBtn) favoritePlayerBtn.title = 'Удалить из избранного';
                             fetchXrecomen();
                         }
                     } else {
@@ -1917,11 +1851,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (index >= 0) playMedia(index);
             } else if (categoryCard) {
                 const categoryId = categoryCard.dataset.categoryId;
-                if (viewTitle) viewTitle.textContent = categoryCard.textContent;
-                if (categoriesView) categoriesView.classList.remove('active-view');
-                if (specificCategoryView) specificCategoryView.classList.add('active-view');
-                if (allGridContainer) allGridContainer.style.display = 'none';
-                fetchAndRenderCategoryTracks(categoryId);
+                if (categoryId === 'all') {
+                    if (viewTitle) viewTitle.textContent = 'Все треки';
+                    if (categoriesView) categoriesView.classList.remove('active-view');
+                    if (specificCategoryView) specificCategoryView.classList.add('active-view');
+                    if (allGridContainer) allGridContainer.style.display = 'grid';
+                    fetchAndRenderAll();
+                } else if (categoryId === 'history') {
+                    if (viewTitle) viewTitle.textContent = 'История прослушиваний';
+                    if (categoriesView) categoriesView.classList.remove('active-view');
+                    if (specificCategoryView) specificCategoryView.classList.add('active-view');
+                    if (specificCategoryGrid) specificCategoryGrid.innerHTML = `<p>Функция истории прослушиваний пока не реализована. Возвращайтесь позже!</p>`;
+                } else {
+                    if (viewTitle) viewTitle.textContent = categoryCard.textContent;
+                    if (categoriesView) categoriesView.classList.remove('active-view');
+                    if (specificCategoryView) specificCategoryView.classList.add('active-view');
+                    if (allGridContainer) allGridContainer.style.display = 'none';
+                    fetchAndRenderCategoryTracks(categoryId);
+                }
             }
         });
 
@@ -2012,8 +1959,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Сначала выберите трек.');
                     return;
                 }
-                const currentTrack = allMedia[currentTrackIndex];
-                const isFavorite = userFavorites.includes(currentTrack.file);
+                const trackToAdd = allMedia[currentTrackIndex];
+                const isFavorite = userFavorites.includes(trackToAdd.file);
 
                 try {
                     const res = await fetchWithAuth(`${api}/api/favorites`, {
@@ -2023,17 +1970,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         body: JSON.stringify({
                             userId: currentUser.id,
-                            mediaFile: currentTrack.file
+                            mediaFile: trackToAdd.file
                         })
                     });
                     if (res.ok) {
                         if (isFavorite) {
-                            userFavorites = userFavorites.filter(f => f !== currentTrack.file);
+                            userFavorites = userFavorites.filter(f => f !== trackToAdd.file);
                             favoritePlayerBtn.classList.remove('favorited');
                             favoritePlayerBtn.title = 'Добавить в избранное';
                             fetchXrecomen();
                         } else {
-                            userFavorites.push(currentTrack.file);
+                            userFavorites.push(trackToAdd.file);
                             favoritePlayerBtn.classList.add('favorited');
                             favoritePlayerBtn.title = 'Удалить из избранного';
                             fetchXrecomen();
@@ -2046,21 +1993,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-
-        if (playerHeader) playerHeader.addEventListener('click', () => {
-            if (player) {
-                if (player.classList.contains('expanded')) {
-                    player.classList.remove('expanded');
-                    if (playerHeader) playerHeader.classList.remove('expanded');
-                    if (controlButtonsAndProgress) controlButtonsAndProgress.style.display = 'flex';
-                    if (volumeControls) volumeControls.style.display = 'flex';
-                } else {
-                    player.classList.add('expanded');
-                    if (playerHeader) playerHeader.classList.add('expanded');
-                }
-            }
-        });
-
+        
         const onPlay = () => {
             if (playIcon) playIcon.style.display = 'none';
             if (pauseIcon) pauseIcon.style.display = 'block';
@@ -2077,7 +2010,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pauseIcon) pauseIcon.style.display = 'none';
         };
 
-        // Исправлено: Добавлен обработчик события 'ended', чтобы переключать на следующий трек
         const onEnded = () => {
             if (!repeatMode) {
                 const nextIndex = (currentTrackIndex + 1) % allMedia.length;
@@ -2149,10 +2081,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (volumeBar) volumeBar.addEventListener('input', () => {
             audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
+            saveVolumeSetting(volumeBar.value);
         });
     };
 
     loadOpacitySetting();
+    loadVolumeSetting();
     initEventListeners();
     fetchAndRenderAll();
     fetchCategories();
