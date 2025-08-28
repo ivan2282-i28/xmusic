@@ -628,7 +628,7 @@ body {
 .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 10px;
     width: 100%;
     margin-top: 5px;
@@ -1229,7 +1229,7 @@ body.creator-mode {
 .player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 10px;
     width: 100%;
     margin-top: 5px;
