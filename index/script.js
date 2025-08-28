@@ -842,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewIdToShow === 'creatorView') {
             if (viewTitle) viewTitle.textContent = 'Creator Studio';
             if (searchBarWrapper) searchBarWrapper.style.display = 'none';
-            if (player) player.style.display = 'none';
+            if (player) player.style.display = 'grid'; // Плеер остается видимым
             if (currentUser && currentUser.role === 'admin') {
                 if (adminApplicationsBtn) adminApplicationsBtn.classList.add('active');
                 if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
@@ -871,11 +871,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (creatorView) creatorView.classList.add('active-view');
-            if (homeView) homeView.classList.remove('active-view');
-            if (categoriesView) categoriesView.classList.remove('active-view');
-            if (favoritesView) favoritesView.classList.remove('active-view');
-            if (specificCategoryView) specificCategoryView.classList.remove('active-view');
-
+            
+            // Player remains visible, just changes its style
+            if(player) player.classList.add('creator-mode');
+            
             document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
             const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
             creatorNavButtons.forEach(btn => btn.classList.remove('active'));
@@ -895,6 +894,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (xcreatorNav) xcreatorNav.style.display = 'none';
             if (xmusicLogo) xmusicLogo.style.display = 'block';
             if (xmusicNav) xmusicNav.style.display = 'flex';
+            
+            if(player) player.classList.remove('creator-mode');
 
             showVideo();
 

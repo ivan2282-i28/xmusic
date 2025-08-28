@@ -938,8 +938,13 @@ body.creator-mode {
     background-color: transparent;
 }
 
+/* Обновленный стиль для плеера в режиме Creator Studio */
 .creator-mode .player {
-    display: none;
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
