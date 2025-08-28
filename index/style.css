@@ -14,6 +14,7 @@
     --text-secondary: #A0A0A0;
     --border-color: #404040;
     --font-family: 'Inter', sans-serif;
+    --blur-value: 8px;
 
     /* Новые цвета для Creator Studio */
     --creator-primary-color: #4A90E2;
@@ -82,8 +83,8 @@ body {
 
 .sidebar {
     background-color: rgba(var(--sidebar-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -93,8 +94,8 @@ body {
 
 .main-content {
     background-color: rgba(var(--main-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
     padding: 24px 40px;
     overflow-y: auto;
     height: 100vh;
@@ -108,16 +109,15 @@ body {
     width: 450px;
     height: 200px;
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
     border: 1px solid var(--border-color);
     border-radius: 16px;
     left: auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-items: center;
+    justify-content: center;
     gap: 15px;
     padding: 20px;
     z-index: 3;
@@ -505,22 +505,29 @@ body {
     color: var(--text-secondary);
 }
 
-.player-controls {
+.player-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.control-buttons-and-progress {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 15px;
+    width: 100%;
 }
 
 .control-buttons {
     display: flex;
     align-items: center;
-    width: 100%;
-    margin-top: -15px;
-    /* Обновлено для центрирования кнопок */
     justify-content: center;
     gap: 20px;
+    width: 100%;
+    margin-top: -15px;
 }
 
 .control-btn, .play-button {
@@ -1213,22 +1220,10 @@ body.creator-mode {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.control-buttons-and-progress {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-}
-
-.player .progress-bar {
-    width: 100%;
-}
-
 .player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 10px;
     width: 100%;
     margin-top: 5px;
@@ -1243,19 +1238,13 @@ body.creator-mode {
 }
 
 .player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
     width: 16px;
     height: 16px;
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
-}
-
-.player-header {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
