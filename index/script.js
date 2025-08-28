@@ -825,24 +825,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navHome) navHome.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Главная';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) player.style.display = 'grid';
+            if (player) {
+                player.style.display = 'grid';
+                player.classList.remove('creator-mode');
+            }
             fetchXrecomen();
         } else if (viewIdToShow === 'categoriesView') {
             if (navCategories) navCategories.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Категории';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) player.style.display = 'grid';
+            if (player) {
+                player.style.display = 'grid';
+                player.classList.remove('creator-mode');
+            }
             fetchCategories();
         } else if (viewIdToShow === 'favoritesView') {
             if (navFavorites) navFavorites.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Избранное';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) player.style.display = 'grid';
+            if (player) {
+                player.style.display = 'grid';
+                player.classList.remove('creator-mode');
+            }
             fetchFavorites();
         } else if (viewIdToShow === 'creatorView') {
             if (viewTitle) viewTitle.textContent = 'Creator Studio';
             if (searchBarWrapper) searchBarWrapper.style.display = 'none';
-            if (player) player.style.display = 'grid'; // Плеер остается видимым
+            if (player) player.classList.add('creator-mode'); // Плеер остается видимым
             if (currentUser && currentUser.role === 'admin') {
                 if (adminApplicationsBtn) adminApplicationsBtn.classList.add('active');
                 if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
@@ -854,6 +863,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (viewIdToShow === 'specificCategoryView') {
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
+            if (player) {
+                player.style.display = 'grid';
+                player.classList.remove('creator-mode');
+            }
         }
     };
 
