@@ -9,8 +9,6 @@ from flask_cors import CORS
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
-import threading
-import json
 
 load_dotenv()
 
@@ -25,28 +23,12 @@ MUSIC_DIR = os.path.join(BASE_DIR, 'music')
 FON_DIR = os.path.join(BASE_DIR, 'fon')
 VIDEO_DIR = os.path.join(BASE_DIR, 'video')
 TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
-BACKUP_DIR = os.path.join(BASE_DIR, 'backups')
-CONFIG_PATH = os.path.join(BASE_DIR, 'config.json')
 INDEX_DIR = os.path.join(BASE_DIR, 'index')
 
 # Создание директорий, если они не существуют
-for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR, BACKUP_DIR]:
+for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
-
-# Загрузка или создание файла конфигурации
-def load_config():
-    if not os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH, 'w') as f:
-            json.dump({'registration_enabled': True}, f)
-    with open(CONFIG_PATH, 'r') as f:
-        return json.load(f)
-
-def save_config(config):
-    with open(CONFIG_PATH, 'w') as f:
-        json.dump(config, f, indent=4)
-
-config = load_config()
 
 
 # Настройка базы данных
@@ -246,13 +228,9 @@ def serve_video(filename):
 @app.route('/temp_uploads/<path:filename>')
 def serve_temp_uploads(filename):
     return send_from_directory(TEMP_UPLOAD_DIR, filename)
-    
+
 @app.route('/api/register', methods=['POST'])
 def register():
-    global config
-    if not config['registration_enabled']:
-        return jsonify({'message': 'Регистрация временно отключена.'}), 403
-
     data = request.json
     username = data.get('username')
     password = data.get('password')
@@ -789,6 +767,7 @@ def manage_category(category_id):
             return jsonify({'message': 'Категория успешно удалена.'})
         except Exception as e:
             print(e)
+            return jsonify({'message': 'Ошибка при удалении категории.'}), 500
         finally:
             conn.close()
 
@@ -881,108 +860,6 @@ def get_xrecomen(user_id):
 def get_history(user_id):
     return jsonify([])
 
-@app.route('/api/admin/config/registration', methods=['GET', 'POST'])
-@auth_required
-@role_required(['admin'])
-def manage_registration():
-    global config
-    if request.method == 'GET':
-        return jsonify({'registration_enabled': config.get('registration_enabled', True)})
-    elif request.method == 'POST':
-        data = request.json
-        enabled = data.get('enabled', True)
-        config['registration_enabled'] = enabled
-        save_config(config)
-        return jsonify({'message': 'Настройка регистрации обновлена.', 'registration_enabled': enabled})
-
-@app.route('/api/admin/moderation/clear', methods=['POST'])
-@auth_required
-@role_required(['admin'])
-def clear_moderation():
-    conn = get_db_connection()
-    try:
-        tracks = conn.execute("SELECT file_name, cover_name FROM track_moderation").fetchall()
-        for track in tracks:
-            os.unlink(os.path.join(TEMP_UPLOAD_DIR, track['file_name']))
-            os.unlink(os.path.join(TEMP_UPLOAD_DIR, track['cover_name']))
-        
-        conn.execute("DELETE FROM track_moderation")
-        conn.commit()
-        return jsonify({'message': 'Все треки на модерации удалены.'})
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Ошибка при удалении треков.'}), 500
-    finally:
-        conn.close()
-
-def create_backup_thread():
-    try:
-        timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
-        backup_name = f'xmusic_backup_{timestamp}'
-        backup_path = os.path.join(BACKUP_DIR, backup_name)
-        
-        # Создание архива
-        shutil.make_archive(backup_path, 'zip', BASE_DIR, basename='.')
-
-        return jsonify({'message': f'Резервная копия "{backup_name}.zip" успешно создана.'})
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Ошибка при создании резервной копии.'}), 500
-
-@app.route('/api/admin/backup', methods=['POST'])
-@auth_required
-@role_required(['admin'])
-def create_backup():
-    thread = threading.Thread(target=create_backup_thread)
-    thread.start()
-    return jsonify({'message': 'Создание резервной копии начато в фоновом режиме.'})
-
-@app.route('/api/admin/backup/list')
-@auth_required
-@role_required(['admin'])
-def list_backups():
-    backups = [f for f in os.listdir(BACKUP_DIR) if f.endswith('.zip')]
-    backups.sort(reverse=True)
-    return jsonify(backups)
-
-def restart_server():
-    print("Перезапуск сервера...")
-    os.execlp("python3", "python3", "app.py")
-
-@app.route('/api/admin/backup/restore', methods=['POST'])
-@auth_required
-@role_required(['admin'])
-def restore_backup():
-    data = request.json
-    backup_name = data.get('backupName')
-    backup_path = os.path.join(BACKUP_DIR, backup_name)
-
-    if not os.path.exists(backup_path):
-        return jsonify({'message': 'Резервная копия не найдена.'}), 404
-    
-    try:
-        temp_restore_dir = os.path.join(BASE_DIR, 'temp_restore')
-        shutil.unpack_archive(backup_path, temp_restore_dir, 'zip')
-
-        for item in os.listdir(temp_restore_dir):
-            s = os.path.join(temp_restore_dir, item)
-            d = os.path.join(BASE_DIR, item)
-            if os.path.isdir(s):
-                if os.path.exists(d):
-                    shutil.rmtree(d)
-                shutil.copytree(s, d)
-            else:
-                shutil.copy2(s, d)
-
-        shutil.rmtree(temp_restore_dir)
-        
-        threading.Timer(2.0, restart_server).start()
-
-        return jsonify({'message': 'Восстановление начато, сервер будет перезагружен.'})
-
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Ошибка при восстановлении резервной копии.'}), 500
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
