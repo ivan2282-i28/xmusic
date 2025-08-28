@@ -141,14 +141,6 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS app_settings (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )
-    ''')
-    c.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)", ('registration_enabled', 'true'))
-
 
     # Добавление админа, если его нет
     c.execute("SELECT * FROM users WHERE username = 'root'")
@@ -239,12 +231,6 @@ def serve_temp_uploads(filename):
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    conn = get_db_connection()
-    reg_enabled = conn.execute("SELECT value FROM app_settings WHERE key = 'registration_enabled'").fetchone()['value']
-    conn.close()
-    if reg_enabled == 'false':
-        return jsonify({'message': 'Регистрация временно отключена.'}), 403
-
     data = request.json
     username = data.get('username')
     password = data.get('password')
@@ -401,9 +387,9 @@ def delete_track(track_id):
     finally:
         conn.close()
 
-@app.route('/api/apply-for-creator', methods=['POST'])
 @auth_required
 @role_required(['user'])
+@app.route('/api/apply-for-creator', methods=['POST'])
 def apply_for_creator():
     data = request.json
     user_id = data.get('userId')
@@ -620,50 +606,6 @@ def reject_track(track_id):
         return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
     finally:
         conn.close()
-
-@app.route('/api/admin/moderation/clear-all', methods=['DELETE'])
-@auth_required
-@role_required(['admin'])
-def clear_all_moderation_tracks():
-    conn = get_db_connection()
-    try:
-        tracks = conn.execute("SELECT file_name, cover_name FROM track_moderation WHERE status = 'pending'").fetchall()
-        for track in tracks:
-            os.unlink(os.path.join(TEMP_UPLOAD_DIR, track['file_name']))
-            os.unlink(os.path.join(TEMP_UPLOAD_DIR, track['cover_name']))
-        
-        conn.execute("DELETE FROM track_moderation WHERE status = 'pending'")
-        conn.commit()
-        return jsonify({'message': 'Все треки на модерации удалены.'})
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Ошибка при удалении треков.'}), 500
-    finally:
-        conn.close()
-
-@app.route('/api/admin/registration/toggle', methods=['POST'])
-@auth_required
-@role_required(['admin'])
-def toggle_registration():
-    data = request.json
-    enabled = data.get('enabled')
-    conn = get_db_connection()
-    try:
-        conn.execute("UPDATE app_settings SET value = ? WHERE key = 'registration_enabled'", ('true' if enabled else 'false',))
-        conn.commit()
-        return jsonify({'message': f'Регистрация {"разрешена" if enabled else "запрещена"}.'})
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Ошибка при обновлении статуса регистрации.'}), 500
-    finally:
-        conn.close()
-
-@app.route('/api/admin/registration/status', methods=['GET'])
-def get_registration_status():
-    conn = get_db_connection()
-    status = conn.execute("SELECT value FROM app_settings WHERE key = 'registration_enabled'").fetchone()['value']
-    conn.close()
-    return jsonify({'enabled': status == 'true'})
 
 @app.route('/api/admin/stats')
 @auth_required

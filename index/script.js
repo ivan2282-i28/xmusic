@@ -64,10 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoBackgroundContainer = document.getElementById('videoBackgroundContainer');
     const controlButtonsAndProgress = document.querySelector('.control-buttons-and-progress');
     const volumeControls = document.querySelector('.volume-controls');
-    
-    // Новые элементы для настроек фона
-    const opacityEnabledToggle = document.getElementById('opacityEnabledToggle');
-    const opacitySliderContainer = document.getElementById('opacitySliderContainer');
 
     const uploadModal = document.getElementById('uploadModal');
     const closeUploadBtn = uploadModal.querySelector('.close-btn');
@@ -89,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettingsBtn = settingsModal.querySelector('.close-btn');
     const opacitySlider = document.getElementById('opacitySlider');
     const opacityValue = document.getElementById('opacityValue');
-    const logoutBtn = document.getElementById('logoutBtn');
 
     const loginModal = document.getElementById('loginModal');
     const loginBtn = document.getElementById('loginBtn');
@@ -100,10 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
     const closeRegisterBtn = registerModal.querySelector('.close-btn');
     const switchToLoginBtn = document.getElementById('switchToLogin');
-    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
     const favoritesView = document.getElementById('favoritesView');
     const favoritesGridContainer = document.getElementById('favoritesGridContainer');
     const welcomeMessage = document.getElementById('welcomeMessage');
+    const logoutBtn = document.getElementById('logoutBtn');
     const headerControls = document.querySelector('.header-controls');
 
     const creatorStudioBtn = document.getElementById('creatorStudioBtn');
@@ -120,10 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const creatorHomeBtn = document.getElementById('creatorHomeBtn');
     const myTracksBtn = document.getElementById('myTracksBtn');
     const analyticsBtn = document.getElementById('analyticsBtn');
-    const adminPanelBtn = document.getElementById('adminPanelBtn');
-    const adminPanelSection = document.getElementById('adminPanelSection');
-    const clearModerationBtn = document.getElementById('clearModerationBtn');
-    const registrationToggle = document.getElementById('registrationToggle');
     const adminApplicationsBtn = document.getElementById('adminApplicationsBtn');
     const adminUsersBtn = document.getElementById('adminUsersBtn');
     const adminModerationBtn = document.getElementById('adminModerationBtn');
@@ -416,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 welcomeMessage.textContent = `Привет, ${user.username}!`;
                 welcomeMessage.style.display = 'block';
             }
+            if (logoutBtn) logoutBtn.style.display = 'block';
             fetchFavorites();
             fetchXrecomen();
 
@@ -429,10 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (user.role === 'admin') {
-                if (adminPanelBtn) adminPanelBtn.style.display = 'flex';
                 document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'flex');
             } else {
-                if (adminPanelBtn) adminPanelBtn.style.display = 'none';
                 document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'none');
             }
         } else {
@@ -442,10 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navFavorites) navFavorites.style.display = 'none';
             if (creatorStudioBtn) creatorStudioBtn.style.display = 'none';
             if (welcomeMessage) welcomeMessage.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
             userFavorites = [];
             if (myTracksBtn) myTracksBtn.style.display = 'none';
             if (analyticsBtn) analyticsBtn.style.display = 'none';
-            if (adminPanelBtn) adminPanelBtn.style.display = 'none';
             document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'none');
             if (document.querySelector('.view.active-view').id === 'favoritesView') {
                 switchView('homeView');
@@ -769,20 +759,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadOpacitySetting = () => {
-        const savedOpacity = localStorage.getItem('uiOpacity');
-        const savedOpacityEnabled = localStorage.getItem('opacityEnabled') === 'true';
-
-        if (opacityEnabledToggle) {
-            opacityEnabledToggle.checked = savedOpacityEnabled;
-        }
-
-        if (savedOpacityEnabled) {
-            applyOpacity(savedOpacity || 0.5);
-            if (opacitySliderContainer) opacitySliderContainer.style.display = 'block';
-        } else {
-            document.documentElement.style.setProperty('--ui-opacity', 0);
-            if (opacitySliderContainer) opacitySliderContainer.style.display = 'none';
-        }
+        const savedOpacity = localStorage.getItem('uiOpacity') || 0.5;
+        applyOpacity(savedOpacity);
     };
 
     const saveVolumeSetting = (value) => {
@@ -846,10 +824,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (searchBarWrapper) searchBarWrapper.style.display = 'none';
             if (player) player.style.display = 'none';
             if (currentUser && currentUser.role === 'admin') {
-                if (adminPanelBtn) adminPanelBtn.classList.add('active');
-                if (adminPanelSection) adminPanelSection.style.display = 'block';
+                if (adminApplicationsBtn) adminApplicationsBtn.classList.add('active');
+                if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
                 fetchAdminApplications();
-                checkRegistrationStatus();
             } else if (currentUser) {
                 if (analyticsBtn) analyticsBtn.classList.add('active');
                 if (analyticsSection) analyticsSection.style.display = 'block';
@@ -883,13 +860,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
             creatorNavButtons.forEach(btn => btn.classList.remove('active'));
 
-            if (currentUser && currentUser.role === 'admin') {
-                if (adminPanelSection) adminPanelSection.style.display = 'block';
-                if (adminPanelBtn) adminPanelBtn.classList.add('active');
-                checkRegistrationStatus();
-            } else if (currentUser && currentUser.role === 'creator') {
+            if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
                 if (analyticsSection) analyticsSection.style.display = 'block';
                 if (analyticsBtn) analyticsBtn.classList.add('active');
+                if (creatorHomeSection) creatorHomeSection.style.display = 'none';
                 fetchCreatorStats();
             } else {
                 if (creatorHomeSection) creatorHomeSection.style.display = 'block';
@@ -899,7 +873,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('creator-mode');
             if (xcreatorLogo) xcreatorLogo.style.display = 'none';
             if (xcreatorNav) xcreatorNav.style.display = 'none';
-            if (document.querySelector('.telegram-link')) document.querySelector('.telegram-link').style.display = 'flex';
             if (xmusicLogo) xmusicLogo.style.display = 'block';
             if (xmusicNav) xmusicNav.style.display = 'flex';
 
@@ -1040,18 +1013,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const checkRegistrationStatus = async () => {
-        try {
-            const res = await fetchWithAuth(`${api}/api/admin/registration/status`);
-            const status = await res.json();
-            if (registrationToggle) {
-                registrationToggle.checked = status.enabled;
-            }
-        } catch (err) {
-            console.error('Ошибка при получении статуса регистрации', err);
-        }
-    };
-
     const initEventListeners = () => {
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
             if (el) {
@@ -1122,12 +1083,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => {
                     if (sec) sec.style.display = 'none';
                 });
-                
-                if (btn.id === 'adminPanelBtn') {
-                    if (adminPanelSection) adminPanelSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Админ-панель';
-                    checkRegistrationStatus();
-                } else if (btn.id === 'myTracksBtn') {
+
+                if (btn.id === 'myTracksBtn') {
                     if (myTracksSection) myTracksSection.style.display = 'block';
                     if (viewTitle) viewTitle.textContent = 'Мои треки';
                     fetchMyTracks();
@@ -1222,20 +1179,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeRegisterBtn) closeRegisterBtn.addEventListener('click', () => {
             if (registerModal) registerModal.style.display = 'none';
         });
-        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', async () => {
-            try {
-                const res = await fetch(`${api}/api/admin/registration/status`);
-                const status = await res.json();
-                if (status.enabled) {
-                    if (loginModal) loginModal.style.display = 'none';
-                    if (registerModal) registerModal.style.display = 'flex';
-                } else {
-                    alert('Регистрация временно закрыта администратором.');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Не удалось проверить статус регистрации.');
-            }
+        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => {
+            if (loginModal) loginModal.style.display = 'none';
+            if (registerModal) registerModal.style.display = 'flex';
         });
         if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => {
             if (registerModal) registerModal.style.display = 'none';
@@ -1245,7 +1191,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('currentUser');
             updateUIForAuth(null);
             toggleCreatorMode(false);
-            if (settingsModal) settingsModal.style.display = 'none';
         });
 
         if (closeVideoBtn) closeVideoBtn.addEventListener('click', () => {
@@ -1569,19 +1514,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (opacityEnabledToggle) opacityEnabledToggle.addEventListener('change', () => {
-            const isEnabled = opacityEnabledToggle.checked;
-            localStorage.setItem('opacityEnabled', isEnabled);
-            if (isEnabled) {
-                if (opacitySliderContainer) opacitySliderContainer.style.display = 'block';
-                const savedOpacity = localStorage.getItem('uiOpacity') || 0.5;
-                applyOpacity(savedOpacity);
-            } else {
-                if (opacitySliderContainer) opacitySliderContainer.style.display = 'none';
-                document.documentElement.style.setProperty('--ui-opacity', 0);
-            }
-        });
-
         if (opacitySlider) opacitySlider.addEventListener('input', () => {
             applyOpacity(opacitySlider.value);
             saveOpacitySetting(opacitySlider.value);
@@ -1635,35 +1567,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteCategoryBtn = e.target.closest('.delete-category-btn');
             const categoryCard = e.target.closest('.category-card');
             const collectionCard = e.target.closest('.collection-card');
-            const clearModerationBtn = e.target.closest('#clearModerationBtn');
-            const registrationToggle = e.target.closest('#registrationToggle');
 
-            if (clearModerationBtn) {
-                e.preventDefault();
-                if (confirm('Вы уверены, что хотите удалить все треки на модерации? Это действие необратимо.')) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/admin/moderation/clear-all`, { method: 'DELETE' });
-                        const result = await res.json();
-                        alert(result.message);
-                        if (res.ok) fetchModerationTracks();
-                    } catch (err) {
-                        alert('Ошибка при удалении треков на модерации.');
-                    }
-                }
-            } else if (registrationToggle) {
-                const isChecked = registrationToggle.checked;
-                try {
-                    const res = await fetchWithAuth(`${api}/api/admin/registration/toggle`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ enabled: isChecked })
-                    });
-                    const result = await res.json();
-                    alert(result.message);
-                } catch (err) {
-                    alert('Ошибка при изменении статуса регистрации.');
-                }
-            } else if (renameBtn) {
+            if (renameBtn) {
                 e.stopPropagation();
                 const {
                     trackId,
