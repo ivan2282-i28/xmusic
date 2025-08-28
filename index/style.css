@@ -114,10 +114,10 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 16px;
     left: auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 15px;
     padding: 20px;
     z-index: 3;
@@ -505,22 +505,29 @@ body {
     color: var(--text-secondary);
 }
 
-.player-controls {
+.player-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.control-buttons-and-progress {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 15px;
+    width: 100%;
 }
 
 .control-buttons {
     display: flex;
     align-items: center;
-    width: 100%;
-    margin-top: -15px;
-    /* Обновлено для центрирования кнопок */
     justify-content: center;
     gap: 20px;
+    width: 100%;
+    margin-top: -15px;
 }
 
 .control-btn, .play-button {
@@ -1039,7 +1046,7 @@ body.creator-mode {
 }
 
 .creator-mode .upload-type-selector {
-    background-color: var(--creator-bg);
+    background-color: var(--dark-bg);
 }
 
 .creator-mode .upload-type-selector input:checked + span {
@@ -1213,18 +1220,6 @@ body.creator-mode {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.control-buttons-and-progress {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-}
-
-.player .progress-bar {
-    width: 100%;
-}
-
 .player .volume-controls {
     display: flex;
     align-items: center;
@@ -1250,14 +1245,6 @@ body.creator-mode {
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
-}
-
-.player-header {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
