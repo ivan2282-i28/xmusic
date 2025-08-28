@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeMediaElement = audioPlayer;
     let currentPage = 1;
     const tracksPerPage = 20;
+    const BLUR_KEY = "blur_enabled";
 
     // Новые элементы для жанров
     const determineGenreBtn = document.getElementById('determineGenreBtn');
@@ -85,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettingsBtn = settingsModal.querySelector('.close-btn');
     const opacitySlider = document.getElementById('opacitySlider');
     const opacityValue = document.getElementById('opacityValue');
+    const blurToggle = document.getElementById('blurToggle');
 
     const loginModal = document.getElementById('loginModal');
     const loginBtn = document.getElementById('loginBtn');
@@ -762,6 +764,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedOpacity = localStorage.getItem('uiOpacity') || 0.5;
         applyOpacity(savedOpacity);
     };
+    
+    const applyBlur = (enabled) => {
+        const blurValue = enabled ? '8px' : '0px';
+        document.documentElement.style.setProperty('--blur-value', blurValue);
+        if (blurToggle) {
+            blurToggle.checked = enabled;
+        }
+    };
+
+    const saveBlurSetting = (enabled) => {
+        localStorage.setItem(BLUR_KEY, enabled);
+    };
+
+    const loadBlurSetting = () => {
+        const savedBlur = localStorage.getItem(BLUR_KEY) === 'true';
+        applyBlur(savedBlur);
+    };
+
 
     const saveVolumeSetting = (value) => {
         localStorage.setItem(VOLUME_KEY, value);
@@ -1187,11 +1207,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (registerModal) registerModal.style.display = 'none';
             if (loginModal) loginModal.style.display = 'flex';
         });
+        
         if (logoutBtn) logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('currentUser');
             updateUIForAuth(null);
             toggleCreatorMode(false);
+            if (settingsModal) settingsModal.style.display = 'none';
         });
+
 
         if (closeVideoBtn) closeVideoBtn.addEventListener('click', () => {
             videoPlayerModal.pause();
@@ -1518,6 +1541,14 @@ document.addEventListener('DOMContentLoaded', () => {
             applyOpacity(opacitySlider.value);
             saveOpacitySetting(opacitySlider.value);
         });
+        
+        if (blurToggle) {
+            blurToggle.addEventListener('change', () => {
+                const enabled = blurToggle.checked;
+                applyBlur(enabled);
+                saveBlurSetting(enabled);
+            });
+        }
 
         if (searchInput) searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -2071,6 +2102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     loadOpacitySetting();
+    loadBlurSetting();
     loadVolumeSetting();
     initEventListeners();
     fetchAndRenderAll();
