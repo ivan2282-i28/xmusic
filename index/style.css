@@ -36,8 +36,8 @@
     --player-copy-border: #333;
     --player-copy-text: #fff;
     --player-copy-secondary-text: #aaa;
-    --player-copy-progress: #FF5A5F;
-    --player-copy-thumb: #FF5A5F;
+    --player-copy-progress: #FFC107;
+    --player-copy-thumb: #FFC107;
 }
 
 * {
