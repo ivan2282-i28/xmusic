@@ -326,9 +326,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderBestTracks(bestTracks);
             }
 
-            // Рендерим первые 5 категорий в "Ваши любимые подборки"
+            // Рендерим все категории (до 5 штук) на главной странице
             if (favoriteCollectionsGrid) {
-                renderAllUserCollections(favoriteCollectionsGrid, 5);
+                renderAllCategoriesOnMain(favoriteCollectionsGrid, 5);
             }
         } catch (error) {
             console.error('Ошибка при получении рекомендаций:', error);
@@ -347,87 +347,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const renderAllUserCollections = async (container, limit = -1) => {
+    const renderAllCategoriesOnMain = async (container, limit) => {
         if (!currentUser) {
             container.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
             return;
         }
         try {
-            const res = await fetchWithAuth(`${api}/api/creator/my-categories/${currentUser.id}`);
-            if (!res.ok) throw new Error('Ошибка при получении категорий.');
-            const categories = await res.json();
+            const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
+            if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий.');
+            const categories = await categoriesRes.json();
             
             container.innerHTML = '';
             
-            let categoriesToRender = limit > 0 ? categories.slice(0, limit) : categories;
+            // Добавляем категорию "Все треки" в начало списка
+            const allTracksCategory = { id: 'all', name: 'Все треки' };
+            const allCategories = [allTracksCategory, ...categories];
+            
+            const categoriesToRender = allCategories.slice(0, limit);
             
             if (categoriesToRender.length === 0) {
-                container.innerHTML = '<p>У вас еще нет подборок. Добавьте свои треки в категории в Creator Studio.</p>';
+                container.innerHTML = '<p>Категорий пока нет.</p>';
                 return;
             }
 
-            categoriesToRender.forEach(col => {
+            categoriesToRender.forEach(cat => {
                 const card = document.createElement('div');
                 card.className = 'collection-card';
-                card.dataset.categoryId = col.id;
-                card.innerHTML = `<h3>${col.name}</h3>`;
+                card.dataset.categoryId = cat.id;
+                card.innerHTML = `<h3>${cat.name}</h3>`;
                 container.appendChild(card);
             });
         } catch (error) {
             console.error(error);
-            container.innerHTML = '<p>Не удалось загрузить подборки.</p>';
+            container.innerHTML = '<p>Не удалось загрузить категории.</p>';
         }
     };
 
     const fetchCategories = async () => {
-        if (!currentUser) {
-            try {
-                const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
-                if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
-                const categoriesData = await categoriesRes.json();
-                if (allCategoriesGrid) {
-                    allCategoriesGrid.innerHTML = '';
-                    const allTracksCard = document.createElement('div');
-                    allTracksCard.className = 'category-card';
-                    allTracksCard.dataset.categoryId = 'all';
-                    allTracksCard.innerHTML = `<h3>Все треки</h3>`;
-                    allCategoriesGrid.appendChild(allTracksCard);
-
-                    categoriesData.forEach(cat => {
-                        const catCard = document.createElement('div');
-                        catCard.className = 'category-card';
-                        catCard.dataset.categoryId = cat.id;
-                        catCard.innerHTML = `<h3>${cat.name}</h3>`;
-                        allCategoriesGrid.appendChild(catCard);
-                    });
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-            }
-            return;
-        }
-
         try {
             const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
             if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
             const categoriesData = await categoriesRes.json();
-
-            const myCategoriesRes = await fetchWithAuth(`${api}/api/creator/my-categories/${currentUser.id}`);
-            const myCategories = await myCategoriesRes.json();
-            const myCategoryIds = myCategories.map(cat => cat.id);
-
-            const categoriesOnMain = myCategories.slice(0, 5).map(cat => cat.id);
-            const otherCategories = categoriesData.filter(cat => !categoriesOnMain.includes(cat.id));
+            
+            const allTracksCategory = { id: 'all', name: 'Все треки' };
+            const allCategories = [allTracksCategory, ...categoriesData];
+            
+            const categoriesToDisplay = allCategories.slice(5);
 
             if (allCategoriesGrid) {
                 allCategoriesGrid.innerHTML = '';
-                const allTracksCard = document.createElement('div');
-                allTracksCard.className = 'category-card';
-                allTracksCard.dataset.categoryId = 'all';
-                allTracksCard.innerHTML = `<h3>Все треки</h3>`;
-                allCategoriesGrid.appendChild(allTracksCard);
+                
+                if (categoriesToDisplay.length === 0) {
+                    allCategoriesGrid.innerHTML = '<p>Нет дополнительных категорий.</p>';
+                    return;
+                }
 
-                otherCategories.forEach(cat => {
+                categoriesToDisplay.forEach(cat => {
                     const card = document.createElement('div');
                     card.className = 'category-card';
                     card.dataset.categoryId = cat.id;
