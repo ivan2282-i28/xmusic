@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
     let currentPage = 1;
-    const tracksPerPage = 20;
+    const tracksPerPage = 50;
+    let isLoading = false;
     const BLUR_KEY = "blur_enabled";
 
     // Новые элементы для жанров
@@ -186,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let playTimer;
     let userSearchTimeout;
     let currentTrack = null;
+    let currentCategoryId = null;
 
     async function fetchWithAuth(url, options = {}) {
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -274,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
             if (bestTracksResponse.ok) {
                 const bestTracks = await bestTracksResponse.json();
-                renderAllTracks(bestTracks);
+                renderBestTracks(bestTracks);
             }
             return;
         }
@@ -323,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
             if (bestTracksResponse.ok) {
                 const bestTracks = await bestTracksResponse.json();
-                renderAllTracks(bestTracks);
+                renderBestTracks(bestTracks);
             }
 
             if (favoriteCollectionsGrid) {
@@ -386,15 +388,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchAndRenderCategoryTracks = async (categoryId) => {
+        if (isLoading) return;
+        isLoading = true;
+        currentCategoryId = categoryId;
+        currentPage = 1;
+        specificCategoryGrid.innerHTML = ''; // Очищаем старые треки при смене категории
+        await loadMoreTracks();
+        isLoading = false;
+    };
+
+    const loadMoreTracks = async () => {
+        if (isLoading) return;
+        isLoading = true;
+
         try {
-            const response = await fetchWithAuth(`${api}/api/tracks?categoryId=${categoryId}`);
+            const response = await fetchWithAuth(`${api}/api/tracks?categoryId=${currentCategoryId}&page=${currentPage}&per_page=${tracksPerPage}`);
             if (!response.ok) throw new Error('Network response was not ok');
-            const categoryTracks = await response.json();
+            const newTracks = await response.json();
             if (specificCategoryGrid) {
-                renderMediaInContainer(specificCategoryGrid, categoryTracks, true);
+                renderMediaInContainer(specificCategoryGrid, newTracks, true);
+            }
+            if (newTracks.length > 0) {
+                currentPage++;
             }
         } catch (error) {
             console.error('Ошибка:', error);
+        } finally {
+            isLoading = false;
+        }
+    };
+
+    const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = mainContent;
+        if (scrollTop + clientHeight >= scrollHeight - 500 && !isLoading && document.querySelector('.view.active-view').id === 'specificCategoryView' && currentCategoryId !== 'all') {
+            loadMoreTracks();
         }
     };
 
@@ -497,22 +524,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const renderMediaInContainer = (container, media, isAllTracksView, isFavoritesView = false) => {
-        container.innerHTML = '';
-        if (media.length === 0) {
-            container.innerHTML = `<p>${isFavoritesView ? 'Здесь пока ничего нет. Добавьте медиа в избранное!' : 'Ничего не найдено'}.</p>`;
-            return;
+    const renderBestTracks = (mediaToRender) => {
+        if (allGridContainer) {
+            allGridContainer.innerHTML = '';
+            if (mediaToRender.length === 0) {
+                allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
+                return;
+            }
+            renderMediaInContainer(allGridContainer, mediaToRender, true);
         }
+    };
+
+    const renderMediaInContainer = (container, media, isAllTracksView, isFavoritesView = false) => {
+        if (!container) return; // Проверка на существование контейнера
+        const existingMediaIds = Array.from(container.children).map(card => parseInt(card.dataset.id));
+
         media.forEach((item) => {
             if (!item || !item.title || !item.file) {
                 console.warn("Пропущен трек из-за неполных данных:", item);
                 return;
             }
+            if (existingMediaIds.includes(item.id)) {
+                return; // Пропускаем уже отрисованные треки
+            }
+
             const globalIndex = allMedia.findIndex(t => t.id === item.id);
             const isFavorite = currentUser ? userFavorites.includes(item.file) : false;
             const card = document.createElement('div');
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
             card.dataset.index = globalIndex;
+            card.dataset.id = item.id;
 
             if (globalIndex === -1) {
                 allMedia.push(item);
@@ -2146,6 +2187,8 @@ document.addEventListener('DOMContentLoaded', () => {
             audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
             saveVolumeSetting(volumeBar.value);
         });
+
+        mainContent.addEventListener('scroll', handleScroll);
     };
 
     loadOpacitySetting();
