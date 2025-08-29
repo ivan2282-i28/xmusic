@@ -1,1968 +1,1373 @@
-:root {
-    --primary-color: #9147FF;
-    --primary-hover-color: #7a3ee0;
-    --accent-color: #00BFFF;
-    --accent-glow: rgba(0, 191, 255, 0.3);
-    --dark-bg: #0E0E10;
-    --sidebar-bg-rgb: 24, 24, 27;
-    --main-bg-rgb: 14, 14, 16;
-    --player-bg-rgb: 24, 24, 27;
-    --ui-opacity: 0.5;
-    --card-bg: #1F1F23;
-    --card-hover-bg: #26262A;
-    --text-primary: #EFEFF1;
-    --text-secondary: #A0A0A0;
-    --border-color: #404040;
-    --font-family: 'Inter', sans-serif;
-    --blur-value: 8px;
-
-    /* Новые цвета для Creator Studio */
-    --creator-primary-color: #4A90E2;
-    --creator-primary-hover: #357ABD;
-    --creator-bg: #F4F6F9;
-    --creator-card-bg: #FFFFFF;
-    --creator-text-primary: #333333;
-    --creator-text-secondary: #666666;
-    --creator-border-color: #DDDDDD;
-
-    /* Новые переменные для плеера */
-    --player-button-size: 40px;
-    --player-icon-color: var(--text-primary);
-    --player-icon-hover-color: var(--primary-color);
-    --player-icon-fill-color: var(--text-secondary);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background-color: var(--dark-bg);
-    color: var(--text-primary);
-    font-family: var(--font-family);
-    overflow: hidden;
-    transition: background-color 1.5s ease-in-out, color 1.5s ease-in-out;
-}
-
-.app-container, .player, .logo, .modal-content {
-    position: relative;
-    z-index: 2;
-    transition: opacity 0.5s ease-in-out, background-color 0.5s, backdrop-filter 0.5s;
-}
-
-.video-background-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.5s;
-    background-color: #000;
-    pointer-events: none;
-}
-
-.video-background-container.visible {
-    opacity: 1;
-}
-
-#backgroundVideo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.35;
-}
-
-.app-container {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    height: 100vh;
-}
-
-.sidebar {
-    background-color: rgba(var(--sidebar-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border-color);
-    transition: all 1.5s ease-in-out;
-}
-
-.main-content {
-    background-color: rgba(var(--main-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
-    padding: 24px 40px;
-    overflow-y: auto;
-    height: 100vh;
-    transition: all 1.5s ease-in-out;
-}
-
-/* Стили для плеера - ОБЩИЕ */
-.player {
-    position: fixed;
-    bottom: 24px;
-    background: rgba(var(--player-bg-rgb), 0.85);
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
-    border: 1px solid var(--border-color);
-    z-index: 3;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-}
-
-/* Стили для плеера Default */
-.player.player--default {
-    right: 24px; /* Позиция в углу */
-    width: 380px;
-    height: 220px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    padding: 20px;
-    border-radius: 16px;
-}
-
-.player.player--default .player-style-copy {
-    display: none;
-}
-.player.player--default .player-style-default {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-}
-
-.logo {
-    font-size: 1.8em;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 40px;
-    transition: color 1.5s ease-in-out;
-}
-
-.main-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.main-nav a, .creator-nav-btn, .creator-btn, .go-back-btn, .back-to-categories-btn {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-weight: 600;
-    padding: 12px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: all 1.5s ease-in-out, background-color 0.2s, color 0.2s;
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-}
-
-.main-nav a:hover, .main-nav a.active, .creator-nav-btn:hover, .creator-nav-btn.active, .creator-btn:hover, .go-back-btn:hover, .back-to-categories-btn:hover {
-    background-color: var(--card-bg);
-    color: var(--text-primary);
-}
-
-.sidebar-footer {
-    margin-top: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-start;
-}
-
-.user-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    background-color: rgba(var(--sidebar-bg-rgb), 0.7);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    width: 100%;
-    margin-top: auto;
-}
-
-.user-info-container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-}
-
-.user-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: #4CAF50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    color: white;
-    flex-shrink: 0;
-}
-
-.user-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.welcome-message {
-    font-size: 1em;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.user-role {
-    font-size: 0.8em;
-    color: var(--text-secondary);
-    text-transform: capitalize;
-}
-
-.login-btn, .logout-btn {
-    width: 100%;
-    background-color: transparent;
-    color: var(--text-secondary);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 1em;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: border-color 0.3s ease, color 0.3s ease;
-}
-
-.login-btn:hover, .logout-btn:hover {
-    color: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-.settings-btn {
-    width: 100%;
-    background-color: transparent;
-    color: var(--text-secondary);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 1em;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    margin-top: -10px;
-    transition: border-color 0.3s ease, color 0.3s ease;
-}
-
-.settings-btn:hover {
-    color: var(--text-primary);
-    border-color: var(--text-secondary);
-}
-
-.slider-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.slider-wrapper input[type="range"] {
-    flex-grow: 1;
-}
-
-.slider-wrapper span {
-    font-weight: 600;
-    min-width: 45px;
-    text-align: right;
-    color: var(--text-primary);
-}
-
-.view {
-    display: none;
-}
-
-.view.active-view {
-    display: block;
-    animation: view-fade-in 0.5s;
-}
-
-@keyframes view-fade-in {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.main-header h1 {
-    font-size: 2.5em;
-    font-weight: 700;
-    transition: color 1.5s ease-in-out;
-}
-
-.search-bar-wrapper {
-    width: 100%;
-    max-width: 350px;
-}
-
-#searchInput {
-    width: 100%;
-    height: 40px;
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
-    background-color: var(--card-bg);
-    color: var(--text-primary);
-    font-size: 1em;
-    transition: all 0.2s ease;
-}
-
-#searchInput:hover {
-    border-color: var(--accent-color);
-}
-
-#searchInput:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    animation: pulse-glow 2s infinite alternate;
-}
-
-@keyframes pulse-glow {
-    50% {
-        box-shadow: 0 0 15px var(--accent-glow);
-    }
-}
-
-.section {
-    margin-bottom: 40px;
-    width: 100%;
-}
-
-.section-title {
-    font-size: 1.5em;
-    font-weight: 600;
-    margin-bottom: 20px;
-    transition: color 1.5s ease-in-out;
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
-}
-
-#allGridContainer {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 20px;
-    padding-bottom: 20px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-#allGridContainer::-webkit-scrollbar {
-    display: none;
-}
-
-#allGridContainer .card {
-    flex: 0 0 auto;
-    width: 180px;
-}
-
-.search-results-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 20px;
-    padding-bottom: 20px;
-}
-
-.card {
-    background: var(--card-bg);
-    padding: 16px;
-    border-radius: 12px;
-    position: relative;
-    transition: all 0.2s;
-    cursor: pointer;
-    border: 1px solid transparent;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    background-color: var(--card-hover-bg);
-    border-color: var(--accent-color);
-}
-
-.card-image-wrapper {
-    position: relative;
-}
-
-.card-image {
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-}
-
-.card-title {
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.card-artist {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 5px;
-}
-
-.card--video .card-title {
-    color: var(--accent-color);
-}
-
-.card--video .card-image-wrapper::after {
-    content: '🎥';
-    font-family: sans-serif;
-    position: absolute;
-    bottom: 18px;
-    right: 12px;
-    color: white;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    padding-left: 2px;
-}
-
-.card-actions {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-    z-index: 5;
-}
-
-.card:hover .card-actions {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.card-actions button {
-    background-color: rgba(10, 10, 10, 0.7);
-    backdrop-filter: blur(4px);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: all 0.2s;
-}
-
-.card-actions button:hover {
-    color: var(--text-primary);
-    border-color: var(--primary-color);
-    transform: scale(1.1);
-}
-
-.card-actions button svg {
-    width: 16px;
-    height: 16px;
-}
-
-.featured-card {
-    display: flex;
-    gap: 30px;
-    background: var(--card-bg);
-    padding: 24px;
-    border-radius: 16px;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-    position: relative;
-}
-
-.featured-card:hover {
-    transform: translateY(-5px);
-    background-color: var(--card-hover-bg);
-    border-color: var(--accent-color);
-}
-
-.featured-card .card-image-wrapper {
-    width: 180px;
-    height: 180px;
-    flex-shrink: 0;
-}
-
-.featured-card .card-image {
-    margin-bottom: 0;
-}
-
-.featured-card-info {
-    min-width: 0;
-}
-
-.featured-card-info h3 {
-    font-size: 1em;
-    color: var(--text-secondary);
-    margin-bottom: 10px;
-}
-
-.featured-card-info .card-title {
-    font-size: 2.8em;
-    font-weight: 800;
-    white-space: normal;
-    line-height: 1.2;
-}
-
-
-.player .player-header {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 15px;
-}
-
-.player .track-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-grow: 1;
-    min-width: 0;
-}
-
-.player .track-info div {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    min-width: 0;
-}
-
-.player .track-info img {
-    width: 60px;
-    height: 60px;
-    border-radius: 6px;
-    flex-shrink: 0;
-}
-
-.player .track-info .title {
-    font-weight: 600;
-    font-size: 1.1em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.player .track-info .artist {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.player .control-buttons-and-progress {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-}
-
-.player .control-buttons {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    width: 100%;
-}
-
-.player .control-btn, .player .play-button {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease-in-out;
-}
-
-.player .control-buttons svg {
-    width: 24px;
-    height: 24px;
-    fill: var(--text-secondary);
-    transition: fill 0.2s, transform 0.2s;
-}
-
-.player .control-buttons .control-btn:hover svg {
-    fill: var(--text-primary);
-    transform: scale(1.1);
-}
-
-.player .play-button {
-    background-color: var(--card-bg);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    border: 1px solid var(--border-color);
-}
-
-.player .play-button svg {
-    fill: var(--text-primary);
-    width: 30px;
-    height: 30px;
-}
-
-.player .play-button:hover {
-    transform: scale(1.1);
-    background-color: var(--card-hover-bg);
-    border-color: var(--primary-color);
-}
-
-.player .progress-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-}
-
-.player .progress-bar span {
-    font-size: 0.8em;
-    color: var(--text-secondary);
-    width: 40px;
-    text-align: center;
-}
-
-.player .progress-bar-container {
-    flex-grow: 1;
-    height: 12px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    position: relative;
-}
-
-.player .progress-track, .player .progress-filled {
-    position: absolute;
-    height: 6px;
-    width: 100%;
-    border-radius: 3px;
-}
-
-.player .progress-track {
-    background-color: #4d4d4d;
-}
-
-.player .progress-filled {
-    background-color: var(--primary-color);
-    width: 0;
-}
-
-.player .progress-thumb {
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    background-color: var(--text-primary);
-    border-radius: 50%;
-    left: 0;
-    transform: translateX(-50%) scale(0);
-    pointer-events: none;
-    transition: transform 0.2s;
-}
-
-.player .progress-bar-container:hover .progress-thumb {
-    transform: translateX(-50%) scale(1);
-}
-
-.player .volume-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.player .volume-controls svg {
-    fill: var(--text-secondary);
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.player .volume-controls input[type=range] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background: transparent;
-    width: 150px;
-    height: 6px;
-    cursor: pointer;
-}
-
-.player .volume-controls input[type=range]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    background: #4d4d4d;
-    border-radius: 3px;
-}
-
-.player .volume-controls input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--text-primary);
-    border-radius: 50%;
-    margin-top: -5px;
-}
-
-.player .volume-controls input[type=range]::-moz-range-track {
-    width: 100%;
-    height: 6px;
-    background: #4d4d4d;
-    border-radius: 3px;
-}
-
-.player .volume-controls input[type=range]::-moz-range-thumb {
-    -moz-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--text-primary);
-    border-radius: 50%;
-}
-
-
-.player #favoritePlayerBtn {
-    background-color: transparent;
-    border: none;
-    font-size: 1.2em;
-    padding: 0;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: color 0.2s, transform 0.2s;
-}
-
-.player #favoritePlayerBtn:hover {
-    color: var(--primary-color);
-    transform: scale(1.2);
-}
-
-.player #favoritePlayerBtn.favorited {
-    color: red;
-    animation: heart-beat 0.5s ease-in-out;
-}
-
-.player .repeat-btn svg {
-    fill: var(--text-secondary);
-}
-
-.player .repeat-btn.active svg {
-    fill: var(--primary-color);
-}
-
-.track-info.fading {
-    opacity: 0;
-}
-
-.logout-btn {
-    width: 100%;
-    background-color: transparent;
-    color: var(--text-secondary);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 1em;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: border-color 0.3s ease, color 0.3s ease;
-    margin-top: auto;
-}
-
-.logout-btn:hover {
-    color: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-body.creator-mode {
-    background-color: var(--creator-bg);
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .sidebar {
-    background-color: var(--creator-card-bg);
-    border-right: 1px solid var(--creator-border-color);
-}
-
-.creator-mode .main-content {
-    background-color: transparent;
-}
-
-.creator-mode .player {
-    background-color: var(--creator-card-bg);
-    border: 1px solid var(--creator-border-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-.creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .main-nav a span, .creator-mode .creator-nav-btn span, .creator-mode .creator-btn span, .creator-mode .go-back-btn span, .creator-mode .settings-btn span, .creator-mode .logout-btn span {
-    color: var(--creator-text-secondary);
-}
-
-.creator-mode .main-nav a:hover, .creator-mode .main-nav a.active, .creator-mode .creator-nav-btn:hover, .creator-mode .creator-nav-btn.active, .creator-mode .creator-btn:hover, .creator-mode .go-back-btn:hover {
-    background-color: var(--creator-border-color);
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .player-controls .control-btn svg, .creator-mode .volume-controls svg {
-    fill: var(--creator-text-secondary);
-}
-
-.creator-mode .player-controls .control-btn:hover svg {
-    fill: var(--creator-primary-color);
-}
-
-.creator-mode .player-controls .play-button {
-    background-color: var(--creator-primary-color);
-}
-
-.creator-mode .player-controls .play-button:hover {
-    background-color: var(--creator-primary-hover);
-}
-
-.creator-mode .progress-filled {
-    background-color: var(--creator-primary-color);
-}
-
-.creator-mode .progress-thumb {
-    background-color: var(--creator-primary-color);
-}
-
-.creator-mode .volume-controls .slider::-webkit-slider-thumb {
-    background-color: var(--creator-primary-color);
-}
-
-.creator-mode .main-header h1 {
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .search-bar-wrapper {
-    display: none;
-}
-
-.creator-mode .section-title {
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .card, .creator-mode .featured-card {
-    background-color: var(--creator-card-bg);
-    border: 1px solid var(--creator-border-color);
-}
-
-.creator-mode .card:hover, .creator-mode .featured-card:hover {
-    background-color: #f0f2f5;
-    border-color: var(--creator-primary-color);
-}
-
-.creator-mode .card-title, .creator-mode .card-artist {
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .card--video .card-title {
-    color: var(--creator-primary-color);
-}
-
-.creator-mode .card-actions button {
-    background-color: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(4px);
-    border: 1px solid var(--creator-border-color);
-    color: var(--creator-text-secondary);
-}
-
-.creator-mode .card-actions button:hover {
-    color: var(--creator-primary-color);
-    border-color: var(--creator-primary-color);
-}
-
-.creator-mode .favorite-btn {
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--creator-text-secondary);
-    border-color: var(--creator-border-color);
-}
-
-.creator-mode .favorite-btn.favorited {
-    color: var(--creator-primary-color);
-    border-color: var(--creator-primary-color);
-}
-
-.creator-mode .modal-content {
-    background-color: var(--creator-card-bg);
-    border: 1px solid var(--creator-border-color);
-}
-
-.creator-mode .modal-content h2, .creator-mode .modal-content label, .creator-mode .modal-content .link-btn {
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .upload-type-selector {
-    background-color: var(--creator-bg);
-}
-
-.creator-mode .upload-type-selector input:checked + span {
-    background-color: var(--creator-primary-color);
-    color: var(--creator-card-bg);
-}
-
-.creator-mode .submit-btn {
-    background-color: var(--creator-primary-color);
-    color: var(--creator-card-bg);
-}
-
-.creator-mode .submit-btn:hover {
-    background-color: var(--creator-primary-hover);
-}
-
-.creator-mode .creator-main-screen {
-    text-align: center;
-    padding: 50px;
-    font-size: 1.2em;
-    color: var(--creator-text-secondary);
-}
-
-.creator-mode .creator-main-screen h2 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    color: var(--creator-text-primary);
-}
-
-.creator-mode .apply-btn {
-    margin-top: 30px;
-    padding: 15px 30px;
-    font-size: 1em;
-    font-weight: 600;
-    color: var(--creator-card-bg);
-    background-color: var(--creator-primary-color);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.creator-mode .apply-btn:hover {
-    background-color: var(--creator-primary-hover);
-}
-
-.admin-card {
-    background-color: var(--creator-card-bg);
-    border: 1px solid var(--creator-border-color);
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.admin-card h3 {
-    margin-top: 0;
-    color: var(--creator-text-primary);
-}
-
-.admin-card p {
-    margin: 5px 0;
-    color: var(--creator-text-secondary);
-}
-
-.admin-card button {
-    margin-top: 10px;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.approve-app-btn, .approve-track-btn {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.reject-app-btn, .reject-track-btn {
-    background-color: #f44336;
-    color: white;
-}
-
-.change-role-btn, .change-password-btn, .delete-user-btn {
-    background-color: #2196F3;
-    color: white;
-}
-
-.admin-card button:hover {
-    opacity: 0.8;
-}
-
-.creator-moderation-card {
-    background-color: var(--creator-card-bg);
-}
-
-.video-icon {
-    margin-left: 5px;
-    font-size: 0.8em;
-}
-
-.video-modal {
-    display: none;
-    position: fixed;
-    z-index: 1001;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(5px);
-    align-items: center;
-    justify-content: center;
-}
-
-.video-modal-content {
-    position: relative;
-    width: 80%;
-    max-width: 1000px;
-    background-color: black;
-}
-
-#videoPlayerModal {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-#closeVideoBtn {
-    position: absolute;
-    top: -40px;
-    right: 0;
-    background: none;
-    border: none;
-    font-size: 2.5em;
-    color: white;
-    cursor: pointer;
-}
-
-.upload-status-bar {
-    width: 100%;
-    height: 10px;
-    background-color: var(--card-bg);
-    border-radius: 5px;
-    overflow: hidden;
-    margin-bottom: 10px;
-}
-
-.upload-progress-fill {
-    height: 100%;
-    background-color: var(--primary-color);
-    transition: width 0.3s ease;
-}
-
-.player .track-info img {
-    width: 50px;
-    height: 50px;
-    border-radius: 6px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.favorite-btn {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background-color: rgba(10, 10, 10, 0.7);
-    backdrop-filter: blur(4px);
-    border: none;
-    color: white;
-    cursor: pointer;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    padding-bottom: 2px;
-    transition: all 0.2s;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 5;
-}
-
-.card:hover .favorite-btn {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.favorite-btn.favorited {
-    color: red;
-}
-
-.favorite-btn:hover {
-    color: red;
-    transform: scale(1.1);
-}
-
-@keyframes heart-beat {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-.now-playing-section {
-    position: fixed;
-    top: 15px;
-    left: 265px;
-    width: auto;
-    z-index: 5;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    border-radius: 8px;
-    padding: 8px 15px;
-    transform: translateX(-150%);
-    transition: transform 0.5s ease-out;
-}
-
-.now-playing-section.visible {
-    transform: translateX(0);
-}
-
-.now-playing-text {
-    font-size: 1em;
-    font-weight: 500;
-    white-space: nowrap;
-    color: var(--text-primary);
-}
-
-.xrecomen-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 400px;
-    width: 100%;
-    margin-bottom: 50px;
-    margin-top: 50px;
-}
-
-#xrecomenBtn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    padding: 20px;
-    position: relative;
-    color: white;
-    text-shadow: none;
-    transition: color 0.3s ease-out;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-#xrecomenBtn:hover {
-    color: var(--text-primary);
-}
-
-.xrecomen-title {
-    font-size: 4em;
-    font-weight: 800;
-    color: var(--text-primary);
-}
-
-.xrecomen-subtitle {
-    font-size: 0.8em;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-top: 10px;
-}
-
-.equalizer {
-    display: none;
-}
-
-.scroll-container {
-    width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    display: flex;
-    gap: 20px;
-    padding-bottom: 20px;
-    margin-bottom: 40px;
-}
-
-.scroll-container .card {
-    min-width: 140px;
-    max-width: 140px;
-    display: inline-block;
-}
-
-.collection-card {
-    min-width: 180px;
-    height: 180px;
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.collection-card:hover {
-    transform: translateY(-5px);
-    background-color: var(--card-hover-bg);
-}
-
-.category-card, .genre-card {
-    min-width: 180px;
-    height: 180px;
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-    position: relative;
-}
-
-.category-card:hover, .genre-card:hover {
-    transform: translateY(-5px);
-    background-color: var(--card-hover-bg);
-    border-color: var(--accent-color);
-    box-shadow: 0 0 15px var(--accent-glow);
-}
-
-.category-card h3, .genre-card h3 {
-    font-size: 1.2em;
-    font-weight: 700;
-    color: var(--text-primary);
-    transition: color 0.2s;
-}
-
-.category-card p, .genre-card p {
-    margin-top: 5px;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-}
-
-.categories-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.moderation-modal {
-    display: none;
-    position: fixed;
-    z-index: 1002;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    align-items: center;
-    justify-content: center;
-}
-
-.moderation-content {
-    background-color: var(--card-bg);
-    padding: 30px;
-    border: 1px solid var(--border-color);
-    width: 90%;
-    max-width: 700px;
-    border-radius: 12px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    text-align: center;
-}
-
-.moderation-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.moderation-player-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-}
-
-.moderation-player-controls button {
-    padding: 10px 20px;
-}
-
-.analytics-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.analytics-block {
-    background-color: var(--card-bg);
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-}
-
-.analytics-block.full-width {
-    grid-column: 1 / -1;
-}
-
-.analytics-block h3 {
-    margin-top: 0;
-    margin-bottom: 5px;
-    color: var(--text-primary);
-}
-
-.stat-value {
-    color: var(--text-primary);
-}
-
-.analytics-block canvas {
-    background-color: var(--dark-bg);
-    padding: 10px;
-    border-radius: 8px;
-    width: 100% !important;
-    height: 300px !important;
-}
-
-.analytics-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    max-height: 250px;
-    overflow-y: auto;
-}
-
-.analytics-table th, .analytics-table td {
-    text-align: left;
-    padding: 10px;
-    border-bottom: 1px solid var(--border-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--text-primary);
-}
-
-.analytics-table th {
-    color: var(--text-secondary);
-}
-
-.analytics-table tr:last-child td {
-    border-bottom: none;
-}
-
-.analytics-table tr:hover {
-    background-color: var(--card-hover-bg);
-}
-
-.card--video .card-title {
-    color: var(--accent-color);
-}
-
-.video-icon {
-    margin-left: 5px;
-    font-size: 0.8em;
-}
-
-.chart-container {
-    position: relative;
-    width: 100%;
-    height: 300px;
-}
-
-#categoryModal .modal-content {
-    max-width: 600px;
-}
-
-#userSearchResults {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 10;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-top: none;
-    max-height: 200px;
-    overflow-y: auto;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#userSearchResults li {
-    padding: 10px;
-    cursor: pointer;
-}
-
-#userSearchResults li:hover {
-    background-color: var(--card-hover-bg);
-}
-
-#selectedUsersContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.selected-user {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.selected-user .remove-user {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.2em;
-    cursor: pointer;
-    line-height: 1;
-}
-
-.admin-card .category-actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-}
-
-.user-input-wrapper {
-    margin-bottom: 10px;
-}
-
-.user-input-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.user-input-container #userSearchInput {
-    padding-right: 40px;
-}
-
-#userSearchStatus {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.5em;
-    font-weight: bold;
-    line-height: 1;
-}
-
-#userSearchStatus.status-valid {
-    color: #4CAF50;
-}
-
-#userSearchStatus.status-invalid {
-    color: #f44336;
-    font-size: 1.2em;
-}
-
-#userSearchStatus.status-warning {
-    color: #FFC107;
-    font-size: 1em;
-}
-
-#moderationPlayer {
-    display: none;
-    width: 100%;
-    margin-top: 20px;
-}
-
-#moderationVideoPlayer {
-    display: none;
-    width: 100%;
-    margin-top: 20px;
-}
-
-#uploadManager {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-#fileStatusText {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-}
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background-color: var(--card-bg);
-    padding: 30px;
-    border: 1px solid var(--border-color);
-    width: 90%;
-    max-width: 500px;
-    border-radius: 12px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* Новые стили для модального окна загрузки */
-#uploadModal .modal-content h2,
-#uploadModal .modal-content p,
-#uploadModal .modal-content label {
-    color: #000000;
-}
-
-#uploadModal .upload-type-selector label span {
-    color: #000000;
-}
-
-#uploadModal .upload-type-selector input:checked + span {
-    color: #ffffff;
-}
-
-#uploadModal #fileStatusText,
-#uploadModal #uploadStatusText {
-    color: #000000;
-}
-
-#uploadModal input[type="text"],
-#uploadModal input[type="file"],
-#uploadModal select,
-#uploadModal #artistFields input,
-#uploadModal .upload-status-bar {
-    background-color: rgba(255, 255, 255, 0.8);
-    color: #000000;
-    border: 1px solid #ccc;
-}
-
-#uploadModal .upload-status-bar {
-    background-color: #f0f0f0;
-}
-
-.modal .close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 2em;
-    line-height: 1;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.modal .close-btn:hover {
-    color: var(--text-primary);
-}
-
-.modal h2 {
-    text-align: center;
-    color: var(--text-primary);
-}
-
-.modal .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.modal .form-group label {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.modal input[type="text"],
-.modal input[type="password"],
-.modal input[type="tel"],
-.modal input[type="email"] {
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background-color: var(--card-hover-bg);
-    color: var(--text-primary);
-    font-size: 1em;
-}
-
-.modal input[type="text"]:focus,
-.modal input[type="password"]:focus,
-.modal input[type="tel"]:focus,
-.modal input[type="email"]:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.modal .submit-btn,
-.modal .link-btn {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.modal .submit-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-}
-
-.modal .submit-btn:hover {
-    background-color: var(--primary-hover-color);
-}
-
-.modal .link-btn {
-    background: none;
-    border: 1px solid transparent;
-    color: var(--primary-color);
-    margin-top: 10px;
-}
-
-.modal .link-btn:hover {
-    border-color: var(--primary-color);
-}
-
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 28px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: var(--primary-color);
-}
-
-input:checked + .slider:before {
-    transform: translateX(22px);
-}
-
-.slider.round {
-    border-radius: 28px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
-}
-
-.player-style-selector {
-    display: flex;
-    gap: 10px;
-}
-
-.player-style-selector .style-btn {
-    background-color: var(--card-bg);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.player-style-selector .style-btn.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.player-style-selector .style-btn:hover {
-    background-color: var(--card-hover-bg);
-    color: var(--text-primary);
-}
-
-
-/* ######################################################## */
-/* ### НОВЫЕ СТИЛИ ДЛЯ ГОРИЗОНТАЛЬНОГО ПЛЕЕРА СТИЛЯ "COPY" ### */
-/* ######################################################## */
-
-.player.player--copy {
-    left: 50%; /* Позиция по центру */
-    transform: translateX(-50%);
-    right: auto;
-    width: 800px;
-    height: 90px;
-    padding: 0;
-    border-radius: 12px;
-}
-
-.player.player--copy .player-style-default {
-    display: none;
-}
-.player.player--copy .player-style-copy {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    justify-content: space-between;
-    padding: 12px 0; /* Добавляем вертикальные отступы */
-}
-
-/* Тело плеера */
-.copy-player-body {
-    width: 100%;
-    padding: 0 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    align-items: center;
-}
-
-/* Прогресс-бар для стиля Copy */
-.copy-progress-bar-container {
-    width: calc(100% - 48px);
-    height: 3px;
-    cursor: pointer;
-    background-color: #535353;
-    border-radius: 2px;
-    margin: 0 24px; /* Убираем верхний отступ */
-}
-.copy-progress-filled {
-    height: 100%;
-    width: 0;
-    background-color: var(--text-primary);
-    border-radius: 2px;
-}
-.copy-progress-bar-container:hover .copy-progress-filled {
-    background-color: #FFD700;
-}
-
-
-/* Левая часть: информация о треке */
-.copy-track-info {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    justify-self: start;
-}
-#copyPlayerCover {
-    width: 56px;
-    height: 56px;
-    border-radius: 4px;
-    object-fit: cover;
-}
-.copy-track-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.copy-track-text .title {
-    font-size: 1em;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-.copy-track-text .artist {
-    font-size: 0.8em;
-    color: var(--text-secondary);
-}
-
-/* Центральная часть: главные кнопки управления */
-.copy-main-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-}
-.copy-main-controls .control-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: var(--text-secondary);
-}
-.copy-main-controls .control-btn:hover svg {
-    fill: var(--text-primary);
-}
-.copy-main-controls .play-button {
-    width: 40px;
-    height: 40px;
-    background-color: var(--text-primary);
-    border: none;
-}
-.copy-main-controls .play-button:hover {
-    transform: scale(1.05);
-    background-color: #fff;
-}
-.copy-main-controls .play-button svg {
-    width: 24px;
-    height: 24px;
-    fill: #000;
-}
-
-/* Правая часть: громкость и лайк */
-.copy-secondary-controls {
-    display: flex;
-    align-items: center;
-    justify-self: end;
-    gap: 16px;
-}
-#copyFavoriteBtn svg {
-    width: 20px;
-    height: 20px;
-    stroke: var(--text-secondary);
-    fill: none;
-    transition: all 0.2s;
-}
-#copyFavoriteBtn:hover svg {
-    stroke: var(--text-primary);
-}
-#copyFavoriteBtn.favorited svg {
-    stroke: #ff4747;
-    fill: #ff4747;
-}
-
-.copy-volume-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.copy-volume-controls svg {
-    width: 20px;
-    height: 20px;
-    fill: var(--text-secondary);
-}
-.copy-volume-controls input[type=range] {
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    width: 90px;
-    cursor: pointer;
-}
-.copy-volume-controls input[type=range]::-webkit-slider-runnable-track {
-    background: #535353;
-    height: 4px;
-    border-radius: 2px;
-}
-.copy-volume-controls input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    background: var(--text-primary);
-    border-radius: 50%;
-    margin-top: -4px;
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const api = '';
+    let allMedia = [];
+    let myTracks = [];
+    let moderationTracks = [];
+    let currentTrackIndex = -1;
+    let isDragging = false;
+    let currentUser = null;
+    let userFavorites = [];
+    let repeatMode = false;
+    const audioPlayer = new Audio();
+    const videoPlayer = document.getElementById('backgroundVideo');
+    let activeMediaElement = audioPlayer;
+    let currentPage = 1;
+    const tracksPerPage = 30;
+    let isLoading = false;
+    const initialLoadCount = 20;
+
+    const ACCESS_TOKEN_KEY = "access_token"
+    const REFRESH_TOKEN_KEY = "refresh_token"
+    const VOLUME_KEY = "volume_level"
+    const UI_OPACITY_KEY = "ui_opacity";
+    const PLAYER_STYLE_KEY = "player_style";
+    const BLUR_ENABLED_KEY = "blur_enabled";
+
+
+    const mainContent = document.querySelector('.main-content');
+    const allGridContainer = document.getElementById('allGridContainer');
+    const allCategoriesGrid = document.getElementById('allCategoriesGrid');
+    const specificCategoryView = document.getElementById('specificCategoryView');
+    const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+    const specificCategoryGrid = document.getElementById('specificCategoryGrid');
+    const homeView = document.getElementById('homeView');
+    const searchBarWrapper = document.querySelector('.search-bar-wrapper');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const trackDetailsModal = document.getElementById('trackDetailsModal');
+    const playNextBtn = document.getElementById('playNextBtn');
+    const playPrevBtn = document.getElementById('playPrevBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const miniPlayer = document.querySelector('.mini-player');
+    const closeMiniPlayerBtn = document.querySelector('#closeMiniPlayerBtn');
+    const fullPlayer = document.querySelector('.full-player');
+    const playerStyleToggle = document.getElementById('playerStyleToggle');
+    const miniPlayerBtn = document.getElementById('miniPlayerBtn');
+    const fullPlayerBtn = document.getElementById('fullPlayerBtn');
+    const copyMainControls = document.querySelector('.copy-main-controls');
+    const volumeBar = document.querySelector('.volume-bar');
+    const copyVolumeBar = document.querySelector('.copy-volume-bar');
+    const progressBarContainer = document.querySelector('.progress-bar-container');
+    const copyProgressBarContainer = document.querySelector('.copy-progress-bar-container');
+    const progressBar = document.querySelector('.progress-bar');
+    const copyProgressBar = document.querySelector('.copy-progress-bar');
+    const timeCurrent = document.querySelector('.time-current');
+    const timeTotal = document.querySelector('.time-total');
+    const copyTimeCurrent = document.querySelector('.copy-time-current');
+    const copyTimeTotal = document.querySelector('.copy-time-total');
+    const favoriteBtn = document.querySelector('.favorite-btn');
+    const copyFavoriteBtn = document.querySelector('#copyFavoriteBtn');
+    const navFavorites = document.getElementById('navFavorites');
+    const favoritesGridContainer = document.getElementById('favoritesGridContainer');
+    const creatorStudioBtn = document.getElementById('creatorStudioBtn');
+    const homeNav = document.getElementById('navHome');
+    const creatorView = document.getElementById('creatorView');
+    const myTracksView = document.getElementById('myTracksView');
+    const myTracksGrid = document.getElementById('myTracksGrid');
+    const moderationView = document.getElementById('moderationView');
+    const moderationGrid = document.getElementById('moderationGrid');
+    const profileView = document.getElementById('profileView');
+    const profileUsername = document.getElementById('profileUsername');
+    const profileRole = document.getElementById('profileRole');
+    const loginView = document.getElementById('loginView');
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const registerForm = document.getElementById('registerForm');
+    const registerUsernameInput = document.getElementById('registerUsername');
+    const registerPasswordInput = document.getElementById('registerPassword');
+    const showRegisterLink = document.getElementById('showRegister');
+    const showLoginLink = document.getElementById('showLogin');
+    const loginStatus = document.getElementById('loginStatus');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const uploadMusicModal = document.getElementById('uploadMusicModal');
+    const showUploadBtn = document.getElementById('showUploadBtn');
+    const closeUploadModalBtn = document.getElementById('closeUploadModalBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const genreSelector = document.getElementById('genreSelector');
+    const genreDetectionBtn = document.getElementById('genreDetectionBtn');
+    const userSelect = document.getElementById('userSelect');
+    const videoSource = document.getElementById('videoSource');
+    const creatorStatsView = document.getElementById('creatorStatsView');
+    const totalPlaysEl = document.getElementById('totalPlays');
+    const dailyPlaysCanvas = document.getElementById('dailyPlaysChart');
+    const bestTracksList = document.getElementById('bestTracksList');
+    const navCategories = document.getElementById('navCategories');
+    const categoriesView = document.getElementById('categoriesView');
+    const allTracksView = document.getElementById('allTracksView');
+    const bestTracksGridContainer = document.getElementById('bestTracksGridContainer');
+    const allTracksGridContainer = document.getElementById('allTracksGridContainer');
+    const myTracksBtn = document.getElementById('myTracksBtn');
+    const moderationTracksBtn = document.getElementById('moderationTracksBtn');
+    const creatorNav = document.getElementById('creatorNav');
+    const creatorApplyBtn = document.getElementById('creatorApplyBtn');
+    const creatorApplyModal = document.getElementById('creatorApplyModal');
+    const closeCreatorApplyModalBtn = document.getElementById('closeCreatorApplyModalBtn');
+    const creatorApplyForm = document.getElementById('creatorApplyForm');
+    const creatorApplyStatus = document.getElementById('creatorApplyStatus');
+    const uploadCategorySelect = document.getElementById('uploadCategorySelect');
+    const categoryModal = document.getElementById('categoryModal');
+    const showCategoryModalBtn = document.getElementById('showCategoryModalBtn');
+    const closeCategoryModalBtn = document.getElementById('closeCategoryModalBtn');
+    const categoryForm = document.getElementById('categoryForm');
+    const categoryNameInput = document.getElementById('categoryName');
+    const userSearchInput = document.getElementById('userSearchInput');
+    const userSearchStatus = document.getElementById('userSearchStatus');
+    const selectedUsersContainer = document.getElementById('selectedUsersContainer');
+    const homeViewXrecomenTrackImg = document.getElementById('xrecomenTrackImg');
+    const homeViewXrecomenTrackTitle = document.getElementById('xrecomenTrackTitle');
+    const homeViewXrecomenTrackArtist = document.getElementById('xrecomenTrackArtist');
+    const homeViewYouLikeGrid = document.getElementById('youLikeGrid');
+    const homeViewYouMayLikeGrid = document.getElementById('youMayLikeGrid');
+    const homeViewFavoriteCollectionsGrid = document.getElementById('favoriteCollectionsGrid');
+    const homeViewBestTracksGrid = document.getElementById('bestTracksGrid');
+    const playerBackground = document.querySelector('.player-background');
+    const creatorMainContent = document.querySelector('.creator-main-content');
+    const myTracksLoader = document.getElementById('myTracksLoader');
+    const myTracksEndMessage = document.getElementById('myTracksEndMessage');
+    let totalMyTracks = 0;
+
+
+    const showView = (viewId) => {
+        document.querySelectorAll('.view').forEach(view => {
+            view.style.display = 'none';
+        });
+        const view = document.getElementById(viewId);
+        if (view) {
+            view.style.display = 'block';
+        }
+        if(viewId === 'myTracksView') {
+            myTracksGrid.innerHTML = '';
+            currentPage = 1;
+            fetchMyTracks(true);
+        } else if (viewId === 'homeView') {
+            fetchInitialData();
+            fetchBestTracks();
+            fetchXrecomen();
+        } else if (viewId === 'allTracksView') {
+            fetchTracks();
+        } else if (viewId === 'categoriesView') {
+            fetchCategories();
+        } else if (viewId === 'favoritesView') {
+            fetchFavorites();
+        } else if (viewId === 'creatorStatsView') {
+            fetchCreatorStats();
+        }
+    };
+
+    const fetchMyTracks = async (isInitial = false) => {
+        if (isLoading) return;
+        isLoading = true;
+        myTracksLoader.style.display = 'block';
+
+        const userId = currentUser.id;
+        const page = isInitial ? 1 : currentPage;
+        const perPage = isInitial ? 20 : 30;
+
+        try {
+            const response = await fetch(`${api}/api/creator/my-tracks/${userId}?page=${page}&per_page=${perPage}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const data = await response.json();
+
+            if (data.length > 0) {
+                myTracks = isInitial ? data : [...myTracks, ...data];
+                renderMyTracks(data);
+                currentPage++;
+            } else {
+                myTracksEndMessage.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Ошибка при получении треков пользователя:', error);
+        } finally {
+            isLoading = false;
+            myTracksLoader.style.display = 'none';
+        }
+    };
+    
+    const setupScrollListener = () => {
+        const myTracksContainer = document.querySelector('.creator-main-content');
+        if (!myTracksContainer) return;
+    
+        myTracksContainer.removeEventListener('scroll', handleMyTracksScroll);
+        myTracksContainer.addEventListener('scroll', handleMyTracksScroll);
+    };
+
+    const handleMyTracksScroll = () => {
+        const myTracksContainer = document.querySelector('.creator-main-content');
+        if (myTracksContainer.scrollTop + myTracksContainer.clientHeight >= myTracksContainer.scrollHeight - 100) {
+            fetchMyTracks();
+        }
+    };
+
+    const renderMyTracks = (tracksToRender) => {
+        tracksToRender.forEach(track => {
+            const card = createTrackCard(track);
+            myTracksGrid.appendChild(card);
+        });
+    };
+
+    // Все остальные функции из script.js ниже...
+    
+    const fetchInitialData = async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+            if (!token) return;
+
+            const decodedToken = parseJwt(token);
+            if (decodedToken) {
+                currentUser = decodedToken;
+                updateUIAfterLogin();
+            }
+
+            const response = await fetch(`${api}/api/tracks`);
+            allMedia = await response.json();
+            renderTracks(allMedia, allTracksGridContainer);
+        } catch (error) {
+            console.error('Ошибка при получении данных:', error);
+        }
+    };
+
+    const createTrackCard = (track, isBest = false) => {
+        const card = document.createElement('div');
+        card.className = `track-card ${isBest ? 'best-track-card' : ''}`;
+        card.dataset.id = track.id;
+        card.innerHTML = `
+            <img src="${api}/fon/${track.cover}" alt="${track.title}" class="track-cover">
+            <div class="card-overlay">
+                <button class="play-btn">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="track-info">
+                <span class="track-title">${track.title}</span>
+                <span class="track-artist">${track.creator_name || track.artist}</span>
+            </div>
+        `;
+
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.target.closest('.play-btn')) {
+                playMedia(track);
+            } else {
+                showTrackDetails(track);
+            }
+        });
+
+        return card;
+    };
+
+    const renderTracks = (tracks, container) => {
+        container.innerHTML = '';
+        tracks.forEach(track => {
+            container.appendChild(createTrackCard(track));
+        });
+    };
+
+    const renderBestTracks = (tracks, container) => {
+        container.innerHTML = '';
+        tracks.forEach(track => {
+            container.appendChild(createTrackCard(track, true));
+        });
+    };
+
+    const playMedia = (track) => {
+        const mediaSource = `${api}/${track.type === 'video' ? 'video' : 'music'}/${track.file}`;
+        const coverSource = `${api}/fon/${track.cover}`;
+        const playerStyle = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+        const isAudio = track.type === 'audio';
+        
+        if (isAudio) {
+            audioPlayer.src = mediaSource;
+            audioPlayer.style.display = 'block';
+            videoPlayer.style.display = 'none';
+            playerBackground.style.backgroundImage = `url(${coverSource})`;
+            activeMediaElement = audioPlayer;
+        } else {
+            videoPlayer.src = mediaSource;
+            videoPlayer.style.display = 'block';
+            audioPlayer.style.display = 'none';
+            playerBackground.style.backgroundImage = 'none';
+            activeMediaElement = videoPlayer;
+        }
+
+        activeMediaElement.load();
+        activeMediaElement.play().catch(e => console.error('Ошибка воспроизведения:', e));
+
+        document.getElementById('fullPlayerTitle').textContent = track.title;
+        document.getElementById('fullPlayerArtist').textContent = track.creator_name || track.artist;
+        document.getElementById('fullPlayerCover').src = coverSource;
+        document.getElementById('copyPlayerTitle').textContent = track.title;
+        document.getElementById('copyPlayerArtist').textContent = track.creator_name || track.artist;
+        
+        updatePlaybackStatus(track.id, activeMediaElement);
+        checkFavorite(track.file);
+        
+        miniPlayer.style.display = 'block';
+        if(playerStyle === 'copy') {
+            copyMainControls.style.display = 'flex';
+        } else {
+            miniPlayer.classList.add('active');
+        }
+        
+        currentTrackIndex = allMedia.findIndex(t => t.id === track.id);
+        updatePlaybackButtons();
+    };
+
+    const updatePlaybackStatus = (trackId, player) => {
+        let isUpdating = false;
+        const sendUpdate = async () => {
+            if (isUpdating || player.paused) return;
+            isUpdating = true;
+            try {
+                const response = await fetch(`${api}/api/update-playback`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                    },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        trackId: trackId,
+                        currentTime: player.currentTime,
+                        duration: player.duration
+                    })
+                });
+                if (!response.ok) {
+                    console.error('Ошибка обновления статистики воспроизведения.');
+                }
+            } catch (error) {
+                console.error('Ошибка сети при обновлении статистики:', error);
+            } finally {
+                isUpdating = false;
+            }
+        };
+
+        player.removeEventListener('timeupdate', sendUpdate);
+        player.addEventListener('timeupdate', sendUpdate);
+    };
+
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    const updateProgress = () => {
+        const current = activeMediaElement.currentTime;
+        const duration = activeMediaElement.duration;
+        const progressPercent = (current / duration) * 100;
+        
+        progressBar.style.width = `${progressPercent}%`;
+        copyProgressBar.style.width = `${progressPercent}%`;
+        
+        timeCurrent.textContent = formatTime(current);
+        copyTimeCurrent.textContent = formatTime(current);
+        
+        if (!isNaN(duration)) {
+            timeTotal.textContent = formatTime(duration);
+            copyTimeTotal.textContent = formatTime(duration);
+        }
+    };
+
+    const scrub = (e, container) => {
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+        const newTime = (x / width) * activeMediaElement.duration;
+        if (!isNaN(newTime)) {
+            activeMediaElement.currentTime = newTime;
+        }
+    };
+    
+    const showTrackDetails = (track) => {
+        document.getElementById('detailsCover').src = `${api}/fon/${track.cover}`;
+        document.getElementById('detailsTitle').textContent = track.title;
+        document.getElementById('detailsArtist').textContent = track.creator_name || track.artist;
+        document.getElementById('detailsPlays').textContent = `Прослушиваний: ${track.plays}`;
+        document.getElementById('detailsGenre').textContent = `Жанр: ${track.genre}`;
+        document.getElementById('detailsDownload').href = `${api}/music/${track.file}`;
+        trackDetailsModal.style.display = 'block';
+    };
+
+    const closeModal = (modalId) => {
+        document.getElementById(modalId).style.display = 'none';
+    };
+
+    const showViewByHash = () => {
+        const hash = window.location.hash.substring(1);
+        const viewId = hash || 'homeView';
+        showView(viewId);
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch(`${api}/api/categories`);
+            const categories = await response.json();
+            renderCategories(categories);
+        } catch (error) {
+            console.error('Ошибка при получении категорий:', error);
+        }
+    };
+
+    const renderCategories = (categories) => {
+        allCategoriesGrid.innerHTML = '';
+        categories.forEach(category => {
+            const card = document.createElement('div');
+            card.className = 'category-card';
+            card.textContent = category.name;
+            card.dataset.id = category.id;
+            card.addEventListener('click', () => {
+                fetchTracksByCategory(category.id, category.name);
+            });
+            allCategoriesGrid.appendChild(card);
+        });
+    };
+
+    const fetchTracksByCategory = async (categoryId, categoryName) => {
+        try {
+            const response = await fetch(`${api}/api/tracks?categoryId=${categoryId}`);
+            const tracks = await response.json();
+            showView('specificCategoryView');
+            specificCategoryTitle.textContent = categoryName;
+            renderTracks(tracks, specificCategoryGrid);
+        } catch (error) {
+            console.error('Ошибка при получении треков по категории:', error);
+        }
+    };
+
+    const fetchBestTracks = async () => {
+        try {
+            const response = await fetch(`${api}/api/tracks/best`);
+            const tracks = await response.json();
+            renderBestTracks(tracks, bestTracksGridContainer);
+        } catch (error) {
+            console.error('Ошибка при получении лучших треков:', error);
+        }
+    };
+    const fetchFavorites = async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+            if (!token) {
+                console.error('Нет токена доступа.');
+                return;
+            }
+            const response = await fetch(`${api}/api/favorites`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            userFavorites = await response.json();
+            renderFavorites();
+        } catch (error) {
+            console.error('Ошибка при получении избранных треков:', error);
+        }
+    };
+
+    const renderFavorites = () => {
+        favoritesGridContainer.innerHTML = '';
+        const favoriteTracks = allMedia.filter(track => userFavorites.includes(track.file));
+        if (favoriteTracks.length > 0) {
+            favoriteTracks.forEach(track => {
+                favoritesGridContainer.appendChild(createTrackCard(track));
+            });
+        } else {
+            favoritesGridContainer.innerHTML = '<p class="no-tracks">У вас пока нет избранных треков.</p>';
+        }
+    };
+
+    const toggleFavorite = async (trackFile) => {
+        const isFavorited = userFavorites.includes(trackFile);
+        const method = isFavorited ? 'DELETE' : 'POST';
+        const url = `${api}/api/favorites`;
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                },
+                body: JSON.stringify({ userId: currentUser.id, mediaFile: trackFile })
+            });
+            const result = await response.json();
+            console.log(result.message);
+            if (response.ok) {
+                if (isFavorited) {
+                    userFavorites = userFavorites.filter(file => file !== trackFile);
+                } else {
+                    userFavorites.push(trackFile);
+                }
+                checkFavorite(trackFile);
+            }
+        } catch (error) {
+            console.error('Ошибка при изменении избранного:', error);
+        }
+    };
+
+    const checkFavorite = (trackFile) => {
+        const isFavorited = userFavorites.includes(trackFile);
+        if (favoriteBtn) {
+            favoriteBtn.classList.toggle('favorited', isFavorited);
+        }
+        if (copyFavoriteBtn) {
+            copyFavoriteBtn.classList.toggle('favorited', isFavorited);
+        }
+    };
+    
+    const updatePlaybackButtons = () => {
+        const nextTrack = allMedia[currentTrackIndex + 1];
+        const prevTrack = allMedia[currentTrackIndex - 1];
+        if (playNextBtn) playNextBtn.disabled = !nextTrack;
+        if (playPrevBtn) playPrevBtn.disabled = !prevTrack;
+    };
+    
+    const playNextTrack = () => {
+        if (repeatMode) {
+            activeMediaElement.currentTime = 0;
+            activeMediaElement.play();
+            return;
+        }
+        if (currentTrackIndex !== -1 && currentTrackIndex < allMedia.length - 1) {
+            const nextTrack = allMedia[currentTrackIndex + 1];
+            playMedia(nextTrack);
+        }
+    };
+
+    const playPrevTrack = () => {
+        if (activeMediaElement.currentTime > 3) {
+            activeMediaElement.currentTime = 0;
+            return;
+        }
+        if (currentTrackIndex > 0) {
+            const prevTrack = allMedia[currentTrackIndex - 1];
+            playMedia(prevTrack);
+        }
+    };
+    
+    const toggleShuffle = () => {
+        shuffleBtn.classList.toggle('active');
+        if (shuffleBtn.classList.contains('active')) {
+            allMedia.sort(() => Math.random() - 0.5);
+            currentTrackIndex = -1; // Сброс индекса, так как порядок изменился
+        } else {
+            // Восстановление исходного порядка (не реализовано в этом примере)
+            fetchInitialData();
+        }
+    };
+
+    const toggleRepeat = () => {
+        repeatMode = !repeatMode;
+        repeatBtn.classList.toggle('active', repeatMode);
+        activeMediaElement.loop = repeatMode;
+    };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+        try {
+            const response = await fetch(`${api}/api/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem(ACCESS_TOKEN_KEY, data.token);
+                currentUser = data.user;
+                loginStatus.textContent = data.message;
+                loginStatus.style.color = 'green';
+                updateUIAfterLogin();
+            } else {
+                loginStatus.textContent = data.message;
+                loginStatus.style.color = 'red';
+            }
+        } catch (error) {
+            loginStatus.textContent = 'Ошибка сети. Попробуйте позже.';
+            loginStatus.style.color = 'red';
+        }
+    };
+
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        const username = registerUsernameInput.value;
+        const password = registerPasswordInput.value;
+        try {
+            const response = await fetch(`${api}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                loginStatus.textContent = data.message;
+                loginStatus.style.color = 'green';
+                showLoginView();
+            } else {
+                loginStatus.textContent = data.message;
+                loginStatus.style.color = 'red';
+            }
+        } catch (error) {
+            loginStatus.textContent = 'Ошибка сети. Попробуйте позже.';
+            loginStatus.style.color = 'red';
+        }
+    };
+    
+    const showLoginView = () => {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('registerSection').style.display = 'none';
+        loginStatus.textContent = '';
+        loginForm.reset();
+        registerForm.reset();
+    };
+
+    const showRegisterView = () => {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('registerSection').style.display = 'block';
+        loginStatus.textContent = '';
+        loginForm.reset();
+        registerForm.reset();
+    };
+
+    const updateUIAfterLogin = () => {
+        loginView.style.display = 'none';
+        showView('homeView');
+        if(currentUser) {
+            creatorStudioBtn.style.display = (currentUser.role === 'creator' || currentUser.role === 'admin') ? 'block' : 'none';
+            profileView.style.display = 'block';
+            logoutBtn.style.display = 'block';
+            profileUsername.textContent = currentUser.username;
+            profileRole.textContent = currentUser.role;
+            if(currentUser.role === 'creator') {
+                creatorApplyBtn.style.display = 'none';
+                creatorNav.style.display = 'block';
+            } else if (currentUser.role === 'admin') {
+                creatorApplyBtn.style.display = 'none';
+                creatorNav.style.display = 'block';
+                showCategoryModalBtn.style.display = 'block';
+            } else {
+                creatorApplyBtn.style.display = 'block';
+                creatorNav.style.display = 'none';
+                showCategoryModalBtn.style.display = 'none';
+            }
+        }
+        fetchFavorites();
+    };
+    
+    const logout = () => {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        currentUser = null;
+        myTracks = [];
+        myTracksGrid.innerHTML = '';
+        loginView.style.display = 'block';
+        creatorStudioBtn.style.display = 'none';
+        profileView.style.display = 'none';
+        logoutBtn.style.display = 'none';
+        creatorNav.style.display = 'none';
+        showCategoryModalBtn.style.display = 'none';
+        miniPlayer.classList.remove('active');
+        miniPlayer.style.display = 'none';
+        copyMainControls.style.display = 'none';
+        showView('homeView');
+    };
+
+    const handleUpload = async (e) => {
+        e.preventDefault();
+        uploadStatus.textContent = 'Загрузка...';
+        const formData = new FormData(uploadForm);
+        formData.append('userId', currentUser.id);
+        const audioFile = uploadForm.audioFile.files[0];
+        const videoFile = uploadForm.videoFile.files[0];
+        formData.append('uploadType', audioFile ? 'audio' : 'video');
+        
+        try {
+            const response = await fetch(`${api}/api/moderation/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                uploadStatus.textContent = 'Файл успешно отправлен на модерацию!';
+                uploadStatus.style.color = 'green';
+                uploadForm.reset();
+                setTimeout(() => closeModal('uploadMusicModal'), 2000);
+            } else {
+                const data = await response.json();
+                uploadStatus.textContent = data.message || 'Ошибка загрузки.';
+                uploadStatus.style.color = 'red';
+            }
+        } catch (error) {
+            uploadStatus.textContent = 'Ошибка сети. Попробуйте позже.';
+            uploadStatus.style.color = 'red';
+        }
+    };
+    
+    const toggleUploadFields = () => {
+        const audioFile = document.getElementById('audioFile').files[0];
+        const videoFile = document.getElementById('videoFile').files[0];
+        document.getElementById('genreSelector').disabled = !audioFile;
+        document.getElementById('artistInput').disabled = !audioFile;
+        document.getElementById('uploadCategorySelect').disabled = !audioFile;
+    };
+    
+    const fetchCreatorStats = async () => {
+        try {
+            const response = await fetch(`${api}/api/creator/stats/${currentUser.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const data = await response.json();
+            
+            totalPlaysEl.textContent = data.totalPlays;
+            
+            const dates = data.dailyPlays.map(d => d.date);
+            const counts = data.dailyPlays.map(d => d.count);
+            
+            new Chart(dailyPlaysCanvas, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Прослушивания',
+                        data: counts,
+                        borderColor: '#4A90E2',
+                        backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                        tension: 0.1,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            bestTracksList.innerHTML = '';
+            data.trackStats.forEach(track => {
+                const li = document.createElement('li');
+                li.textContent = `${track.title} - ${track.plays} прослушиваний`;
+                bestTracksList.appendChild(li);
+            });
+            
+        } catch (error) {
+            console.error('Ошибка при получении статистики:', error);
+        }
+    };
+    
+    const fetchGenres = async () => {
+        try {
+            const response = await fetch(`${api}/api/genres`);
+            const genres = await response.json();
+            genreSelector.innerHTML = '<option value="">Не выбран</option>';
+            genres.forEach(genre => {
+                const option = document.createElement('option');
+                option.value = genre;
+                option.textContent = genre;
+                genreSelector.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка при получении жанров:', error);
+        }
+    };
+    
+    const determineGenre = async () => {
+        const fileInput = document.getElementById('audioFile');
+        if (fileInput.files.length === 0) {
+            alert('Сначала выберите аудиофайл.');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        genreDetectionBtn.textContent = 'Определение...';
+        genreDetectionBtn.disabled = true;
+
+        try {
+            const response = await fetch(`${api}/api/determine-genre`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                },
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(`Предполагаемый жанр: ${data.genre}`);
+                genreSelector.value = data.genre;
+            } else {
+                alert(`Ошибка: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Ошибка при определении жанра:', error);
+            alert('Произошла ошибка при определении жанра.');
+        } finally {
+            genreDetectionBtn.textContent = 'Определить жанр';
+            genreDetectionBtn.disabled = false;
+        }
+    };
+    
+    const fetchModerationTracks = async () => {
+        try {
+            const response = await fetch(`${api}/api/moderation/tracks`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const data = await response.json();
+            moderationTracks = data;
+            renderModerationTracks();
+        } catch (error) {
+            console.error('Ошибка при получении треков на модерации:', error);
+        }
+    };
+    
+    const renderModerationTracks = () => {
+        moderationGrid.innerHTML = '';
+        moderationTracks.forEach(track => {
+            const card = document.createElement('div');
+            card.className = 'moderation-card';
+            card.innerHTML = `
+                <img src="${api}/temp_uploads/${track.cover_name}" alt="${track.title}" class="moderation-cover">
+                <div class="moderation-info">
+                    <h3>${track.title}</h3>
+                    <p>От: ${track.creator_name}</p>
+                    <p>Жанр: ${track.genre}</p>
+                    <p>Артист: ${track.artist}</p>
+                    <p>Категория: ${track.category_name}</p>
+                </div>
+                <div class="moderation-actions">
+                    <button class="approve-btn" data-id="${track.id}">Одобрить</button>
+                    <button class="reject-btn" data-id="${track.id}">Отклонить</button>
+                </div>
+            `;
+            moderationGrid.appendChild(card);
+        });
+    };
+    
+    const approveTrack = async (trackId) => {
+        try {
+            const response = await fetch(`${api}/api/moderation/approve/${trackId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message);
+                fetchModerationTracks();
+            } else {
+                alert(`Ошибка: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Ошибка при одобрении трека:', error);
+        }
+    };
+
+    const rejectTrack = async (trackId) => {
+        try {
+            const response = await fetch(`${api}/api/moderation/reject/${trackId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message);
+                fetchModerationTracks();
+            } else {
+                alert(`Ошибка: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Ошибка при отклонении трека:', error);
+        }
+    };
+    
+    const fetchUserForCategory = async (username) => {
+        try {
+            const response = await fetch(`${api}/api/user/${username}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const user = await response.json();
+            return user;
+        } catch (error) {
+            console.error('Ошибка при поиске пользователя:', error);
+            return null;
+        }
+    };
+    
+    const fetchCategoriesForUpload = async () => {
+        try {
+            const response = await fetch(`${api}/api/creator/my-categories/${currentUser.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const categories = await response.json();
+            uploadCategorySelect.innerHTML = '<option value="">Не выбрана</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                uploadCategorySelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка при получении категорий:', error);
+        }
+    };
+    
+    const handleCategoryForm = async (e) => {
+        e.preventDefault();
+        const categoryId = document.getElementById('categoryId').value;
+        const categoryName = categoryNameInput.value;
+        const userIds = Array.from(selectedUsersContainer.querySelectorAll('.selected-user')).map(el => el.dataset.id);
+        
+        try {
+            const response = await fetch(`${api}/api/category`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                },
+                body: JSON.stringify({ categoryId, categoryName, userIds })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message);
+                closeModal('categoryModal');
+                fetchCategories();
+            } else {
+                alert(`Ошибка: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Ошибка при создании/обновлении категории:', error);
+            alert('Произошла ошибка.');
+        }
+    };
+    
+    const fetchXrecomen = async () => {
+        try {
+            const response = await fetch(`${api}/api/xrecomen/${currentUser.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                }
+            });
+            const data = await response.json();
+
+            if (data.xrecomenTrack) {
+                homeViewXrecomenTrackImg.src = `${api}/fon/${data.xrecomenTrack.cover}`;
+                homeViewXrecomenTrackTitle.textContent = data.xrecomenTrack.title;
+                homeViewXrecomenTrackArtist.textContent = data.xrecomenTrack.artist || data.xrecomenTrack.creator_name;
+                document.querySelector('.xrecomen-card').dataset.id = data.xrecomenTrack.id;
+                document.querySelector('.xrecomen-card').addEventListener('click', () => playMedia(data.xrecomenTrack));
+            } else {
+                document.querySelector('.xrecomen-card').style.display = 'none';
+            }
+            
+            renderTracks(data.youLike, homeViewYouLikeGrid);
+            renderTracks(data.youMayLike, homeViewYouMayLikeGrid);
+            
+            homeViewFavoriteCollectionsGrid.innerHTML = '';
+            data.favoriteCollections.forEach(collection => {
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.textContent = collection.name;
+                card.dataset.id = collection.id;
+                card.addEventListener('click', () => fetchTracksByCategory(collection.id, collection.name));
+                homeViewFavoriteCollectionsGrid.appendChild(card);
+            });
+        } catch (error) {
+            console.error('Ошибка при получении рекомендаций:', error);
+        }
+    };
+    
+    const initEventListeners = () => {
+        // Установка обработчиков событий для пагинации
+        const myTracksContainer = document.querySelector('.creator-main-content');
+        if (myTracksContainer) {
+            myTracksContainer.addEventListener('scroll', () => {
+                if (myTracksContainer.scrollTop + myTracksContainer.clientHeight >= myTracksContainer.scrollHeight - 100) {
+                    fetchMyTracks();
+                }
+            });
+        }
+        
+        homeNav.addEventListener('click', () => {
+            window.location.hash = '';
+        });
+        navCategories.addEventListener('click', () => {
+            window.location.hash = 'categoriesView';
+        });
+        navFavorites.addEventListener('click', () => {
+            window.location.hash = 'favoritesView';
+        });
+        if (creatorStudioBtn) creatorStudioBtn.addEventListener('click', () => {
+            window.location.hash = 'creatorStatsView';
+        });
+        if (myTracksBtn) myTracksBtn.addEventListener('click', () => {
+            window.location.hash = 'myTracksView';
+        });
+        if (moderationTracksBtn) moderationTracksBtn.addEventListener('click', () => {
+            window.location.hash = 'moderationView';
+            fetchModerationTracks();
+        });
+
+        window.addEventListener('hashchange', showViewByHash);
+        
+        if (loginForm) loginForm.addEventListener('submit', handleLogin);
+        if (registerForm) registerForm.addEventListener('submit', handleRegister);
+        if (showRegisterLink) showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showRegisterView();
+        });
+        if (showLoginLink) showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginView();
+        });
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+        if (closeUploadModalBtn) closeUploadModalBtn.addEventListener('click', () => closeModal('uploadMusicModal'));
+        if (showUploadBtn) showUploadBtn.addEventListener('click', () => {
+            document.getElementById('uploadMusicModal').style.display = 'block';
+            fetchCategoriesForUpload();
+        });
+        if (uploadForm) uploadForm.addEventListener('submit', handleUpload);
+        
+        if (uploadForm) {
+            document.getElementById('audioFile').addEventListener('change', toggleUploadFields);
+            document.getElementById('videoFile').addEventListener('change', toggleUploadFields);
+        }
+        
+        if (genreDetectionBtn) genreDetectionBtn.addEventListener('click', determineGenre);
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('approve-btn')) {
+                approveTrack(e.target.dataset.id);
+            }
+            if (e.target.classList.contains('reject-btn')) {
+                rejectTrack(e.target.dataset.id);
+            }
+        });
+        
+        if (creatorApplyBtn) creatorApplyBtn.addEventListener('click', () => {
+            document.getElementById('creatorApplyModal').style.display = 'block';
+        });
+        
+        if (closeCreatorApplyModalBtn) closeCreatorApplyModalBtn.addEventListener('click', () => {
+            closeModal('creatorApplyModal');
+        });
+        
+        if (creatorApplyForm) creatorApplyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            creatorApplyStatus.textContent = 'Отправка...';
+            const formData = new FormData(creatorApplyForm);
+            const data = {
+                userId: currentUser.id,
+                fullName: formData.get('fullName'),
+                phoneNumber: formData.get('phoneNumber'),
+                email: formData.get('email')
+            };
+
+            try {
+                const response = await fetch(`${api}/api/apply-for-creator`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_KEY)}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    creatorApplyStatus.textContent = result.message;
+                    creatorApplyStatus.style.color = 'green';
+                    setTimeout(() => closeModal('creatorApplyModal'), 2000);
+                } else {
+                    creatorApplyStatus.textContent = result.message || 'Ошибка отправки заявки.';
+                    creatorApplyStatus.style.color = 'red';
+                }
+            } catch (error) {
+                creatorApplyStatus.textContent = 'Ошибка сети. Попробуйте позже.';
+                creatorApplyStatus.style.color = 'red';
+            }
+        });
+
+        if (showCategoryModalBtn) showCategoryModalBtn.addEventListener('click', () => {
+            document.getElementById('categoryModal').style.display = 'block';
+        });
+
+        if (closeCategoryModalBtn) closeCategoryModalBtn.addEventListener('click', () => {
+            closeModal('categoryModal');
+        });
+
+        if (categoryForm) categoryForm.addEventListener('submit', handleCategoryForm);
+
+        if (userSearchInput) userSearchInput.addEventListener('input', debounce(async (e) => {
+            const username = e.target.value.trim();
+            if (username.length < 3) {
+                userSearchStatus.textContent = '';
+                return;
+            }
+            userSearchStatus.textContent = 'Поиск...';
+            const user = await fetchUserForCategory(username);
+            if (user) {
+                userSearchStatus.textContent = '';
+                const userEl = document.createElement('div');
+                userEl.className = 'selected-user';
+                userEl.textContent = user.username;
+                userEl.dataset.id = user.id;
+                const removeBtn = document.createElement('span');
+                removeBtn.textContent = '×';
+                removeBtn.className = 'remove-user';
+                removeBtn.addEventListener('click', () => {
+                    userEl.remove();
+                });
+                userEl.appendChild(removeBtn);
+                selectedUsersContainer.appendChild(userEl);
+                userSearchInput.value = '';
+            } else {
+                userSearchStatus.textContent = 'Пользователь не найден';
+            }
+        }, 300));
+
+        // Media player controls
+        if (playPrevBtn) playPrevBtn.addEventListener('click', playPrevTrack);
+        if (playNextBtn) playNextBtn.addEventListener('click', playNextTrack);
+        if (shuffleBtn) shuffleBtn.addEventListener('click', toggleShuffle);
+        if (repeatBtn) repeatBtn.addEventListener('click', toggleRepeat);
+        if (favoriteBtn) favoriteBtn.addEventListener('click', () => {
+            const activeTrack = allMedia.find(t => t.file === activeMediaElement.src.split('/').pop());
+            if (activeTrack) {
+                toggleFavorite(activeTrack.file);
+            }
+        });
+        if (copyFavoriteBtn) copyFavoriteBtn.addEventListener('click', () => {
+            const activeTrack = allMedia.find(t => t.file === activeMediaElement.src.split('/').pop());
+            if (activeTrack) {
+                toggleFavorite(activeTrack.file);
+            }
+        });
+        
+        document.querySelector('.play-pause-btn').addEventListener('click', () => {
+            if (activeMediaElement.paused) {
+                activeMediaElement.play();
+            } else {
+                activeMediaElement.pause();
+            }
+        });
+
+        document.querySelector('.copy-play-pause-btn').addEventListener('click', () => {
+            if (activeMediaElement.paused) {
+                activeMediaElement.play();
+            } else {
+                activeMediaElement.pause();
+            }
+        });
+
+        activeMediaElement.addEventListener('play', () => {
+            document.querySelector('.play-pause-btn svg').innerHTML = '<path d="M14 19h-4v-12h4v12zm6-12v12h-4v-12h4z"/>';
+            document.querySelector('.copy-play-pause-btn svg').innerHTML = '<path d="M14 19h-4v-12h4v12zm6-12v12h-4v-12h4z"/>';
+        });
+
+        activeMediaElement.addEventListener('pause', () => {
+            document.querySelector('.play-pause-btn svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
+            document.querySelector('.copy-play-pause-btn svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
+        });
+
+        activeMediaElement.addEventListener('ended', () => {
+            if (!repeatMode) {
+                playNextTrack();
+            }
+        });
+
+        activeMediaElement.addEventListener('timeupdate', updateProgress);
+        
+        if (progressBarContainer) progressBarContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            scrub(e, progressBarContainer);
+        });
+        if (copyProgressBarContainer) copyProgressBarContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            scrub(e, copyProgressBarContainer);
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const style = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+                const container = style === 'copy' ? copyProgressBarContainer : progressBarContainer;
+                scrub(e, container);
+            }
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        
+        const setVolume = (value) => {
+            audioPlayer.volume = videoPlayer.volume = value;
+            if(volumeBar) volumeBar.value = value;
+            if(copyVolumeBar) copyVolumeBar.value = value;
+            saveVolumeSetting(value);
+        };
+        
+        if (volumeBar) volumeBar.addEventListener('input', (e) => setVolume(e.target.value));
+        if (copyVolumeBar) copyVolumeBar.addEventListener('input', (e) => setVolume(e.target.value));
+
+        if (closeMiniPlayerBtn) closeMiniPlayerBtn.addEventListener('click', () => {
+            miniPlayer.classList.remove('active');
+            copyMainControls.style.display = 'none';
+            audioPlayer.pause();
+            videoPlayer.pause();
+        });
+
+        if (playerStyleToggle) playerStyleToggle.addEventListener('click', () => {
+            const currentStyle = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+            const newStyle = currentStyle === 'default' ? 'copy' : 'default';
+            localStorage.setItem(PLAYER_STYLE_KEY, newStyle);
+            if (newStyle === 'copy') {
+                miniPlayer.classList.remove('active');
+                copyMainControls.style.display = 'flex';
+            } else {
+                miniPlayer.classList.add('active');
+                copyMainControls.style.display = 'none';
+            }
+        });
+        
+        if (miniPlayerBtn) miniPlayerBtn.addEventListener('click', () => {
+            fullPlayer.style.display = 'none';
+            miniPlayer.classList.add('active');
+        });
+        if (fullPlayerBtn) fullPlayerBtn.addEventListener('click', () => {
+            fullPlayer.style.display = 'flex';
+            miniPlayer.classList.remove('active');
+        });
+
+        const playerBody = document.querySelector('.player-body');
+        const overlayOpacity = document.getElementById('overlayOpacity');
+        if (overlayOpacity) {
+            overlayOpacity.addEventListener('input', (e) => {
+                const opacity = e.target.value;
+                playerBody.style.setProperty('--ui-opacity', opacity);
+                saveOpacitySetting(opacity);
+            });
+        }
+        
+        const backgroundBlur = document.getElementById('backgroundBlur');
+        if (backgroundBlur) {
+            backgroundBlur.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                playerBackground.classList.toggle('blurred', isChecked);
+                saveBlurSetting(isChecked);
+            });
+        }
+    };
+    
+    const parseJwt = (token) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    };
+    
+    const saveOpacitySetting = (opacity) => {
+        localStorage.setItem(UI_OPACITY_KEY, opacity);
+    };
+
+    const loadOpacitySetting = () => {
+        const opacity = localStorage.getItem(UI_OPACITY_KEY);
+        if (opacity) {
+            document.querySelector('.player-body').style.setProperty('--ui-opacity', opacity);
+            if (document.getElementById('overlayOpacity')) {
+                document.getElementById('overlayOpacity').value = opacity;
+            }
+        }
+    };
+    
+    const saveBlurSetting = (enabled) => {
+        localStorage.setItem(BLUR_ENABLED_KEY, enabled);
+    };
+    
+    const loadBlurSetting = () => {
+        const enabled = localStorage.getItem(BLUR_ENABLED_KEY) === 'true';
+        if (enabled) {
+            document.querySelector('.player-background').classList.add('blurred');
+            if (document.getElementById('backgroundBlur')) {
+                document.getElementById('backgroundBlur').checked = true;
+            }
+        }
+    };
+    
+    const saveVolumeSetting = (volume) => {
+        localStorage.setItem(VOLUME_KEY, volume);
+    };
+    
+    const loadVolumeSetting = () => {
+        const volume = localStorage.getItem(VOLUME_KEY);
+        if (volume) {
+            audioPlayer.volume = videoPlayer.volume = volume;
+            if(volumeBar) volumeBar.value = volume;
+            if(copyVolumeBar) copyVolumeBar.value = volume;
+        }
+    };
+
+    const debounce = (func, delay) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), delay);
+        };
+    };
+
+    const init = () => {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+            if(token && parseJwt(token)) {
+                updateUIAfterLogin();
+            } else {
+                logout();
+            }
+        } else {
+            showLoginView();
+        }
+
+        loadOpacitySetting();
+        loadBlurSetting();
+        loadVolumeSetting();
+        initEventListeners();
+        fetchInitialData();
+        fetchCategories();
+        setupScrollListener();
+        showViewByHash();
+    };
+
+    init();
+});
