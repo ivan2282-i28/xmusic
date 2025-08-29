@@ -9,6 +9,9 @@ from flask_cors import CORS
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
+import joblib
+import librosa
+import numpy as np
 
 load_dotenv()
 
@@ -26,10 +29,36 @@ TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
 INDEX_DIR = os.path.join(BASE_DIR, 'index')
 
 # Создание директорий, если они не существуют
-for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR]:
+for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR, INDEX_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+# Загрузка модели ИИ
+try:
+    with open(os.path.join(BASE_DIR, 'music_genre_model.pkl'), 'rb') as model_file:
+        model = joblib.load(model_file)
+except FileNotFoundError:
+    model = None
+    print("Model file not found. AI genre detection will not be available.")
+except Exception as e:
+    model = None
+    print(f"Failed to load the model: {e}. AI genre detection will not be available.")
+
+# Определение списка жанров
+GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
+
+def extract_features(file_path):
+    y, sr = librosa.load(file_path, mono=True, duration=30)
+    S = np.abs(librosa.stft(y))
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
+    chroma = librosa.feature.chroma_stft(S=S, sr=sr)
+    mel = librosa.feature.melspectrogram(y=y, sr=sr)
+    features = np.concatenate((
+        np.mean(mfcc, axis=1),
+        np.mean(chroma, axis=1),
+        np.mean(mel, axis=1)
+    ))
+    return features.reshape(1, -1)
 
 # Настройка базы данных
 def get_db_connection():
@@ -40,149 +69,118 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     c = conn.cursor()
-
-    # --- Миграция базы данных ---
-    c.execute("PRAGMA table_info(users)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role TEXT DEFAULT 'user'
-            )
-        ''')
-    
-    c.execute("PRAGMA table_info(favorites)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE favorites (
-                user_id INTEGER,
-                media_file TEXT NOT NULL,
-                PRIMARY KEY (user_id, media_file),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        ''')
-        
-    c.execute("PRAGMA table_info(creator_applications)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE creator_applications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                full_name TEXT NOT NULL,
-                phone_number TEXT NOT NULL,
-                email TEXT NOT NULL,
-                status TEXT DEFAULT 'pending',
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        ''')
-        
-    c.execute("PRAGMA table_info(categories)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL
-            )
-        ''')
-        
-    c.execute("PRAGMA table_info(category_users)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE category_users (
-                category_id INTEGER,
-                user_id INTEGER,
-                PRIMARY KEY (category_id, user_id),
-                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        ''')
-
-    c.execute("PRAGMA table_info(track_moderation)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE track_moderation (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                file_name TEXT NOT NULL,
-                cover_name TEXT NOT NULL,
-                title TEXT NOT NULL,
-                type TEXT NOT NULL,
-                status TEXT DEFAULT 'pending',
-                artist TEXT,
-                category_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
-            )
-        ''')
-        
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT DEFAULT 'user'
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS favorites (
+            user_id INTEGER,
+            media_file TEXT NOT NULL,
+            PRIMARY KEY (user_id, media_file),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS creator_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            full_name TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            email TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS category_users (
+            category_id INTEGER,
+            user_id INTEGER,
+            PRIMARY KEY (category_id, user_id),
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS track_moderation (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            file_name TEXT NOT NULL,
+            cover_name TEXT NOT NULL,
+            title TEXT NOT NULL,
+            type TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            genre TEXT,
+            artist TEXT,
+            category_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS tracks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            cover_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            creator_id INTEGER NOT NULL,
+            genre TEXT,
+            artist TEXT,
+            category_id INTEGER,
+            plays INTEGER DEFAULT 0,
+            duration REAL,
+            FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+        )
+    ''')
     c.execute("PRAGMA table_info(tracks)")
-    columns = [column[1] for column in c.execute("PRAGMA table_info(tracks)").fetchall()]
-    if 'id' not in columns:
-        c.execute('''
-            CREATE TABLE tracks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                file_name TEXT NOT NULL,
-                cover_name TEXT NOT NULL,
-                type TEXT NOT NULL,
-                creator_id INTEGER NOT NULL,
-                artist TEXT,
-                category_id INTEGER,
-                plays INTEGER DEFAULT 0,
-                duration REAL,
-                FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
-            )
-        ''')
-        columns = [column[1] for column in c.execute("PRAGMA table_info(tracks)").fetchall()]
-
+    columns = [column[1] for column in c.fetchall()]
     if 'duration' not in columns:
         c.execute("ALTER TABLE tracks ADD COLUMN duration REAL")
-
-    c.execute("PRAGMA table_info(plays)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE plays (
-                user_id INTEGER NOT NULL,
-                track_id INTEGER NOT NULL,
-                timestamp INTEGER NOT NULL,
-                listened_duration REAL,
-                PRIMARY KEY (user_id, track_id, timestamp),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
-            )
-        ''')
-
-    c.execute("PRAGMA table_info(user_preferences)")
-    if not c.fetchone():
-        c.execute('''
-            CREATE TABLE user_preferences (
-                user_id INTEGER UNIQUE NOT NULL,
-                liked_genres TEXT,
-                liked_artists TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        ''')
-
-    # Добавление админа, если его нет
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS plays (
+            user_id INTEGER NOT NULL,
+            track_id INTEGER NOT NULL,
+            timestamp INTEGER NOT NULL,
+            listened_duration REAL,
+            PRIMARY KEY (user_id, track_id, timestamp),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INTEGER UNIQUE NOT NULL,
+            liked_genres TEXT,
+            liked_artists TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
     c.execute("SELECT * FROM users WHERE username = 'root'")
     if c.fetchone() is None:
         c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', 'defaultpassword', 'admin'))
-
     conn.commit()
     conn.close()
 
-# Инициализация базы данных при запуске
 init_db()
 
-# Защита путей
 app.config['UPLOAD_FOLDER'] = {
     'music': MUSIC_DIR,
     'fon': FON_DIR,
     'video': VIDEO_DIR,
-    'temp_uploads': TEMP_UPLOAD_DIR
+    'temp_uploads': TEMP_UPLOAD_DIR,
+    'index': INDEX_DIR
 }
 
 def auth_required(f):
@@ -224,17 +222,13 @@ def role_required(roless: list):
         return decorated_function
     return decorator
 
-# Измененные маршруты для обслуживания файлов
 @app.route('/')
 def serve_index():
-    return send_from_directory(BASE_DIR, 'index.html')
+    return send_from_directory(INDEX_DIR, 'index.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    if filename.startswith('style.css') or filename.startswith('script.js'):
-        return send_from_directory(BASE_DIR, filename)
     return send_from_directory(INDEX_DIR, filename)
-
 
 @app.route('/music/<path:filename>')
 def serve_music(filename):
@@ -339,8 +333,7 @@ def get_tracks():
 @app.route('/api/tracks/best')
 def get_best_tracks():
     conn = get_db_connection()
-    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 30").fetchall()
+    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 9").fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
@@ -856,11 +849,9 @@ def update_playback():
 def get_xrecomen(user_id):
     conn = get_db_connection()
     
-    # Получаем список избранных треков пользователя
     user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
     favorite_media_files = [row['media_file'] for row in user_favorites]
     
-    # Формируем список "Вам нравятся" на основе избранного
     you_like_tracks = []
     if favorite_media_files:
         placeholder = ','.join('?' for _ in favorite_media_files)
@@ -870,7 +861,6 @@ def get_xrecomen(user_id):
     xrecomen_track = None
     you_may_like_tracks = []
     
-    # Формируем список "Вам могут понравиться" из случайных треков
     you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
     you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6").fetchall()
     you_may_like_tracks = [dict(row) for row in you_may_like_tracks]
@@ -879,7 +869,6 @@ def get_xrecomen(user_id):
         xrecomen_track = random.choice(you_may_like_tracks)
         you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
 
-    # Формирование "Любимых подборок"
     favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
     favorite_collections = [dict(row) for row in favorite_collections]
     
@@ -897,6 +886,38 @@ def get_xrecomen(user_id):
 def get_history(user_id):
     return jsonify([])
 
+@app.route('/api/genres')
+def get_genres():
+    return jsonify(GENRES)
+
+@app.route('/api/determine-genre', methods=['POST'])
+@auth_required
+@role_required(['creator','admin'])
+def determine_genre():
+    if 'file' not in request.files:
+        return jsonify({'message': 'Нет файла'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'Не выбран файл'}), 400
+
+    if not model:
+        return jsonify({'message': 'Модель ИИ недоступна.'}), 503
+
+    try:
+        temp_path = os.path.join(TEMP_UPLOAD_DIR, secure_filename(file.filename))
+        file.save(temp_path)
+        
+        features = extract_features(temp_path)
+        predicted_genre_index = model.predict(features)[0]
+        predicted_genre = GENRES[predicted_genre_index]
+        
+        os.remove(temp_path)
+        
+        return jsonify({'genre': predicted_genre})
+    except Exception as e:
+        print(f"Error during genre determination: {e}")
+        return jsonify({'message': 'Ошибка при определении жанра.'}), 500
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)

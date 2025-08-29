@@ -246,10 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
             allMedia = newTracks;
             if (currentUser) {
                 fetchFavorites();
-                fetchXrecomen();
-            } else {
-                fetchXrecomen();
             }
+            fetchXrecomen();
         } catch (error) {
             console.error('Ошибка:', error);
         }
@@ -532,6 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
                 return;
             }
+            // Рендерим треки, так как теперь их количество фиксировано и нет скролла
             renderMediaInContainer(allGridContainer, mediaToRender);
         }
     };
