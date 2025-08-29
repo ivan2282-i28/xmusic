@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const durationEl = document.getElementById('duration');
     const volumeBar = document.getElementById('volumeBar');
 
-    // --- Элементы плеера COPY ---
+    // --- Элементы плеера COPY (Горизонтальный) ---
     const playerCopyStyle = document.querySelector('.player-style-copy');
     const copyPlayerCover = document.getElementById('copyPlayerCover');
     const copyPlayerTitle = document.getElementById('copyPlayerTitle');
@@ -1704,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.classList.remove('player--default');
                 player.classList.add('player--copy');
                 playerDefaultStyle.style.display = 'none';
-                playerCopyStyle.style.display = 'flex';
+                playerCopyStyle.style.display = 'block'; // Используем block, а не flex, т.к. управляем flex внутри
             }
         };
 

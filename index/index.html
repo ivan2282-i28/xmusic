@@ -227,18 +227,16 @@
 
         <div class="player-style-copy" style="display: none;">
             <div class="copy-progress-bar-container">
-                <div class="copy-progress-track"></div>
                 <div class="copy-progress-filled"></div>
             </div>
-
-            <div class="copy-player-content">
-                <img src="default.svg" alt="Track Art" id="copyPlayerCover">
-                
+            <div class="copy-player-body">
                 <div class="copy-track-info">
-                    <span class="title" id="copyPlayerTitle">Выберите медиа</span>
-                    <span class="artist" id="copyPlayerArtist"></span>
+                    <img src="default.svg" alt="Track Art" id="copyPlayerCover">
+                    <div class="copy-track-text">
+                        <span class="title" id="copyPlayerTitle">Выберите медиа</span>
+                        <span class="artist" id="copyPlayerArtist"></span>
+                    </div>
                 </div>
-
                 <div class="copy-main-controls">
                     <button id="copyPrevBtn" class="control-btn" title="Назад">
                         <svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
@@ -251,9 +249,8 @@
                         <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
                     </button>
                 </div>
-
                 <div class="copy-secondary-controls">
-                    <button id="copyFavoriteBtn" class="control-btn" title="Добавить в избранное">
+                     <button id="copyFavoriteBtn" class="control-btn" title="Добавить в избранное">
                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                     <div class="copy-volume-controls">
