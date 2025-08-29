@@ -917,43 +917,6 @@ body.creator-mode {
     margin-top: 10px;
 }
 
-.player .volume-controls svg {
-    fill: var(--text-secondary);
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.player .volume-controls input {
-    width: 150px;
-    height: 6px;
-    background: #4d4d4d;
-    outline: none;
-    border-radius: 3px;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.player .volume-controls input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: -5px;
-}
-.player .volume-controls input::-moz-range-thumb {
-    -moz-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
-}
-
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
     color: var(--creator-text-primary);
 }
@@ -1230,53 +1193,6 @@ body.creator-mode {
     height: 50px;
     border-radius: 6px;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Новые стили для ползунка громкости */
-.player .volume-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.player .volume-controls svg {
-    fill: var(--text-secondary);
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.player .volume-controls input {
-    width: 150px;
-    height: 6px;
-    background: #4d4d4d;
-    outline: none;
-    border-radius: 3px;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.player .volume-controls input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: -5px;
-}
-.player .volume-controls input::-moz-range-thumb {
-    -moz-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
 }
 
 /* Исправленные стили для кнопки избранного */
