@@ -392,8 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPage = 1;
 
         if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
-        mainContent.removeEventListener('scroll', handleScroll); // Убираем старый обработчик на всякий случай
-        mainContent.addEventListener('scroll', handleScroll); // Добавляем новый
+        mainContent.removeEventListener('scroll', handleScroll);
+        mainContent.addEventListener('scroll', handleScroll);
 
         await loadMoreTracks();
         isLoading = false;
@@ -404,11 +404,17 @@ document.addEventListener('DOMContentLoaded', () => {
         isLoading = true;
 
         try {
-            const response = await fetchWithAuth(
-                `${api}/api/tracks?categoryId=${currentCategoryId}&page=${currentPage}&per_page=${tracksPerPage}`
-            );
+            const url = currentCategoryId === 'all'
+                ? `${api}/api/tracks?page=${currentPage}&per_page=${tracksPerPage}`
+                : `${api}/api/tracks?categoryId=${currentCategoryId}&page=${currentPage}&per_page=${tracksPerPage}`;
+
+            const response = await fetchWithAuth(url);
             if (!response.ok) throw new Error('Network response was not ok');
             const newTracks = await response.json();
+            
+            // Добавляем новые треки в allMedia, избегая дублирования
+            const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
+            allMedia.push(...newTracksToAdd);
 
             if (newTracks.length > 0) {
                 if (specificCategoryGrid) {
@@ -416,7 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 currentPage++;
             } else {
-                // Если треков больше нет, отключаем подгрузку
                 mainContent.removeEventListener('scroll', handleScroll);
             }
         } catch (error) {
@@ -530,7 +535,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
                 return;
             }
-            // Рендерим треки, так как теперь их количество фиксировано и нет скролла
             renderMediaInContainer(allGridContainer, mediaToRender);
         }
     };
@@ -908,8 +912,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (xmusicLogo) xmusicLogo.style.display = 'block';
             if (xmusicNav) xmusicNav.style.display = 'flex';
             
-            if(player) player.classList.remove('creator-mode');
-
             showVideo();
 
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
@@ -1910,8 +1912,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (viewTitle) viewTitle.textContent = targetCard.querySelector('h3').textContent;
                 switchView('specificCategoryView');
                 
-                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                // Используем одну и ту же функцию для всех категорий, включая "Все треки"
                 fetchAndRenderCategoryTracks(categoryId);
             }
         });
