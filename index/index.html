@@ -184,6 +184,14 @@
             </div>
         </div>
         
+        <div class="track-info-copy" style="display: none;">
+            <img src="default.svg" alt="Track Art" id="playerCoverCopy">
+            <div>
+                <span class="title" id="playerTitleCopy"></span>
+                <span class="artist" id="playerArtistCopy"></span>
+            </div>
+        </div>
+
         <div class="control-buttons-and-progress">
             <div class="control-buttons">
                 <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор">
@@ -320,6 +328,7 @@
                 <label>Стиль плеера</label>
                 <div class="player-style-selector">
                     <button class="style-btn active" data-style="default">Default</button>
+                    <button class="style-btn" data-style="copy">Copy</button>
                 </div>
             </div>
             <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
