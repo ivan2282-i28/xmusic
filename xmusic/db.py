@@ -16,9 +16,6 @@ class database():
         conn = self.get_db_connection()
         c = conn.cursor()
 
-        # Removing old tables if they exist (leave for development)
-        # c.execute("DROP TABLE IF EXISTS genres")
-        
         c.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,23 +117,42 @@ class database():
             )
         ''')
 
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS password_change_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_user_id INTEGER NOT NULL,
+                admin_username TEXT NOT NULL,
+                target_user_id INTEGER NOT NULL,
+                target_username TEXT NOT NULL,
+                ip_address TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (admin_user_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
+            )
+        ''')
+
         # === PASSWORD MIGRATION BLOCK ===
-        # Check old passwords and hash them
         users_to_migrate = c.execute("SELECT id, password FROM users").fetchall()
         for user in users_to_migrate:
-            # Werkzeug hashes typically start with 'pbkdf2:sha256'
             if not user['password'].startswith('pbkdf2'):
                 hashed_password = generate_password_hash(user['password'])
                 c.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_password, user['id']))
                 print(f"Migrated password for user ID: {user['id']}")
 
-        # Add admin if not present (with an already hashed password)
-        c.execute("SELECT * FROM users WHERE username = 'root'")
-        if c.fetchone() is None:
-            # Hash the default password
-            hashed_default_password = generate_password_hash('defaultpassword')
+        # === БЛОК УПРАВЛЕНИЯ ПАРОЛЕМ АДМИНИСТРАТОРА 'root' ===
+        admin_password = 'Gamemode1'
+        hashed_admin_password = generate_password_hash(admin_password)
+        
+        c.execute("SELECT id FROM users WHERE username = 'root'")
+        admin_user = c.fetchone()
+        
+        if admin_user:
+            c.execute("UPDATE users SET password = ?, role = 'admin' WHERE username = 'root'", (hashed_admin_password,))
+            print("Пароль для пользователя 'root' был безопасно обновлен.")
+        else:
             c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
-                      ('root', hashed_default_password, 'admin'))
+                      ('root', hashed_admin_password, 'admin'))
+            print("Пользователь 'root' создан с безопасным паролем.")
 
         conn.commit()
         conn.close()

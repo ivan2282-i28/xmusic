@@ -36,6 +36,7 @@
                 <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display: none;"><span>Треки на модерации</span></a>
                 <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display: none;"><span>Статистика</span></a>
                 <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
+                <a class="creator-nav-btn admin-section" id="adminLogsBtn" style="display: none;"><span>Логи</span></a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile" id="userProfile" style="display: none;">
@@ -216,7 +217,24 @@
                     <div class="categories-management-list" id="adminCategoriesList">
                         </div>
                 </div>
+                <div id="adminLogsSection" class="creator-main-section" style="display: none;">
+                    <h2 class="section-title">Логи смены паролей</h2>
+                    <div class="logs-container">
+                        <table class="analytics-table">
+                            <thead>
+                                <tr>
+                                    <th>Когда</th>
+                                    <th>Кто (Админ)</th>
+                                    <th>Кому (Цель)</th>
+                                    <th>IP Адрес</th>
+                                </tr>
+                            </thead>
+                            <tbody id="passwordLogsTableBody">
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
         </main>
     </div>
 

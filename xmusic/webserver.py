@@ -416,6 +416,113 @@ def webserver(app,db,dirs):
             'trackStats': [dict(row) for row in track_stats]
         })
 
+    # =================================================================
+    # == НОВЫЕ АДМИНСКИЕ МАРШРУТЫ ДЛЯ ПАРОЛЕЙ И ЛОГОВ ==
+    # =================================================================
+
+    @app.route('/api/admin/change-root-password', methods=['POST'])
+    @auth_required
+    @role_required(['admin'])
+    def change_root_password():
+        # ВНИМАНИЕ: Хранение "пароля защиты" прямо в коде — это небезопасно.
+        # В реальном приложении его следует вынести в переменные окружения (.env).
+        PROTECTION_PASSWORD = '79002891465'
+
+        data = request.json
+        new_password = data.get('newPassword')
+        protection_password = data.get('protectionPassword')
+
+        if not new_password or not protection_password:
+            return jsonify({'message': 'Требуется новый пароль и пароль защиты.'}), 400
+        if protection_password != PROTECTION_PASSWORD:
+            return jsonify({'message': 'Неверный пароль защиты.'}), 403
+
+        hashed_new_password = generate_password_hash(new_password)
+        conn = db.get_db_connection()
+        try:
+            root_user = conn.execute("SELECT id FROM users WHERE username = 'root'").fetchone()
+            if not root_user:
+                return jsonify({'message': "Пользователь 'root' не найден."}), 404
+
+            # Обновляем пароль
+            conn.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_new_password, root_user['id']))
+            
+            # Записываем лог
+            conn.execute(
+                """INSERT INTO password_change_logs (admin_user_id, admin_username, target_user_id, target_username, ip_address) 
+                   VALUES (?, ?, ?, ?, ?)""",
+                (request.current_user['id'], request.current_user['username'], root_user['id'], 'root', request.remote_addr)
+            )
+            conn.commit()
+            return jsonify({'message': "Пароль для 'root' успешно изменен."})
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Произошла ошибка при смене пароля.'}), 500
+        finally:
+            if conn: conn.close()
+
+    @app.route('/api/admin/change-password', methods=['POST'])
+    @auth_required
+    @role_required(['admin'])
+    def change_user_password():
+        data = request.json
+        user_id = data.get('userId')
+        new_password = data.get('newPassword')
+        conn = db.get_db_connection()
+        try:
+            user_to_check = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user_to_check:
+                return jsonify({'message': 'Пользователь не найден.'}), 404
+            if user_to_check['username'] == 'root':
+                return jsonify({'message': 'Используйте специальную процедуру для смены пароля root.'}), 403
+
+            hashed_new_password = generate_password_hash(new_password)
+            # Обновляем пароль
+            conn.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_new_password, user_id))
+
+            # Записываем лог
+            conn.execute(
+                """INSERT INTO password_change_logs (admin_user_id, admin_username, target_user_id, target_username, ip_address) 
+                   VALUES (?, ?, ?, ?, ?)""",
+                (request.current_user['id'], request.current_user['username'], user_id, user_to_check['username'], request.remote_addr)
+            )
+            conn.commit()
+            return jsonify({'message': 'Пароль успешно изменен.'})
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Произошла ошибка.'}), 500
+        finally:
+            if conn: conn.close()
+
+    @app.route('/api/admin/password-logs', methods=['POST'])
+    @auth_required
+    @role_required(['admin'])
+    def get_password_logs():
+        # ВНИМАНИЕ: Хранение пароля доступа к логам в коде — это небезопасно.
+        LOGS_ACCESS_PASSWORD = '79002891465'
+        
+        data = request.json
+        password = data.get('password')
+
+        if not password or password != LOGS_ACCESS_PASSWORD:
+            return jsonify({'message': 'Access denied.'}), 403
+
+        conn = db.get_db_connection()
+        logs = conn.execute(
+            """
+            SELECT admin_username, target_username, ip_address, timestamp 
+            FROM password_change_logs 
+            ORDER BY timestamp DESC
+            LIMIT 100
+            """
+        ).fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in logs])
+    
+    # =================================================================
+    # == КОНЕЦ НОВЫХ АДМИНСКИХ МАРШРУТОВ ==
+    # =================================================================
+
 
     @app.route('/api/genres')
     def get_genres():

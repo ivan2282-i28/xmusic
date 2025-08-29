@@ -172,15 +172,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminModerationBtn = document.getElementById('adminModerationBtn');
     const adminStatsBtn = document.getElementById('adminStatsBtn');
     const adminCategoriesBtn = document.getElementById('adminCategoriesBtn');
+    const adminLogsBtn = document.getElementById('adminLogsBtn');
     const adminApplicationsSection = document.getElementById('adminApplicationsSection');
     const adminUsersSection = document.getElementById('adminUsersSection');
     const adminModerationSection = document.getElementById('adminModerationSection');
     const adminStatsSection = document.getElementById('adminStatsSection');
     const adminCategoriesSection = document.getElementById('adminCategoriesSection');
+    const adminLogsSection = document.getElementById('adminLogsSection');
     const applicationsList = document.getElementById('applicationsList');
     const usersList = document.getElementById('usersList');
     const moderationTracksList = document.getElementById('moderationTracksList');
     const statsContent = document.getElementById('statsContent');
+    const passwordLogsTableBody = document.getElementById('passwordLogsTableBody');
 
     const applicationModal = document.getElementById('applicationModal');
     const closeApplicationBtn = applicationModal.querySelector('.close-btn');
@@ -1212,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3>${user.username}</h3>
                         <p>Role: ${user.role}</p>
                         <button class="change-role-btn" data-user-id="${user.id}" data-current-role="${user.role}">Change Role</button>
-                        <button class="change-password-btn" data-user-id="${user.id}">Change Password</button>
+                        <button class="change-password-btn" data-user-id="${user.id}" data-username="${user.username}">Change Password</button>
                         <button class="delete-user-btn" data-user-id="${user.id}">Delete</button>
                     `;
                     usersList.appendChild(userDiv);
@@ -1522,6 +1525,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (adminCategoriesSection) adminCategoriesSection.style.display = 'block';
                     if (viewTitle) viewTitle.textContent = 'Categories';
                     fetchAdminCategories();
+                } else if (btn.id === 'adminLogsBtn') {
+                    const password = prompt("Для доступа к логам введите пароль:");
+                    if (password) {
+                        // Переключаем вид и запрашиваем логи только ПОСЛЕ ввода пароля
+                        document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
+                        if (adminLogsSection) adminLogsSection.style.display = 'block';
+                        if (viewTitle) viewTitle.textContent = 'Логи';
+                        fetchPasswordLogs(password);
+                    }
                 } else {
                     if (creatorHomeSection) creatorHomeSection.style.display = 'block';
                     if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
@@ -2243,24 +2255,45 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (changePasswordBtn) {
                 e.stopPropagation();
                 const userId = changePasswordBtn.dataset.userId;
-                const newPassword = prompt('Enter new password:');
-                if (newPassword && newPassword.trim()) {
+                const username = changePasswordBtn.dataset.username; // Получаем имя пользователя
+
+                if (username === 'root') {
+                    // Особый сценарий для root
+                    const newPassword = prompt('Введите НОВЫЙ пароль для root:');
+                    if (!newPassword || !newPassword.trim()) return;
+
+                    const protectionPassword = prompt('Для подтверждения введите ПАРОЛЬ ЗАЩИТЫ:');
+                    if (!protectionPassword) return;
+
                     try {
-                        const res = await fetchWithAuth(`${api}/api/admin/change-password`, {
+                        const res = await fetchWithAuth(`${api}/api/admin/change-root-password`, { // Новый эндпоинт
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId,
-                                newPassword
-                            })
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ newPassword, protectionPassword })
                         });
                         const result = await res.json();
                         alert(result.message);
                         if (res.ok) fetchAdminUsers();
                     } catch (err) {
-                        alert('Error changing password.');
+                        alert('Ошибка при смене пароля root.');
+                    }
+
+                } else {
+                    // Стандартный сценарий для других пользователей
+                    const newPassword = prompt(`Введите новый пароль для ${username}:`);
+                    if (newPassword && newPassword.trim()) {
+                        try {
+                            const res = await fetchWithAuth(`${api}/api/admin/change-password`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId, newPassword })
+                            });
+                            const result = await res.json();
+                            alert(result.message);
+                            if (res.ok) fetchAdminUsers();
+                        } catch (err) {
+                            alert('Ошибка при смене пароля.');
+                        }
                     }
                 }
             } else if (deleteUserBtn) {
@@ -2559,6 +2592,54 @@ document.addEventListener('DOMContentLoaded', () => {
         if (volumeBar) volumeBar.addEventListener('input', (e) => setVolume(e.target.value));
         if (copyVolumeBar) copyVolumeBar.addEventListener('input', (e) => setVolume(e.target.value));
 
+    };
+
+    const fetchPasswordLogs = async (password) => {
+        if (!passwordLogsTableBody) return;
+        passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Загрузка...</td></tr>`;
+
+        try {
+            // Используем POST для безопасной отправки пароля в теле запроса
+            const res = await fetchWithAuth(`${api}/api/admin/password-logs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ password: password })
+            });
+
+            if (res.status === 403) {
+                 alert('Неверный пароль доступа к логам.');
+                 passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Доступ запрещен. Введите верный пароль.</td></tr>`;
+                 return;
+            }
+            if (!res.ok) {
+                throw new Error('Could not fetch logs');
+            }
+            
+            const logs = await res.json();
+            
+            passwordLogsTableBody.innerHTML = ''; // Очищаем старые данные
+            if (logs.length === 0) {
+                passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Записи о смене паролей отсутствуют.</td></tr>`;
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                const formattedDate = new Date(log.timestamp).toLocaleString('ru-RU');
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${log.admin_username}</td>
+                    <td>${log.target_username}</td>
+                    <td>${log.ip_address}</td>
+                `;
+                passwordLogsTableBody.appendChild(row);
+            });
+        } catch (err) {
+            console.error(err);
+            passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Ошибка при загрузке логов.</td></tr>`;
+        }
     };
 
     loadOpacitySetting();
