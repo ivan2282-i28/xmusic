@@ -103,16 +103,16 @@ body {
     transition: all 1.5s ease-in-out;
 }
 
-/* Стили для плеера */
+/* Стили для плеера - ОБЩИЕ */
 .player {
     position: fixed;
     bottom: 24px;
-    right: 24px;
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(var(--player-bg-rgb), 0.85);
     backdrop-filter: blur(var(--blur-value));
     -webkit-backdrop-filter: blur(var(--blur-value));
     border: 1px solid var(--border-color);
-    left: auto;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
@@ -188,7 +188,6 @@ body {
     align-items: flex-start;
 }
 
-/* Новые стили для профиля пользователя */
 .user-profile {
     display: flex;
     flex-direction: column;
@@ -725,7 +724,6 @@ body {
     transform: translateX(-50%) scale(1);
 }
 
-/* Обновлённые стили для ползунка громкости и его бегунка */
 .player .volume-controls {
     display: flex;
     align-items: center;
@@ -786,7 +784,6 @@ body {
 }
 
 
-/* Стили для кнопки "Избранное" в плеере */
 .player #favoritePlayerBtn {
     background-color: transparent;
     border: none;
@@ -807,7 +804,6 @@ body {
     animation: heart-beat 0.5s ease-in-out;
 }
 
-/* Стили для кнопки "Повтор" */
 .player .repeat-btn svg {
     fill: var(--text-secondary);
 }
@@ -1123,7 +1119,6 @@ body.creator-mode {
     transition: width 0.3s ease;
 }
 
-/* Исправлена обложка плеера для правильного размера */
 .player .track-info img {
     width: 50px;
     height: 50px;
@@ -1131,7 +1126,6 @@ body.creator-mode {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Исправленные стили для кнопки избранного */
 .favorite-btn {
     position: absolute;
     top: 12px;
@@ -1169,7 +1163,6 @@ body.creator-mode {
     transform: scale(1.1);
 }
 
-/* Анимация для лайка */
 @keyframes heart-beat {
     0% {
         transform: scale(1);
@@ -1182,7 +1175,6 @@ body.creator-mode {
     }
 }
 
-/* Новые стили для главной страницы */
 .now-playing-section {
     position: fixed;
     top: 15px;
@@ -1457,14 +1449,12 @@ body.creator-mode {
     font-size: 0.8em;
 }
 
-/* Добавляем стили для chart-container */
 .chart-container {
     position: relative;
     width: 100%;
     height: 300px;
 }
 
-/* Добавленные стили для модального окна категорий */
 #categoryModal .modal-content {
     max-width: 600px;
 }
@@ -1530,7 +1520,6 @@ body.creator-mode {
     gap: 10px;
 }
 
-/* Стили для нового функционала */
 .user-input-wrapper {
     margin-bottom: 10px;
 }
@@ -1569,7 +1558,6 @@ body.creator-mode {
     font-size: 1em;
 }
 
-/* Добавлены стили для модального окна модерации, чтобы отображать видеоплеер */
 #moderationPlayer {
     display: none;
     width: 100%;
@@ -1582,7 +1570,6 @@ body.creator-mode {
     margin-top: 20px;
 }
 
-/* Стили для статуса загрузки */
 #uploadManager {
     display: flex;
     flex-direction: column;
@@ -1595,7 +1582,6 @@ body.creator-mode {
     color: var(--text-secondary);
 }
 
-/* Обновленные стили для модального окна настроек */
 .modal {
     display: none;
     position: fixed;
@@ -1707,7 +1693,6 @@ body.creator-mode {
     border-color: var(--primary-color);
 }
 
-/* Стили для переключателя (toggle switch) */
 .switch {
     position: relative;
     display: inline-block;
@@ -1759,7 +1744,6 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* Стили для селектора стиля плеера */
 .player-style-selector {
     display: flex;
     gap: 10px;
@@ -1806,39 +1790,37 @@ input:checked + .slider:before {
     flex-direction: column;
     width: 100%;
     height: 100%;
-    position: relative;
-}
-
-/* Прогресс-бар для стиля Copy */
-.copy-progress-bar-container {
-    position: absolute;
-    top: -10px; /* Выносим чуть выше плеера */
-    left: 0;
-    width: 100%;
-    height: 4px;
-    cursor: pointer;
-    background-color: #535353;
-    border-radius: 2px;
-}
-.copy-progress-filled {
-    height: 100%;
-    width: 0;
-    background-color: #FFD700; /* Желтый цвет */
-    border-radius: 2px;
-}
-.copy-progress-bar-container:hover .copy-progress-filled {
-    background-color: #f1c40f;
+    justify-content: center;
 }
 
 /* Тело плеера */
 .copy-player-body {
     width: 100%;
-    height: 100%;
     padding: 0 16px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
 }
+
+/* Прогресс-бар для стиля Copy */
+.copy-progress-bar-container {
+    width: calc(100% - 32px);
+    height: 3px;
+    cursor: pointer;
+    background-color: #535353;
+    border-radius: 2px;
+    margin: 8px 16px 0 16px; /* Отступы сверху/снизу и по бокам */
+}
+.copy-progress-filled {
+    height: 100%;
+    width: 0;
+    background-color: var(--text-primary);
+    border-radius: 2px;
+}
+.copy-progress-bar-container:hover .copy-progress-filled {
+    background-color: #FFD700;
+}
+
 
 /* Левая часть: информация о треке */
 .copy-track-info {
@@ -1950,5 +1932,5 @@ input:checked + .slider:before {
     height: 12px;
     background: var(--text-primary);
     border-radius: 50%;
-    margin-top: -4px; /* (4px - 12px) / 2 */
+    margin-top: -4px;
 }
