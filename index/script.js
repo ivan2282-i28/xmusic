@@ -393,7 +393,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentCategoryId = categoryId;
         if (clearGrid) {
             currentPage = 1;
-            if (specificCategoryGrid) specificCategoryGrid.innerHTML = ''; 
+            if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
+            // ✅ При входе в категорию включаем скролл-обработчик
+            mainContent.addEventListener('scroll', handleScroll);
         }
         await loadMoreTracks();
         isLoading = false;
@@ -404,7 +406,9 @@ document.addEventListener('DOMContentLoaded', () => {
         isLoading = true;
 
         try {
-            const response = await fetchWithAuth(`${api}/api/tracks?categoryId=${currentCategoryId}&page=${currentPage}&per_page=${tracksPerPage}`);
+            const response = await fetchWithAuth(
+                `${api}/api/tracks?categoryId=${currentCategoryId}&page=${currentPage}&per_page=${tracksPerPage}`
+            );
             if (!response.ok) throw new Error('Network response was not ok');
             const newTracks = await response.json();
             if (specificCategoryGrid) {
@@ -412,6 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (newTracks.length > 0) {
                 currentPage++;
+            } else {
+                // 🚫 больше треков нет — отключаем подгрузку
+                mainContent.removeEventListener('scroll', handleScroll);
             }
         } catch (error) {
             console.error('Ошибка:', error);
