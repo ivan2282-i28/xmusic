@@ -749,17 +749,17 @@ body {
     cursor: pointer;
 }
 
-.player .volume-controls input {
+.player .volume-controls input[type=range] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
     width: 150px;
     height: 6px;
     background: #4d4d4d;
     outline: none;
     border-radius: 3px;
-    -webkit-appearance: none;
-    appearance: none;
 }
 
-/* Исправленные стили для ползунка громкости */
 .player .volume-controls input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -768,7 +768,9 @@ body {
   background: var(--text-primary);
   border-radius: 50%;
   cursor: pointer;
+  margin-top: -5px;
 }
+
 .player .volume-controls input[type=range]::-moz-range-thumb {
   -moz-appearance: none;
   appearance: none;
@@ -778,6 +780,7 @@ body {
   border-radius: 50%;
   cursor: pointer;
 }
+
 
 /* Стили для кнопки "Избранное" в плеере */
 .player #favoritePlayerBtn {
@@ -931,6 +934,7 @@ body.creator-mode {
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
+    margin-top: -5px;
 }
 .player .volume-controls input::-moz-range-thumb {
     -moz-appearance: none;
@@ -1255,7 +1259,7 @@ body.creator-mode {
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
-    margin-top: -5px; /* Added to fix the vertical position */
+    margin-top: -5px;
 }
 .player .volume-controls input::-moz-range-thumb {
     -moz-appearance: none;
