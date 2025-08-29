@@ -1240,13 +1240,13 @@ body.creator-mode {
     display: none;
     justify-content: center;
     align-items: flex-end;
-    gap: 5px;
-    height: 50px;
+    gap: 4px;
+    height: 60px;
     margin-top: 20px;
 }
 
 .equalizer-bar {
-    width: 8px;
+    width: 6px;
     height: 10%;
     background-color: var(--primary-color);
     border-radius: 2px;
