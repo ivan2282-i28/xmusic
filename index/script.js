@@ -868,7 +868,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (trackInfoCopy) trackInfoCopy.style.display = 'none';
         } else if (style === 'copy') {
             if (trackInfoDefault) trackInfoDefault.style.display = 'none';
-            if (trackInfoCopy) trackInfoCopy.style.display = 'flex';
+            if (!trackInfoCopy) {
+                trackInfoCopy = document.createElement('div');
+                trackInfoCopy.className = 'track-info-copy';
+                playerElement.prepend(trackInfoCopy);
+            }
+            trackInfoCopy.style.display = 'flex';
         }
 
         playerStyleButtons.forEach(btn => btn.classList.remove('active'));
@@ -878,8 +883,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateTrackInfoForStyle = (track, style) => {
+        const playerElement = document.querySelector('.player');
         if (style === 'default') {
-            const playerHeader = document.querySelector('.player--default .player-header');
+            const playerHeader = playerElement.querySelector('.player-header');
             if (playerHeader) {
                 const playerCover = playerHeader.querySelector('#playerCover');
                 const playerTitle = playerHeader.querySelector('#playerTitle');
@@ -889,11 +895,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (playerArtist) playerArtist.textContent = `от ${track.artist || track.creator_name}`;
             }
         } else if (style === 'copy') {
-            let trackInfoCopy = document.querySelector('.player--copy .track-info-copy');
+            let trackInfoCopy = playerElement.querySelector('.track-info-copy');
             if (!trackInfoCopy) {
                 trackInfoCopy = document.createElement('div');
                 trackInfoCopy.className = 'track-info-copy';
-                document.querySelector('.player--copy').prepend(trackInfoCopy);
+                playerElement.prepend(trackInfoCopy);
             }
             trackInfoCopy.innerHTML = `
                 <img src="/fon/${track.cover}" onerror="this.src='/fon/default.png';" alt="Track Art">
