@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
     const VOLUME_KEY = "volume_level"
+    const UI_OPACITY_KEY = "ui_opacity";
+    const PLAYER_STYLE_KEY = "player_style";
+    const BLUR_ENABLED_KEY = "blur_enabled";
+
 
     const mainContent = document.querySelector('.main-content');
     const allGridContainer = document.getElementById('allGridContainer');
@@ -188,6 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSearchStatus = document.getElementById('userSearchStatus');
     const selectedUsersContainer = document.getElementById('selectedUsersContainer');
     let selectedUsers = [];
+    
+    // Новые элементы для плеера
+    const playerStyleButtons = document.querySelectorAll('.player-style-selector .style-btn');
+    const playerStyles = ['default', 'copy'];
 
     let chartInstance = null;
     let playTimer;
@@ -808,11 +816,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const saveOpacitySetting = (value) => {
-        localStorage.setItem('uiOpacity', value);
+        localStorage.setItem(UI_OPACITY_KEY, value);
     };
 
     const loadOpacitySetting = () => {
-        const savedOpacity = localStorage.getItem('uiOpacity') || 0.5;
+        const savedOpacity = localStorage.getItem(UI_OPACITY_KEY) || 0.5;
         applyOpacity(savedOpacity);
     };
     
@@ -825,12 +833,69 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const saveBlurSetting = (enabled) => {
-        localStorage.setItem(BLUR_KEY, enabled);
+        localStorage.setItem(BLUR_ENABLED_KEY, enabled);
     };
 
     const loadBlurSetting = () => {
-        const savedBlur = localStorage.getItem(BLUR_KEY) !== 'false';
+        const savedBlur = localStorage.getItem(BLUR_ENABLED_KEY) !== 'false';
         applyBlur(savedBlur);
+    };
+
+    const applyPlayerStyle = (style) => {
+        const playerElement = document.querySelector('.player');
+        playerStyles.forEach(s => playerElement.classList.remove(`player--${s}`));
+        playerElement.classList.add(`player--${style}`);
+        
+        const playerHeader = document.querySelector('.player--default .player-header');
+        const trackInfoCopy = document.querySelector('.player--copy .track-info-copy');
+        
+        if (style === 'default') {
+            if (playerHeader) playerHeader.style.display = 'flex';
+            if (trackInfoCopy) trackInfoCopy.style.display = 'none';
+        } else if (style === 'copy') {
+            if (playerHeader) playerHeader.style.display = 'none';
+            if (trackInfoCopy) trackInfoCopy.style.display = 'flex';
+        }
+
+        playerStyleButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.style-btn[data-style="${style}"]`).classList.add('active');
+        
+        if (currentTrack) updateTrackInfoForStyle(currentTrack, style);
+    };
+
+    const updateTrackInfoForStyle = (track, style) => {
+        if (style === 'default') {
+            document.getElementById('playerCover').src = `/fon/${track.cover}`;
+            document.getElementById('playerTitle').textContent = track.title;
+            document.getElementById('playerArtist').textContent = `от ${track.artist || track.creator_name}`;
+        } else if (style === 'copy') {
+            const trackInfoCopy = document.querySelector('.player--copy .track-info-copy');
+            if (!trackInfoCopy) {
+                const newTrackInfoCopy = document.createElement('div');
+                newTrackInfoCopy.className = 'track-info-copy';
+                newTrackInfoCopy.innerHTML = `
+                    <img src="/fon/${track.cover}" alt="Track Art">
+                    <div>
+                        <span class="title">${track.title}</span>
+                        <span class="artist">${track.artist || track.creator_name}</span>
+                    </div>
+                `;
+                document.querySelector('.player--copy').prepend(newTrackInfoCopy);
+            } else {
+                trackInfoCopy.querySelector('img').src = `/fon/${track.cover}`;
+                trackInfoCopy.querySelector('.title').textContent = track.title;
+                trackInfoCopy.querySelector('.artist').textContent = track.artist || track.creator_name;
+            }
+        }
+    };
+
+    const savePlayerStyle = (style) => {
+        localStorage.setItem(PLAYER_STYLE_KEY, style);
+    };
+
+    const loadPlayerStyle = () => {
+        const savedStyle = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+        applyPlayerStyle(savedStyle);
     };
 
 
@@ -1642,6 +1707,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBlurSetting(enabled);
             });
         }
+        
+        if (playerStyleButtons) {
+            playerStyleButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const style = btn.dataset.style;
+                    applyPlayerStyle(style);
+                    savePlayerStyle(style);
+                });
+            });
+        }
 
         if (searchInput) searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -2173,6 +2248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOpacitySetting();
     loadBlurSetting();
     loadVolumeSetting();
+    loadPlayerStyle();
     initEventListeners();
     fetchInitialData();
     fetchCategories();

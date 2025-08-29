@@ -173,7 +173,7 @@
         </main>
     </div>
 
-    <div class="player">
+    <div class="player player--default">
         <div class="player-header">
             <div class="track-info">
                 <img src="default.svg" alt="Track Art" id="playerCover">
@@ -303,6 +303,13 @@
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2>Настройки</h2>
             <div class="form-group">
+                <label for="blurToggle">Фоновое размытие</label>
+                <label class="switch">
+                    <input type="checkbox" id="blurToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="form-group">
                 <label for="opacitySlider">Непрозрачность интерфейса</label>
                 <div class="slider-wrapper">
                     <input type="range" id="opacitySlider" min="0.1" max="1" step="0.05">
@@ -310,11 +317,11 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="blurToggle">Размытие фона</label>
-                <label class="switch">
-                    <input type="checkbox" id="blurToggle" checked>
-                    <span class="slider round"></span>
-                </label>
+                <label>Стиль плеера</label>
+                <div class="player-style-selector">
+                    <button class="style-btn active" data-style="default">Default</button>
+                    <button class="style-btn" data-style="copy">Copy</button>
+                </div>
             </div>
             <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
         </div>
