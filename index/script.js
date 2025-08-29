@@ -203,6 +203,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTrack = null;
     let currentCategoryId = null;
 
+    // Скрываем все модальные окна при загрузке
+    const modals = [
+        uploadModal, settingsModal, loginModal,
+        registerModal, applicationModal, videoModal,
+        moderationModal, categoryModal
+    ];
+
+    modals.forEach(modal => {
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    });
+
     async function fetchWithAuth(url, options = {}) {
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
         options.headers = options.headers || {};
@@ -806,6 +819,357 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error(error);
             if (analyticsSection) analyticsSection.innerHTML = `<p>Не удалось загрузить статистику.</p>`;
+        }
+    };
+
+    const applyOpacity = (value) => {
+        document.documentElement.style.setProperty('--ui-opacity', value);
+        if (opacitySlider) opacitySlider.value = value;
+        if (opacityValue) opacityValue.textContent = `${Math.round(value * 100)}%`;
+    };
+
+    const saveOpacitySetting = (value) => {
+        localStorage.setItem(UI_OPACITY_KEY, value);
+    };
+
+    const loadOpacitySetting = () => {
+        const savedOpacity = localStorage.getItem(UI_OPACITY_KEY) || 0.5;
+        applyOpacity(savedOpacity);
+    };
+    
+    const applyBlur = (enabled) => {
+        const blurValue = enabled ? '8px' : '0px';
+        document.documentElement.style.setProperty('--blur-value', blurValue);
+        if (blurToggle) {
+            blurToggle.checked = enabled;
+        }
+    };
+
+    const saveBlurSetting = (enabled) => {
+        localStorage.setItem(BLUR_ENABLED_KEY, enabled);
+    };
+
+    const loadBlurSetting = () => {
+        const savedBlur = localStorage.getItem(BLUR_ENABLED_KEY) !== 'false';
+        applyBlur(savedBlur);
+    };
+
+    const applyPlayerStyle = (style) => {
+        const playerElement = document.querySelector('.player');
+        playerStyles.forEach(s => playerElement.classList.remove(`player--${s}`));
+        playerElement.classList.add(`player--${style}`);
+        
+        const playerHeader = document.querySelector('.player--default .player-header');
+        const trackInfoCopy = document.querySelector('.player--copy .track-info-copy');
+        
+        if (style === 'default') {
+            if (playerHeader) playerHeader.style.display = 'flex';
+            if (trackInfoCopy) trackInfoCopy.style.display = 'none';
+        } else if (style === 'copy') {
+            if (playerHeader) playerHeader.style.display = 'none';
+            if (trackInfoCopy) trackInfoCopy.style.display = 'flex';
+        }
+
+        playerStyleButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.style-btn[data-style="${style}"]`).classList.add('active');
+        
+        if (currentTrack) updateTrackInfoForStyle(currentTrack, style);
+    };
+
+    const updateTrackInfoForStyle = (track, style) => {
+        if (style === 'default') {
+            document.getElementById('playerCover').src = `/fon/${track.cover}`;
+            document.getElementById('playerTitle').textContent = track.title;
+            document.getElementById('playerArtist').textContent = `от ${track.artist || track.creator_name}`;
+        } else if (style === 'copy') {
+            const trackInfoCopy = document.querySelector('.player--copy .track-info-copy');
+            if (!trackInfoCopy) {
+                const newTrackInfoCopy = document.createElement('div');
+                newTrackInfoCopy.className = 'track-info-copy';
+                newTrackInfoCopy.innerHTML = `
+                    <img src="/fon/${track.cover}" alt="Track Art">
+                    <div>
+                        <span class="title">${track.title}</span>
+                        <span class="artist">${track.artist || track.creator_name}</span>
+                    </div>
+                `;
+                document.querySelector('.player--copy').prepend(newTrackInfoCopy);
+            } else {
+                trackInfoCopy.querySelector('img').src = `/fon/${track.cover}`;
+                trackInfoCopy.querySelector('.title').textContent = track.title;
+                trackInfoCopy.querySelector('.artist').textContent = track.artist || track.creator_name;
+            }
+        }
+    };
+
+    const savePlayerStyle = (style) => {
+        localStorage.setItem(PLAYER_STYLE_KEY, style);
+    };
+
+    const loadPlayerStyle = () => {
+        const savedStyle = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+        applyPlayerStyle(savedStyle);
+    };
+
+
+    const saveVolumeSetting = (value) => {
+        localStorage.setItem(VOLUME_KEY, value);
+    };
+
+    const loadVolumeSetting = () => {
+        const savedVolume = localStorage.getItem(VOLUME_KEY) || 1;
+        const volumeValue = parseFloat(savedVolume);
+        if (volumeBar) {
+            volumeBar.value = volumeValue;
+            audioPlayer.volume = videoPlayer.volume = volumeValue;
+        }
+    };
+
+    const showVideo = () => {
+        if (videoBackgroundContainer) videoBackgroundContainer.classList.add('visible');
+    };
+    const hideVideo = () => {
+        if (videoBackgroundContainer) videoBackgroundContainer.classList.remove('visible');
+    };
+    const formatTime = (seconds) => {
+        if (isNaN(seconds)) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
+    const switchView = (viewIdToShow) => {
+        document.querySelectorAll('.nav-link, .creator-nav-btn').forEach(l => l.classList.remove('active'));
+
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+
+        const viewToShow = document.getElementById(viewIdToShow);
+        if (viewToShow) viewToShow.classList.add('active-view');
+
+        if (backToCategoriesBtn) {
+            backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
+        }
+
+        if (viewIdToShow === 'homeView') {
+            if (navHome) navHome.classList.add('active');
+            if (viewTitle) viewTitle.textContent = 'Главная';
+            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
+            if (player) {
+                player.style.display = 'flex';
+                player.classList.remove('creator-mode');
+            }
+            fetchXrecomen();
+        } else if (viewIdToShow === 'categoriesView') {
+            if (navCategories) navCategories.classList.add('active');
+            if (viewTitle) viewTitle.textContent = 'Категории';
+            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
+            if (player) {
+                player.style.display = 'flex';
+                player.classList.remove('creator-mode');
+            }
+            fetchCategories();
+        } else if (viewIdToShow === 'favoritesView') {
+            if (navFavorites) navFavorites.classList.add('active');
+            if (viewTitle) viewTitle.textContent = 'Избранное';
+            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
+            if (player) {
+                player.style.display = 'flex';
+                player.classList.remove('creator-mode');
+            }
+            fetchFavorites();
+        } else if (viewIdToShow === 'creatorView') {
+            if (viewTitle) viewTitle.textContent = 'Creator Studio';
+            if (searchBarWrapper) searchBarWrapper.style.display = 'none';
+            if (player) player.classList.add('creator-mode');
+            if (currentUser && currentUser.role === 'admin') {
+                if (adminApplicationsBtn) adminApplicationsBtn.classList.add('active');
+                if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
+                fetchAdminApplications();
+            } else if (currentUser) {
+                if (analyticsBtn) analyticsBtn.classList.add('active');
+                if (analyticsSection) analyticsSection.style.display = 'block';
+                fetchCreatorStats();
+            }
+        } else if (viewIdToShow === 'specificCategoryView') {
+            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
+            if (player) {
+                player.style.display = 'flex';
+                player.classList.remove('creator-mode');
+            }
+        }
+    };
+
+    const toggleCreatorMode = (enable) => {
+        if (enable) {
+            document.body.classList.add('creator-mode');
+            hideVideo();
+            activeMediaElement.pause();
+            activeMediaElement.currentTime = 0;
+
+            if (xmusicLogo) xmusicLogo.style.display = 'none';
+            if (xcreatorLogo) xcreatorLogo.style.display = 'block';
+            if (xmusicNav) xmusicNav.style.display = 'none';
+            if (xcreatorNav) xcreatorNav.style.display = 'flex';
+
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+            if (creatorView) creatorView.classList.add('active-view');
+            
+            if(player) player.classList.add('creator-mode');
+            
+            document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
+            const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
+            creatorNavButtons.forEach(btn => btn.classList.remove('active'));
+
+            if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
+                if (analyticsSection) analyticsSection.style.display = 'block';
+                if (analyticsBtn) analyticsBtn.classList.add('active');
+                if (creatorHomeSection) creatorHomeSection.style.display = 'none';
+                fetchCreatorStats();
+            } else {
+                if (creatorHomeSection) creatorHomeSection.style.display = 'block';
+                if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
+            }
+        } else {
+            document.body.classList.remove('creator-mode');
+            if (xcreatorLogo) xcreatorLogo.style.display = 'none';
+            if (xcreatorNav) xcreatorNav.style.display = 'none';
+            if (xmusicLogo) xmusicLogo.style.display = 'block';
+            if (xmusicNav) xmusicNav.style.display = 'flex';
+            
+            showVideo();
+
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+            if (homeView) homeView.classList.add('active-view');
+
+            fetchInitialData();
+        }
+    };
+
+    const fetchAdminApplications = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/applications`);
+            const applications = await res.json();
+            if (applicationsList) {
+                applicationsList.innerHTML = '';
+                if (applications.length === 0) {
+                    applicationsList.innerHTML = '<p>Нет новых заявок.</p>';
+                    return;
+                }
+                applications.forEach(app => {
+                    const appDiv = document.createElement('div');
+                    appDiv.className = 'admin-card';
+                    appDiv.innerHTML = `
+                        <h3>Заявка от: ${app.username}</h3>
+                        <p><strong>Имя:</strong> ${app.full_name}</p>
+                        <p><strong>Телефон:</strong> ${app.phone_number}</p>
+                        <p><strong>Почта:</strong> ${app.email}</p>
+                        <button class="approve-app-btn" data-user-id="${app.user_id}">Одобрить</button>
+                        <button class="reject-app-btn" data-app-id="${app.id}">Отклонить</button>
+                    `;
+                    applicationsList.appendChild(appDiv);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchAdminCategories = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/categories`);
+            const categories = await res.json();
+            if (adminCategoriesSection) {
+                const categoriesList = document.getElementById('adminCategoriesList');
+                if (categoriesList) {
+                    categoriesList.innerHTML = '';
+                    categories.forEach(cat => {
+                        const catDiv = document.createElement('div');
+                        catDiv.className = 'admin-card';
+                        catDiv.innerHTML = `
+                            <h3>${cat.name}</h3>
+                            <div class="category-actions">
+                                <button class="edit-category-btn" data-category-id="${cat.id}">Редактировать</button>
+                                <button class="delete-category-btn" data-category-id="${cat.id}">Удалить</button>
+                            </div>
+                        `;
+                        categoriesList.appendChild(catDiv);
+                    });
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchAdminUsers = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/users`);
+            const users = await res.json();
+            if (usersList) {
+                usersList.innerHTML = '';
+                users.forEach(user => {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'admin-card';
+                    userDiv.innerHTML = `
+                        <h3>${user.username}</h3>
+                        <p>Роль: ${user.role}</p>
+                        <button class="change-role-btn" data-user-id="${user.id}" data-current-role="${user.role}">Сменить роль</button>
+                        <button class="change-password-btn" data-user-id="${user.id}">Сменить пароль</button>
+                        <button class="delete-user-btn" data-user-id="${user.id}">Удалить</button>
+                    `;
+                    usersList.appendChild(userDiv);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchModerationTracks = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/moderation-tracks`);
+            const tracks = await res.json();
+            moderationTracks = tracks;
+            if (moderationTracksList) {
+                moderationTracksList.innerHTML = '';
+                if (tracks.length === 0) {
+                    moderationTracksList.innerHTML = '<p>Нет треков на модерации.</p>';
+                    return;
+                }
+                tracks.forEach((track, index) => {
+                    const trackCard = document.createElement('div');
+                    trackCard.className = `card creator-moderation-card ${track.type === 'video' ? 'card--video' : ''}`;
+                    trackCard.dataset.index = index;
+                    trackCard.innerHTML = `
+                        <div class="card-image-wrapper">
+                            <img src="/temp_uploads/${track.cover_name}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
+                        </div>
+                        <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
+                        <p class="card-artist">от ${track.username}</p>
+                        <div class="moderation-actions">
+                            <button class="moderation-check-btn" data-track-id="${track.id}">Проверить</button>
+                        </div>
+                    `;
+                    moderationTracksList.appendChild(trackCard);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchAdminStats = async () => {
+        try {
+            const res = await fetchWithAuth(`${api}/api/admin/stats`);
+            const stats = await res.json();
+            if (statsContent) {
+                statsContent.innerHTML = `
+                    <p>Всего пользователей: ${stats.userCount}</p>
+                    <p>Треков в медиатеке: ${stats.trackCount}</p>
+                `;
+            }
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -2238,11 +2602,32 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('mouseup', () => { isDragging = false; });
         window.addEventListener('touchend', () => { isDragging = false; });
         
+        // Исправленная логика для ползунка громкости
+        if (volumeBar) {
+            volumeBar.addEventListener('input', () => {
+                audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
+                saveVolumeSetting(volumeBar.value);
+            });
+        }
 
-        if (volumeBar) volumeBar.addEventListener('input', () => {
-            audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
-            saveVolumeSetting(volumeBar.value);
-        });
+        // Логика переключения стилей плеера
+        if (playerStyleButtons) {
+            playerStyleButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const style = btn.dataset.style;
+                    applyPlayerStyle(style);
+                    savePlayerStyle(style);
+
+                    // Управление видимостью volume-controls в зависимости от стиля
+                    const playerElement = document.querySelector('.player');
+                    const isCopyStyle = playerElement.classList.contains('player--copy');
+                    const volumeControls = playerElement.querySelector('.volume-controls');
+                    if (volumeControls) {
+                        volumeControls.style.display = isCopyStyle ? 'flex' : 'none';
+                    }
+                });
+            });
+        }
     };
 
     loadOpacitySetting();
