@@ -184,6 +184,14 @@
             </div>
         </div>
         
+        <div class="track-info-copy" style="display: none;">
+            <img src="default.svg" alt="Track Art" id="playerCoverCopy">
+            <div>
+                <span class="title" id="playerTitleCopy"></span>
+                <span class="artist" id="playerArtistCopy"></span>
+            </div>
+        </div>
+
         <div class="control-buttons-and-progress">
             <div class="control-buttons">
                 <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор">
@@ -215,11 +223,11 @@
                 </div>
                 <span id="duration">0:00</span>
             </div>
-        </div>
-        
-        <div class="volume-controls">
-            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            <input type="range" id="volumeBar" class="slider" min="0" max="1" step="0.01" value="1">
+            
+            <div class="volume-controls">
+                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                <input type="range" id="volumeBar" class="slider" min="0" max="1" step="0.01" value="1">
+            </div>
         </div>
     </div>
     

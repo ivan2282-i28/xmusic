@@ -196,6 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Новые элементы для плеера
     const playerStyleButtons = document.querySelectorAll('.player-style-selector .style-btn');
     const playerStyles = ['default', 'copy'];
+    // Элементы для плеера "Copy"
+    const playerCoverCopy = document.getElementById('playerCoverCopy');
+    const playerTitleCopy = document.getElementById('playerTitleCopy');
+    const playerArtistCopy = document.getElementById('playerArtistCopy');
+    const trackInfoCopy = document.querySelector('.track-info-copy');
+
 
     let chartInstance = null;
     let playTimer;
@@ -659,7 +665,8 @@ document.addEventListener('DOMContentLoaded', () => {
             nowPlayingText.textContent = `Сейчас играет: ${item.title} от ${item.artist || item.creator_name}`;
         }
 
-        if (playerTrackInfo) playerTrackInfo.classList.add('fading');
+        if (playerHeader) playerHeader.classList.add('fading');
+        if (trackInfoCopy) trackInfoCopy.classList.add('fading');
         setTimeout(() => {
             updateTrackInfoForStyle(item, localStorage.getItem(PLAYER_STYLE_KEY) || 'default');
 
@@ -673,7 +680,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showVideo();
             }
             activeMediaElement.play().catch(e => console.error("Ошибка воспроизведения:", e));
-            if (playerTrackInfo) playerTrackInfo.classList.remove('fading');
+            if (playerHeader) playerHeader.classList.remove('fading');
+            if (trackInfoCopy) trackInfoCopy.classList.remove('fading');
         }, 150);
 
         if (favoritePlayerBtn && currentUser) {
@@ -861,19 +869,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Handle visibility of track info elements to prevent duplication
         const trackInfoDefault = playerElement.querySelector('.player-header');
-        let trackInfoCopy = playerElement.querySelector('.track-info-copy');
+        const trackInfoCopy = playerElement.querySelector('.track-info-copy');
+        const favoritePlayerBtn = document.getElementById('favoritePlayerBtn');
 
         if (style === 'default') {
             if (trackInfoDefault) trackInfoDefault.style.display = 'flex';
             if (trackInfoCopy) trackInfoCopy.style.display = 'none';
+            if (favoritePlayerBtn) favoritePlayerBtn.style.display = 'flex';
         } else if (style === 'copy') {
             if (trackInfoDefault) trackInfoDefault.style.display = 'none';
-            if (!trackInfoCopy) {
-                trackInfoCopy = document.createElement('div');
-                trackInfoCopy.className = 'track-info-copy';
-                playerElement.prepend(trackInfoCopy);
-            }
-            trackInfoCopy.style.display = 'flex';
+            if (trackInfoCopy) trackInfoCopy.style.display = 'flex';
+            if (favoritePlayerBtn) favoritePlayerBtn.style.display = 'none';
         }
 
         playerStyleButtons.forEach(btn => btn.classList.remove('active'));
@@ -895,19 +901,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (playerArtist) playerArtist.textContent = `от ${track.artist || track.creator_name}`;
             }
         } else if (style === 'copy') {
-            let trackInfoCopy = playerElement.querySelector('.track-info-copy');
-            if (!trackInfoCopy) {
-                trackInfoCopy = document.createElement('div');
-                trackInfoCopy.className = 'track-info-copy';
-                playerElement.prepend(trackInfoCopy);
+            const trackInfoCopy = playerElement.querySelector('.track-info-copy');
+            if (trackInfoCopy) {
+                const playerCoverCopy = trackInfoCopy.querySelector('#playerCoverCopy');
+                const playerTitleCopy = trackInfoCopy.querySelector('#playerTitleCopy');
+                const playerArtistCopy = trackInfoCopy.querySelector('#playerArtistCopy');
+                if (playerCoverCopy) playerCoverCopy.src = `/fon/${track.cover}`;
+                if (playerTitleCopy) playerTitleCopy.textContent = track.title;
+                if (playerArtistCopy) playerArtistCopy.textContent = `от ${track.artist || track.creator_name}`;
             }
-            trackInfoCopy.innerHTML = `
-                <img src="/fon/${track.cover}" onerror="this.src='/fon/default.png';" alt="Track Art">
-                <div>
-                    <span class="title">${track.title}</span>
-                    <span class="artist">${track.artist || track.creator_name}</span>
-                </div>
-            `;
         }
     };
 

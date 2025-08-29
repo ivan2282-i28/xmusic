@@ -32,7 +32,7 @@
     --player-icon-fill-color: var(--text-secondary);
 
     /* Стили для нового плеера */
-    --player-copy-bg: #1A1A1A;
+    --player-copy-bg: #1a1a1a;
     --player-copy-border: #333;
     --player-copy-text: #fff;
     --player-copy-secondary-text: #aaa;
@@ -1192,7 +1192,7 @@ body.creator-mode {
     width: 100%;
     margin-top: 10px;
 }
-/* Старый баг, убираем display: none; */
+
 .player--copy .volume-controls {
     order: 4;
     width: 120px;
