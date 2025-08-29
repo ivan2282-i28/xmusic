@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
     let currentPage = 1;
-    const tracksPerPage = 30; // Изменено на 30
+    const tracksPerPage = 30;
     let isLoading = false;
     const BLUR_KEY = "blur_enabled";
 
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.status === 401) {
             localStorage.removeItem(ACCESS_TOKEN_KEY);
             localStorage.removeItem(REFRESH_TOKEN_KEY);
-            alert("Ошибко токено овторизоции")
+            alert("Ошибка токена авторизации")
             localStorage.removeItem('currentUser');
             updateUIForAuth(null);
             toggleCreatorMode(false);
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchSection.appendChild(searchResultsContainer);
                 homeView.prepend(searchSection);
             }
-            renderMediaInContainer(searchResultsContainer, mediaToRender, true);
+            renderMediaInContainer(searchResultsContainer, mediaToRender);
         } else {
             if (searchResultsContainer) {
                 searchResultsContainer.parentElement.remove();
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    const fetchAndRenderAll = async () => {
+    const fetchInitialData = async () => {
         try {
             const response = await fetchWithAuth(`${api}/api/tracks`);
             if (!response.ok) throw new Error('Network response was not ok');
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (youLikeGrid) {
                 if (data.youLike && data.youLike.length > 0) {
-                    renderMediaInContainer(youLikeGrid, data.youLike, true);
+                    renderMediaInContainer(youLikeGrid, data.youLike);
                 } else {
                     youLikeGrid.innerHTML = '<p>Добавьте треки в избранное для отображения.</p>';
                 }
@@ -387,16 +387,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchAndRenderCategoryTracks = async (categoryId, clearGrid = true) => {
+    const fetchAndRenderCategoryTracks = async (categoryId) => {
         if (isLoading) return;
         isLoading = true;
         currentCategoryId = categoryId;
-        if (clearGrid) {
-            currentPage = 1;
-            if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
-            // ✅ При входе в категорию включаем скролл-обработчик
-            mainContent.addEventListener('scroll', handleScroll);
-        }
+        currentPage = 1;
+
+        if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
+        mainContent.removeEventListener('scroll', handleScroll); // Убираем старый обработчик на всякий случай
+        mainContent.addEventListener('scroll', handleScroll); // Добавляем новый
+
         await loadMoreTracks();
         isLoading = false;
     };
@@ -411,17 +411,18 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             if (!response.ok) throw new Error('Network response was not ok');
             const newTracks = await response.json();
-            if (specificCategoryGrid) {
-                renderMediaInContainer(specificCategoryGrid, newTracks, true);
-            }
+
             if (newTracks.length > 0) {
+                if (specificCategoryGrid) {
+                    renderMediaInContainer(specificCategoryGrid, newTracks);
+                }
                 currentPage++;
             } else {
-                // 🚫 больше треков нет — отключаем подгрузку
+                // Если треков больше нет, отключаем подгрузку
                 mainContent.removeEventListener('scroll', handleScroll);
             }
         } catch (error) {
-            console.error('Ошибка:', error);
+            console.error('Ошибка при загрузке треков:', error);
         } finally {
             isLoading = false;
         }
@@ -429,7 +430,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = mainContent;
-        if (scrollTop + clientHeight >= scrollHeight - 500 && !isLoading && document.querySelector('.view.active-view').id === 'specificCategoryView' && currentCategoryId !== 'all') {
+        const isActiveView = document.getElementById('specificCategoryView').classList.contains('active-view');
+
+        if (isActiveView && scrollTop + clientHeight >= scrollHeight - 500 && !isLoading) {
             loadMoreTracks();
         }
     };
@@ -517,7 +520,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderFavorites = () => {
         const favoriteMedia = allMedia.filter(item => userFavorites.includes(item.file));
         if (favoritesGridContainer) {
-            renderMediaInContainer(favoritesGridContainer, favoriteMedia, true, true);
+            favoritesGridContainer.innerHTML = '';
+            renderMediaInContainer(favoritesGridContainer, favoriteMedia);
         }
     };
 
@@ -528,12 +532,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
                 return;
             }
-            renderMediaInContainer(allGridContainer, mediaToRender, true);
+            renderMediaInContainer(allGridContainer, mediaToRender);
         }
     };
 
-    const renderMediaInContainer = (container, media, isAllTracksView, isFavoritesView = false) => {
-        if (!container) return; // Проверка на существование контейнера
+    const renderMediaInContainer = (container, media) => {
+        if (!container) return;
         const existingMediaIds = Array.from(container.children).map(card => parseInt(card.dataset.id));
 
         media.forEach((item) => {
@@ -542,11 +546,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             if (existingMediaIds.includes(item.id)) {
-                return; // Пропускаем уже отрисованные треки
+                return;
             }
 
-            const globalIndex = allMedia.findIndex(t => t.id === item.id);
-            if (globalIndex === -1) {
+            if (!allMedia.some(t => t.id === item.id)) {
                 allMedia.push(item);
             }
 
@@ -557,34 +560,15 @@ document.addEventListener('DOMContentLoaded', () => {
             card.dataset.index = trackIndex;
             card.dataset.id = item.id;
 
-
             let cardActionsHtml = '';
             if (currentUser && currentUser.role === 'admin') {
                 cardActionsHtml = `
                     <div class="card-actions">
-                        <button class="rename-btn" data-track-id="${item.id}" data-type="${item.type}" title="Переименовать"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="delete-btn" data-track-id="${item.id}" data-type="${item.type}" title="Удалить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
-                    </div>
-                `;
-            } else if (currentUser && currentUser.role === 'creator') {
-                cardActionsHtml = `
-                    <div class="card-actions">
-                        <button class="delete-btn" data-track-id="${item.id}" data-type="${item.type}" title="Удалить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                        <button class="rename-btn" data-track-id="${item.id}" title="Переименовать"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+                        <button class="delete-btn" data-track-id="${item.id}" title="Удалить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                     </div>
                 `;
             }
-
-            if (favoritePlayerBtn) {
-                const isCurrentTrackFavorite = userFavorites.includes(item.file);
-                if (isCurrentTrackFavorite) {
-                    favoritePlayerBtn.classList.add('favorited');
-                    favoritePlayerBtn.title = 'Удалить из избранного';
-                } else {
-                    favoritePlayerBtn.classList.remove('favorited');
-                    favoritePlayerBtn.title = 'Добавить в избранное';
-                }
-            }
-
 
             card.innerHTML = `
                 <div class="card-image-wrapper">
@@ -597,28 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             container.appendChild(card);
         });
-    };
-
-    const playModerationMedia = (track) => {
-        if (track.type === 'video') {
-            activeMediaElement.pause();
-            activeMediaElement.currentTime = 0;
-            if (player) player.style.display = 'none';
-            videoPlayerModal.src = `/temp_uploads/${track.file_name}`;
-            if (videoModal) videoModal.style.display = 'flex';
-            videoPlayerModal.play();
-        } else {
-            videoPlayerModal.pause();
-            videoPlayerModal.currentTime = 0;
-            if (videoModal) videoModal.style.display = 'none';
-            if (player) player.style.display = 'grid';
-            if (playerCover) playerCover.src = `/temp_uploads/${track.cover_name}`;
-            if (playerTitle) playerTitle.textContent = track.title;
-            if (playerArtist) playerArtist.textContent = `от ${track.username}`;
-            activeMediaElement = audioPlayer;
-            activeMediaElement.src = `/temp_uploads/${track.file_name}`;
-            activeMediaElement.play().catch(e => console.error("Ошибка воспроизведения:", e));
-        }
     };
 
     const playMedia = async (index) => {
@@ -758,6 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: dates,
                     datasets: [{
                         label: 'Прослушивания',
+                        data: plays,
                         borderColor: '#9147FF',
                         backgroundColor: 'rgba(145, 71, 255, 0.2)',
                         borderWidth: 2,
@@ -817,7 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadBlurSetting = () => {
-        const savedBlur = localStorage.getItem(BLUR_KEY) === 'true';
+        const savedBlur = localStorage.getItem(BLUR_KEY) !== 'false';
         applyBlur(savedBlur);
     };
 
@@ -865,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (viewTitle) viewTitle.textContent = 'Главная';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             if (player) {
-                player.style.display = 'grid';
+                player.style.display = 'flex';
                 player.classList.remove('creator-mode');
             }
             fetchXrecomen();
@@ -874,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (viewTitle) viewTitle.textContent = 'Категории';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             if (player) {
-                player.style.display = 'grid';
+                player.style.display = 'flex';
                 player.classList.remove('creator-mode');
             }
             fetchCategories();
@@ -883,14 +846,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (viewTitle) viewTitle.textContent = 'Избранное';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             if (player) {
-                player.style.display = 'grid';
+                player.style.display = 'flex';
                 player.classList.remove('creator-mode');
             }
             fetchFavorites();
         } else if (viewIdToShow === 'creatorView') {
             if (viewTitle) viewTitle.textContent = 'Creator Studio';
             if (searchBarWrapper) searchBarWrapper.style.display = 'none';
-            if (player) player.classList.add('creator-mode'); // Плеер остается видимым
+            if (player) player.classList.add('creator-mode');
             if (currentUser && currentUser.role === 'admin') {
                 if (adminApplicationsBtn) adminApplicationsBtn.classList.add('active');
                 if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
@@ -903,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewIdToShow === 'specificCategoryView') {
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             if (player) {
-                player.style.display = 'grid';
+                player.style.display = 'flex';
                 player.classList.remove('creator-mode');
             }
         }
@@ -924,7 +887,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (creatorView) creatorView.classList.add('active-view');
             
-            // Player remains visible, just changes its style
             if(player) player.classList.add('creator-mode');
             
             document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
@@ -954,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
             if (homeView) homeView.classList.add('active-view');
 
-            fetchAndRenderAll();
+            fetchInitialData();
         }
     };
 
@@ -1201,7 +1163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (applicationModal) applicationModal.style.display = 'flex';
         });
         
-        // ОБРАБОТЧИК ДЛЯ ОТПРАВКИ ФОРМЫ ЗАЯВКИ
         if (applicationForm) {
             applicationForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1243,12 +1204,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const uploadTrackBtn = document.getElementById('uploadTrackBtn');
-        if (uploadTrackBtn) uploadTrackBtn.addEventListener('click', () => {
-            if (uploadModal) uploadModal.style.display = 'flex';
-            if (uploadManager) uploadManager.style.display = 'block';
-            const submitButton = document.querySelector('#uploadForm button[type="submit"]');
-            if (submitButton) submitButton.textContent = 'Отправить на модерацию';
+        if (myTracksSection) myTracksSection.addEventListener('click', (e) => {
+            if (e.target.id === 'uploadTrackBtn') {
+                if (uploadModal) uploadModal.style.display = 'flex';
+            }
         });
 
         if (closeUploadBtn) closeUploadBtn.addEventListener('click', () => {
@@ -1570,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             try {
-                const res = await fetchWithAuth(`${api}/api/login`, {
+                const res = await fetch(`${api}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1600,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const username = document.getElementById('registerUsername').value;
             const password = document.getElementById('registerPassword').value;
             try {
-                const res = await fetchWithAuth(`${api}/api/register`, {
+                const res = await fetch(`${api}/api/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1667,7 +1626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index >= 0) playMedia(index);
         });
 
-        mainContent.addEventListener('click', async (e) => {
+        document.body.addEventListener('click', async (e) => {
             const card = e.target.closest('.card');
             const deleteBtn = e.target.closest('.delete-btn');
             const renameBtn = e.target.closest('.rename-btn');
@@ -1687,10 +1646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (renameBtn) {
                 e.stopPropagation();
-                const {
-                    trackId,
-                    type
-                } = renameBtn.dataset;
+                const trackId = renameBtn.dataset.trackId;
                 const track = allMedia.find(t => t.id == trackId);
                 const newTitle = prompt('Введите новое название:', track.title);
                 if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
@@ -1705,7 +1661,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 newTitle: newTitle.trim()
                             })
                         });
-                        if (res.ok) fetchAndRenderAll();
+                        if (res.ok) fetchInitialData();
                         else alert('Ошибка при переименовании');
                     } catch (err) {
                         console.error(err);
@@ -1713,16 +1669,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (deleteBtn) {
                 e.stopPropagation();
-                const {
-                    trackId
-                } = deleteBtn.dataset;
+                const trackId = deleteBtn.dataset.trackId;
                 const track = allMedia.find(t => t.id == trackId);
                 if (confirm(`Вы уверены, что хотите удалить "${track.title}"?`)) {
                     try {
                         const res = await fetchWithAuth(`${api}/api/tracks/${trackId}`, {
                             method: 'DELETE'
                         });
-                        if (res.ok) fetchAndRenderAll();
+                        if (res.ok) fetchInitialData();
                         else alert('Ошибка при удалении');
                     } catch (err) {
                         console.error(err);
@@ -1767,16 +1721,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                     });
                     if (res.ok) {
-                        if (isFavorite) {
-                            userFavorites = userFavorites.filter(f => f !== mediaFile);
-                            favoritePlayerBtn.classList.remove('favorited');
-                            favoritePlayerBtn.title = 'Добавить в избранное';
-                            fetchXrecomen();
-                        } else {
-                            userFavorites.push(currentTrack.file);
-                            favoritePlayerBtn.classList.add('favorited');
-                            favoritePlayerBtn.title = 'Удалить из избранного';
-                            fetchXrecomen();
+                        await fetchFavorites();
+                        const allFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${mediaFile}"]`);
+                        allFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
+                        if (currentTrack && currentTrack.file === mediaFile) {
+                           favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
                         }
                     } else {
                         alert('Ошибка при изменении избранного.');
@@ -1858,8 +1807,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     moderationApproveBtn.dataset.title = track.title;
                     moderationApproveBtn.dataset.type = track.type;
                     moderationApproveBtn.dataset.creatorId = track.user_id;
-                    moderationApproveBtn.dataset.artist = track.artist;
-                    moderationApproveBtn.dataset.categoryId = track.category_id;
+                    moderationApproveBtn.dataset.artist = track.artist || '';
+                    moderationApproveBtn.dataset.categoryId = track.category_id || '';
                 }
 
                 if (moderationRejectBtn) moderationRejectBtn.dataset.trackId = track.id;
@@ -1958,15 +1907,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (categoryCard || collectionCard) {
                 const targetCard = categoryCard || collectionCard;
                 const categoryId = targetCard.dataset.categoryId;
-                if (categoryId === 'all') {
-                    if (viewTitle) viewTitle.textContent = 'Все треки';
-                    switchView('specificCategoryView');
-                    fetchAndRenderAll();
-                } else {
-                    if (viewTitle) viewTitle.textContent = targetCard.querySelector('h3').textContent;
-                    switchView('specificCategoryView');
-                    fetchAndRenderCategoryTracks(categoryId);
-                }
+                
+                if (viewTitle) viewTitle.textContent = targetCard.querySelector('h3').textContent;
+                switchView('specificCategoryView');
+                
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                // Используем одну и ту же функцию для всех категорий, включая "Все треки"
+                fetchAndRenderCategoryTracks(categoryId);
             }
         });
 
@@ -2004,7 +1951,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (moderationPlayer) moderationPlayer.pause();
                     if (moderationVideoPlayer) moderationVideoPlayer.pause();
                     fetchModerationTracks();
-                    fetchAndRenderAll();
+                    fetchInitialData();
                 }
             } catch (err) {
                 alert('Ошибка при одобрении трека.');
@@ -2058,7 +2005,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 const trackToAdd = allMedia[currentTrackIndex];
-                const isFavorite = userFavorites.includes(trackToAdd.file);
+                const isFavorite = favoritePlayerBtn.classList.contains('favorited');
 
                 try {
                     const res = await fetchWithAuth(`${api}/api/favorites`, {
@@ -2072,17 +2019,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                     });
                     if (res.ok) {
-                        if (isFavorite) {
-                            userFavorites = userFavorites.filter(f => f !== trackToAdd.file);
-                            favoritePlayerBtn.classList.remove('favorited');
-                            favoritePlayerBtn.title = 'Добавить в избранное';
-                            fetchXrecomen();
-                        } else {
-                            userFavorites.push(trackToAdd.file);
-                            favoritePlayerBtn.classList.add('favorited');
-                            favoritePlayerBtn.title = 'Удалить из избранного';
-                            fetchXrecomen();
-                        }
+                        await fetchFavorites();
+                        favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
                     } else {
                         alert('Ошибка при изменении избранного.');
                     }
@@ -2095,12 +2033,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const onPlay = () => {
             if (playIcon) playIcon.style.display = 'none';
             if (pauseIcon) pauseIcon.style.display = 'block';
-            if (nowPlayingText) {
-                if (currentTrackIndex !== -1 && allMedia[currentTrackIndex]) {
-                    const track = allMedia[currentTrackIndex];
-                    nowPlayingText.textContent = `Сейчас играет: ${track.title} от ${track.artist || track.creator_name}`;
-                }
-            }
         };
 
         const onPause = () => {
@@ -2115,13 +2047,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
+        [audioPlayer, videoPlayer].forEach(el => {
             if (el) {
                 el.addEventListener('play', onPlay);
                 el.addEventListener('pause', onPause);
                 el.addEventListener('ended', onEnded);
                 el.addEventListener('timeupdate', () => {
-                    if (!isDragging) {
+                    if (!isDragging && el.duration) {
                         const progress = (el.currentTime / el.duration) * 100 || 0;
                         if (progressFilled) progressFilled.style.width = `${progress}%`;
                         if (progressThumb) progressThumb.style.left = `${progress}%`;
@@ -2152,44 +2084,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        if (progressBarContainer) progressBarContainer.addEventListener('mousedown', (e) => {
-            if (allMedia.length > 0) {
-                isDragging = true;
-                scrub(e);
-            }
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) scrub(e);
-        });
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-        if (progressBarContainer) progressBarContainer.addEventListener('touchstart', (e) => {
-            if (allMedia.length > 0) {
-                isDragging = true;
-                scrub(e);
-            }
-        });
-        window.addEventListener('touchmove', (e) => {
-            if (isDragging) scrub(e);
-        });
-        window.addEventListener('touchend', () => {
-            isDragging = false;
-        });
+        if (progressBarContainer) {
+            progressBarContainer.addEventListener('mousedown', (e) => {
+                if (allMedia.length > 0) { isDragging = true; scrub(e); }
+            });
+            progressBarContainer.addEventListener('touchstart', (e) => {
+                if (allMedia.length > 0) { isDragging = true; scrub(e); }
+            });
+        }
+        window.addEventListener('mousemove', (e) => { if (isDragging) scrub(e); });
+        window.addEventListener('touchmove', (e) => { if (isDragging) scrub(e); });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('touchend', () => { isDragging = false; });
+        
 
         if (volumeBar) volumeBar.addEventListener('input', () => {
             audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
             saveVolumeSetting(volumeBar.value);
         });
-
-        mainContent.addEventListener('scroll', handleScroll);
     };
 
     loadOpacitySetting();
     loadBlurSetting();
     loadVolumeSetting();
     initEventListeners();
-    fetchAndRenderAll();
+    fetchInitialData();
     fetchCategories();
 
     const savedUser = localStorage.getItem('currentUser');

@@ -296,19 +296,30 @@ body {
     transition: color 1.5s ease-in-out;
 }
 
-/* Обновлённый блок для отступов */
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
 }
 
+/* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
+/* Старый grid-контейнер заменен на flex для горизонтальной прокрутки */
 #allGridContainer {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex; /* Используем flexbox */
     gap: 20px;
-    overflow-x: hidden;
+    overflow-x: auto; /* Включаем горизонтальный скролл */
+    padding-bottom: 20px; /* Отступ для скроллбара */
+    white-space: nowrap; /* Запрещаем перенос элементов */
 }
+
+/* Добавляем стили для карточек внутри нового контейнера, чтобы они не сжимались */
+#allGridContainer .card {
+    min-width: 180px; /* Задаем минимальную ширину */
+    max-width: 180px; /* Задаем максимальную ширину */
+    display: inline-block;
+    white-space: normal; /* Восстанавливаем перенос текста внутри карточки */
+}
+/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
 .search-results-container {
     display: grid;

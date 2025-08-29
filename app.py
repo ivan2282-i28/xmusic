@@ -320,7 +320,7 @@ def get_tracks():
     conn = get_db_connection()
     category_id = request.args.get('categoryId')
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 30, type=int) # Изменено на 30
+    per_page = request.args.get('per_page', 30, type=int)
     offset = (page - 1) * per_page
 
     query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
@@ -339,7 +339,8 @@ def get_tracks():
 @app.route('/api/tracks/best')
 def get_best_tracks():
     conn = get_db_connection()
-    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 9").fetchall()
+    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 30").fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
