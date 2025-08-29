@@ -156,10 +156,10 @@ def webserver(app,db,dirs):
         query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
         params = []
 
-        if category_id and category_id != 'all':
+        if category_id and category_id.isdigit():
             query += " WHERE t.category_id = ?"
             params.append(category_id)
-
+        
         query += " ORDER BY t.id DESC LIMIT ? OFFSET ?"
         params.extend([per_page, offset])
 
