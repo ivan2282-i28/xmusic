@@ -103,6 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeMessage = document.getElementById('welcomeMessage');
     const logoutBtn = document.getElementById('logoutBtn');
     const headerControls = document.querySelector('.header-controls');
+    
+    // Новые элементы для профиля
+    const userProfile = document.getElementById('userProfile');
+    const profileLetter = document.getElementById('profileLetter');
+    const userRole = document.getElementById('userRole');
+
 
     const creatorStudioBtn = document.getElementById('creatorStudioBtn');
     const backToXMusicBtn = document.getElementById('backToXMusicBtn');
@@ -469,18 +475,21 @@ document.addEventListener('DOMContentLoaded', () => {
             loadMoreTracks();
         }
     };
-
+    
+    // Обновленная функция updateUIForAuth
     const updateUIForAuth = (user) => {
         if (user) {
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
-            loginBtn.style.display = 'none';
+
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (userProfile) userProfile.style.display = 'flex';
+            if (profileLetter) profileLetter.textContent = user.username.charAt(0).toUpperCase();
+            if (welcomeMessage) welcomeMessage.textContent = `Привет, ${user.username}!`;
+            if (userRole) userRole.textContent = `Роль: ${user.role}`;
+
             if (navFavorites) navFavorites.style.display = 'flex';
             if (creatorStudioBtn) creatorStudioBtn.style.display = 'block';
-            if (welcomeMessage) {
-                welcomeMessage.textContent = `Привет, ${user.username}!`;
-                welcomeMessage.style.display = 'block';
-            }
             if (logoutBtn) logoutBtn.style.display = 'block';
             fetchFavorites();
             fetchXrecomen();
@@ -502,7 +511,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             currentUser = null;
             localStorage.removeItem('currentUser');
+
             if (loginBtn) loginBtn.style.display = 'block';
+            if (userProfile) userProfile.style.display = 'none';
             if (navFavorites) navFavorites.style.display = 'none';
             if (creatorStudioBtn) creatorStudioBtn.style.display = 'none';
             if (welcomeMessage) welcomeMessage.style.display = 'none';
@@ -517,6 +528,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchXrecomen();
         }
     };
+    // Конец обновленной функции
+
 
     const fetchCreatorCategories = async () => {
         if (!currentUser) return;
@@ -2065,18 +2078,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     if (res.ok) {
                         await fetchFavorites();
-                        const allFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${mediaFile}"]`);
+                        const allFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${trackToAdd.file}"]`);
                         allFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
-                        if (currentTrack && currentTrack.file === mediaFile) {
-                           favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
-                           const heartIcon = favoritePlayerBtn.querySelector('svg');
-                           if (!isFavorite) {
-                                heartIcon.setAttribute('fill', 'red');
-                                heartIcon.setAttribute('stroke', 'red');
-                           } else {
-                                heartIcon.setAttribute('fill', 'none');
-                                heartIcon.setAttribute('stroke', 'currentColor');
-                           }
+                        favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
+                        const heartIcon = favoritePlayerBtn.querySelector('svg');
+                        if (!isFavorite) {
+                            heartIcon.setAttribute('fill', 'red');
+                            heartIcon.setAttribute('stroke', 'red');
+                        } else {
+                            heartIcon.setAttribute('fill', 'none');
+                            heartIcon.setAttribute('stroke', 'currentColor');
                         }
                     } else {
                         alert('Ошибка при изменении избранного.');
@@ -2086,6 +2097,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+        
 
         const onPlay = () => {
             if (playIcon) playIcon.style.display = 'none';
