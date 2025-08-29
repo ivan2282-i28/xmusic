@@ -25,11 +25,6 @@
     --creator-text-secondary: #666666;
     --creator-border-color: #DDDDDD;
 
-    /* Новые цвета для Creator Studio */
-    --creator-accent-color: #3B72A9;
-    --creator-bg-light: #F8FAFC;
-    --creator-block-bg: #EAEFF5;
-
     /* Новые переменные для плеера */
     --player-button-size: 40px;
     --player-icon-color: var(--text-primary);
@@ -108,13 +103,13 @@ body {
     transition: all 1.5s ease-in-out;
 }
 
-/* Обновлённые стили для плеера - УВЕЛИЧЕНА ВЫСОТА И УМЕНЬШЕНЫ ВНУТРЕННИЕ ОТСТУПЫ */
+/* Обновлённые стили для плеера */
 .player {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 320px;
-    height: 160px; /* ИЗМЕНЕНИЕ: Увеличенная высота, чтобы вместить все элементы */
+    width: 380px; /* Увеличенная ширина */
+    height: 220px; /* Увеличенная высота */
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
     backdrop-filter: blur(var(--blur-value));
     -webkit-backdrop-filter: blur(var(--blur-value));
@@ -125,8 +120,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 15px;
+    gap: 15px; /* Увеличенный зазор */
+    padding: 20px;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -497,46 +492,50 @@ body {
 }
 
 /* Обновлённые стили плеера */
+.player {
+    /* ... (оставляем старые стили расположения) ... */
+}
+
+/* Новая компоновка плеера */
 .player .player-header {
     display: flex;
     width: 100%;
     align-items: center;
     gap: 15px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .player .track-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: auto;
-    align-self: flex-start;
-    padding-top: 0px;
+    gap: 15px;
+    flex-grow: 1;
+    min-width: 0;
 }
 
 .player .track-info div {
     display: flex;
     flex-direction: column;
     text-align: left;
+    min-width: 0;
 }
 
 .player .track-info img {
-    width: 40px;
-    height: 40px;
+    width: 60px; /* Увеличенный размер обложки */
+    height: 60px;
     border-radius: 6px;
     flex-shrink: 0;
 }
 
 .player .track-info .title {
     font-weight: 600;
-    font-size: 0.9em;
+    font-size: 1.1em; /* Увеличенный размер шрифта */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .player .track-info .artist {
-    font-size: 0.7em;
+    font-size: 0.9em; /* Увеличенный размер шрифта */
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -547,7 +546,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
 }
 
@@ -555,7 +554,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 20px; /* Увеличенный зазор между кнопками */
     width: 100%;
 }
 
@@ -571,8 +570,8 @@ body {
 }
 
 .player .control-buttons svg {
-    width: 20px;
-    height: 20px;
+    width: 24px; /* Увеличенный размер иконок */
+    height: 24px;
     fill: var(--text-secondary);
     transition: fill 0.2s, transform 0.2s;
 }
@@ -585,15 +584,15 @@ body {
 .player .play-button {
     background-color: var(--card-bg);
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 50px; /* Увеличенный размер кнопки */
+    height: 50px;
     border: 1px solid var(--border-color);
 }
 
 .player .play-button svg {
     fill: var(--text-primary);
-    width: 24px;
-    height: 24px;
+    width: 30px; /* Увеличенный размер иконок */
+    height: 30px;
 }
 
 .player .play-button:hover {
@@ -605,21 +604,20 @@ body {
 .player .progress-bar {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px; /* Увеличенный зазор */
     width: 100%;
-    margin-top: -5px;
 }
 
 .player .progress-bar span {
-    font-size: 0.7em;
+    font-size: 0.8em; /* Увеличенный размер шрифта */
     color: var(--text-secondary);
-    width: 30px;
+    width: 40px; /* Увеличенная ширина */
     text-align: center;
 }
 
 .player .progress-bar-container {
     flex-grow: 1;
-    height: 10px;
+    height: 12px; /* Увеличенная высота */
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -628,9 +626,9 @@ body {
 
 .player .progress-track, .player .progress-filled {
     position: absolute;
-    height: 4px;
+    height: 6px; /* Увеличенная высота */
     width: 100%;
-    border-radius: 2px;
+    border-radius: 3px; /* Увеличенный радиус */
 }
 
 .player .progress-track {
@@ -644,8 +642,8 @@ body {
 
 .player .progress-thumb {
     position: absolute;
-    width: 12px;
-    height: 12px;
+    width: 14px; /* Увеличенный размер */
+    height: 14px;
     background-color: var(--text-primary);
     border-radius: 50%;
     left: 0;
@@ -658,39 +656,43 @@ body {
     transform: translateX(-50%) scale(1);
 }
 
+/* Новые стили для ползунка громкости */
 .player .volume-controls {
     display: flex;
     align-items: center;
+    justify-content: center; /* Центрируем ползунок */
     gap: 10px;
     width: 100%;
-    margin-top: 5px;
+    margin-top: 10px;
 }
 
 .player .volume-controls svg {
     fill: var(--text-secondary);
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     cursor: pointer;
 }
 
-.player .volume-controls .slider {
-    -webkit-appearance: none;
-    width: 80px;
-    height: 4px;
+.player .volume-controls input {
+    width: 150px; /* Увеличенная ширина ползунка */
+    height: 6px;
     background: #4d4d4d;
     outline: none;
-    border-radius: 2px;
-}
-
-.player .volume-controls .slider::-webkit-slider-thumb {
+    border-radius: 3px;
     -webkit-appearance: none;
     appearance: none;
-    width: 12px;
-    height: 12px;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
 }
+
 
 /* Стили для кнопки "Избранное" в плеере */
 .player #favoritePlayerBtn {
@@ -813,6 +815,7 @@ body.creator-mode {
 .player .volume-controls {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     width: 100%;
 }
@@ -1098,10 +1101,10 @@ body.creator-mode {
 .player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center; /* Центрируем по горизонтали */
     gap: 10px;
     width: 100%;
-    margin-top: 5px;
+    margin-top: 10px; /* Дополнительный отступ сверху */
 }
 
 .player .volume-controls input {
