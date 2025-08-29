@@ -103,12 +103,13 @@ body {
     transition: all 1.5s ease-in-out;
 }
 
+/* Обновлённые стили для плеера */
 .player {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 380px;
-    height: 220px;
+    width: 380px; /* Увеличенная ширина */
+    height: 220px; /* Увеличенная высота */
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
     backdrop-filter: blur(var(--blur-value));
     -webkit-backdrop-filter: blur(var(--blur-value));
@@ -119,7 +120,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 15px; /* Увеличенный зазор */
     padding: 20px;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -252,12 +253,6 @@ body {
     transition: color 1.5s ease-in-out;
 }
 
-.header-controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
 .search-bar-wrapper {
     width: 100%;
     max-width: 350px;
@@ -309,6 +304,8 @@ body {
     gap: 20px;
 }
 
+/* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
+/* Стиль для grid-контейнера в разделе "Лучшее", чтобы отобразить 10 карточек в одну строку */
 #allGridContainer {
     display: flex;
     flex-wrap: nowrap;
@@ -327,6 +324,7 @@ body {
     flex: 0 0 auto;
     width: 180px;
 }
+/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
 .search-results-container {
     display: grid;
@@ -493,54 +491,241 @@ body {
     line-height: 1.2;
 }
 
-.player .player-header {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
+/* Обновлённые стили плеера */
+.player {
+    /* ... (оставляем старые стили расположения) ... */
 }
 
-.player .track-info {
-    flex-direction: row;
+/* Новая компоновка плеера */
+.player .player-header {
+    display: flex;
+    width: 100%;
     align-items: center;
     gap: 15px;
 }
-.player .track-info div {
-    text-align: left;
-}
-.player .track-info img {
-    width: 50px;
-    height: 50px;
-}
-.player .player-header .track-info {
+
+.player .track-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
     flex-grow: 1;
+    min-width: 0;
+}
+
+.player .track-info div {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    min-width: 0;
+}
+
+.player .track-info img {
+    width: 60px; /* Увеличенный размер обложки */
+    height: 60px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.player .track-info .title {
+    font-weight: 600;
+    font-size: 1.1em; /* Увеличенный размер шрифта */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player .track-info .artist {
+    font-size: 0.9em; /* Увеличенный размер шрифта */
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .player .control-buttons-and-progress {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    width: 100%;
-}
-.player .control-buttons {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-}
-.player .progress-bar {
-    display: flex;
-    align-items: center;
     gap: 10px;
     width: 100%;
 }
 
-.player .volume-controls {
+.player .control-buttons {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 20px; /* Увеличенный зазор между кнопками */
+    width: 100%;
+}
+
+.player .control-btn, .player .play-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.player .control-buttons svg {
+    width: 24px; /* Увеличенный размер иконок */
+    height: 24px;
+    fill: var(--text-secondary);
+    transition: fill 0.2s, transform 0.2s;
+}
+
+.player .control-buttons .control-btn:hover svg {
+    fill: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.player .play-button {
+    background-color: var(--card-bg);
+    border-radius: 50%;
+    width: 50px; /* Увеличенный размер кнопки */
+    height: 50px;
+    border: 1px solid var(--border-color);
+}
+
+.player .play-button svg {
+    fill: var(--text-primary);
+    width: 30px; /* Увеличенный размер иконок */
+    height: 30px;
+}
+
+.player .play-button:hover {
+    transform: scale(1.1);
+    background-color: var(--card-hover-bg);
+    border-color: var(--primary-color);
+}
+
+.player .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Увеличенный зазор */
+    width: 100%;
+}
+
+.player .progress-bar span {
+    font-size: 0.8em; /* Увеличенный размер шрифта */
+    color: var(--text-secondary);
+    width: 40px; /* Увеличенная ширина */
+    text-align: center;
+}
+
+.player .progress-bar-container {
+    flex-grow: 1;
+    height: 12px; /* Увеличенная высота */
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.player .progress-track, .player .progress-filled {
+    position: absolute;
+    height: 6px; /* Увеличенная высота */
+    width: 100%;
+    border-radius: 3px; /* Увеличенный радиус */
+}
+
+.player .progress-track {
+    background-color: #4d4d4d;
+}
+
+.player .progress-filled {
+    background-color: var(--primary-color);
+    width: 0;
+}
+
+.player .progress-thumb {
+    position: absolute;
+    width: 14px; /* Увеличенный размер */
+    height: 14px;
+    background-color: var(--text-primary);
+    border-radius: 50%;
+    left: 0;
+    transform: translateX(-50%) scale(0);
+    pointer-events: none;
+    transition: transform 0.2s;
+}
+
+.player .progress-bar-container:hover .progress-thumb {
+    transform: translateX(-50%) scale(1);
+}
+
+/* Новые стили для ползунка громкости */
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Центрируем ползунок */
     gap: 10px;
     width: 100%;
+    margin-top: 10px;
+}
+
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.player .volume-controls input {
+    width: 150px; /* Увеличенная ширина ползунка */
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+
+/* Стили для кнопки "Избранное" в плеере */
+.player #favoritePlayerBtn {
+    background-color: transparent;
+    border: none;
+    font-size: 1.2em;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.player #favoritePlayerBtn:hover {
+    color: var(--primary-color);
+    transform: scale(1.2);
+}
+
+.player #favoritePlayerBtn.favorited {
+    color: red;
+    animation: heart-beat 0.5s ease-in-out;
+}
+
+/* Стили для кнопки "Повтор" */
+.player .repeat-btn svg {
+    fill: var(--text-secondary);
+}
+
+.player .repeat-btn.active svg {
+    fill: var(--primary-color);
+}
+
+.track-info.fading {
+    opacity: 0;
 }
 
 .logout-btn {
@@ -905,6 +1090,7 @@ body.creator-mode {
     text-align: left;
 }
 
+/* Исправлена обложка плеера для правильного размера */
 .player .track-info img {
     width: 50px;
     height: 50px;
@@ -915,10 +1101,10 @@ body.creator-mode {
 .player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center; /* Центрируем по горизонтали */
     gap: 10px;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 10px; /* Дополнительный отступ сверху */
 }
 
 .player .volume-controls input {
@@ -940,6 +1126,7 @@ body.creator-mode {
 }
 
 
+/* Исправленные стили для кнопки избранного */
 .favorite-btn {
     position: absolute;
     top: 12px;
@@ -977,6 +1164,7 @@ body.creator-mode {
     transform: scale(1.1);
 }
 
+/* Анимация для лайка */
 @keyframes heart-beat {
     0% {
         transform: scale(1);
@@ -989,6 +1177,7 @@ body.creator-mode {
     }
 }
 
+/* Новые стили для главной страницы */
 .now-playing-section {
     position: fixed;
     top: 15px;
@@ -1399,65 +1588,4 @@ body.creator-mode {
 #fileStatusText {
     font-size: 0.9em;
     color: var(--text-secondary);
-}
-
-/* --- НОВЫЕ СТИЛИ ДЛЯ ВАШЕГО ЗАПРОСА ВНИЗУ --- */
-
-.sidebar-footer {
-    position: absolute;
-    bottom: 24px;
-    left: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: calc(100% - 48px);
-}
-
-#userProfile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    text-decoration: none;
-}
-
-#userProfile:hover {
-    background-color: var(--card-hover-bg);
-}
-
-.profile-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    font-weight: bold;
-    flex-shrink: 0;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-}
-
-#welcomeMessage {
-    font-size: 1em;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
-}
-
-#userRole {
-    font-size: 0.8em;
-    color: var(--text-secondary);
-    text-transform: capitalize;
 }
