@@ -311,8 +311,13 @@ def webserver(app,db,dirs):
     @auth_required
     @role_required(['creator','admin'])
     def get_creator_tracks(user_id):
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 30, type=int)
+        offset = (page - 1) * per_page
+
         conn = db.get_db_connection()
-        tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE creator_id = ?", (user_id,)).fetchall()
+        query = "SELECT id, title, file_name as file, cover_name as cover, type, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE creator_id = ? ORDER BY id DESC LIMIT ? OFFSET ?"
+        tracks = conn.execute(query, (user_id, per_page, offset)).fetchall()
         conn.close()
         return jsonify([dict(row) for row in tracks])
 

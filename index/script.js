@@ -11,9 +11,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioPlayer = new Audio();
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
+
+    // --- Переменные для пагинации ---
     let currentPage = 1;
     const tracksPerPage = 30;
     let isLoading = false;
+    let currentCategoryId = null;
+
+    // --- Новые переменные для пагинации "Моих треков" ---
+    let myTracksCurrentPage = 1;
+    let myTracksIsLoading = false;
+
 
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
@@ -204,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let playTimer;
     let userSearchTimeout;
     let currentTrack = null;
-    let currentCategoryId = null;
+    
 
     // Скрываем все модальные окна при загрузке
     const modals = [
@@ -728,28 +736,25 @@ document.addEventListener('DOMContentLoaded', () => {
             copyFavoriteBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
         }
     }
-
+    
+    // --- НОВАЯ ЛОГИКА ДЛЯ ПОДГРУЗКИ "МОИХ ТРЕКОВ" ---
+    
     const fetchMyTracks = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
-        try {
-            const response = await fetchWithAuth(`${api}/api/creator/my-tracks/${currentUser.id}`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            myTracks = await response.json();
-            if (myTracksSection) {
-                renderMyTracks(myTracks);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            if (myTracksSection) myTracksSection.innerHTML = `<p>Не удалось загрузить ваши треки.</p>`;
-        }
-    };
 
-    const renderMyTracks = (tracksToRender) => {
-        myTracksSection.innerHTML = '';
+        myTracks = [];
+        myTracksCurrentPage = 1;
+        myTracksIsLoading = false;
+        
+        // Очистка и подготовка контейнера
+        myTracksSection.innerHTML = ''; 
         const uploadBtn = document.createElement('button');
         uploadBtn.className = 'submit-btn';
         uploadBtn.id = 'uploadTrackBtn';
         uploadBtn.textContent = 'Загрузить трек';
+        uploadBtn.addEventListener('click', () => {
+            if (uploadModal) uploadModal.style.display = 'flex';
+        });
 
         const controlsDiv = document.createElement('div');
         controlsDiv.style.display = 'flex';
@@ -761,32 +766,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const myTracksGrid = document.createElement('div');
         myTracksGrid.className = 'grid-container';
-        if (tracksToRender.length === 0) {
-            myTracksGrid.innerHTML = `<p>Вы еще не загрузили ни одного трека.</p>`;
-        } else {
-            tracksToRender.forEach(track => {
-                const card = document.createElement('div');
-                card.className = `card my-track-card ${track.type === 'video' ? 'card--video' : ''}`;
-                card.dataset.trackId = track.id;
-                card.innerHTML = `
-                    <div class="card-image-wrapper">
-                        <img src="/fon/${track.cover}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
-                    </div>
-                    <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
-                    <p class="card-artist">от ${track.artist || track.creator_name}</p>
-                    <div class="card-actions">
-                        <button class="delete-my-track-btn" data-track-id="${track.id}">Удалить</button>
-                    </div>
-                `;
-                myTracksGrid.appendChild(card);
-            });
-        }
+        myTracksGrid.id = 'myTracksGrid';
         myTracksSection.appendChild(myTracksGrid);
+        
+        mainContent.addEventListener('scroll', handleMyTracksScroll);
 
-        document.getElementById('uploadTrackBtn').addEventListener('click', () => {
-            if (uploadModal) uploadModal.style.display = 'flex';
+        await loadMoreMyTracks();
+    };
+
+    const loadMoreMyTracks = async () => {
+        if (myTracksIsLoading || !currentUser) return;
+        myTracksIsLoading = true;
+
+        try {
+            const response = await fetchWithAuth(`${api}/api/creator/my-tracks/${currentUser.id}?page=${myTracksCurrentPage}&per_page=${tracksPerPage}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const newTracks = await response.json();
+
+            if (newTracks.length > 0) {
+                myTracks.push(...newTracks);
+                renderMyTracksChunk(newTracks);
+                myTracksCurrentPage++;
+            } else {
+                // Больше треков нет, отключаем скролл
+                mainContent.removeEventListener('scroll', handleMyTracksScroll);
+                if (myTracks.length === 0) {
+                     const myTracksGrid = document.getElementById('myTracksGrid');
+                     if (myTracksGrid) {
+                        myTracksGrid.innerHTML = `<p>Вы еще не загрузили ни одного трека.</p>`;
+                     }
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке ваших треков:', error);
+        } finally {
+            myTracksIsLoading = false;
+        }
+    };
+    
+    const renderMyTracksChunk = (tracksToRender) => {
+        const myTracksGrid = document.getElementById('myTracksGrid');
+        if (!myTracksGrid) return;
+        
+        tracksToRender.forEach(track => {
+            const card = document.createElement('div');
+            card.className = `card my-track-card ${track.type === 'video' ? 'card--video' : ''}`;
+            card.dataset.trackId = track.id; // Используем ID трека для уникальности
+             // Добавляем трек в глобальный allMedia, если его там еще нет, для работы плеера
+            if (!allMedia.some(t => t.id === track.id)) {
+                allMedia.push(track);
+            }
+            const trackIndex = allMedia.findIndex(t => t.id === track.id);
+            card.dataset.index = trackIndex;
+
+            card.innerHTML = `
+                <div class="card-image-wrapper">
+                    <img src="/fon/${track.cover}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
+                </div>
+                <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
+                <p class="card-artist">от ${track.artist || track.creator_name}</p>
+                <div class="card-actions">
+                    <button class="delete-my-track-btn" data-track-id="${track.id}">Удалить</button>
+                </div>
+            `;
+            myTracksGrid.appendChild(card);
         });
     };
+
+    const handleMyTracksScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = mainContent;
+        // Проверяем, активна ли вкладка "Мои треки"
+        const isActive = myTracksSection.style.display === 'block';
+        if (isActive && scrollTop + clientHeight >= scrollHeight - 500 && !myTracksIsLoading) {
+            loadMoreMyTracks();
+        }
+    };
+    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
 
     const fetchCreatorStats = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
@@ -982,10 +1039,10 @@ document.addEventListener('DOMContentLoaded', () => {
             creatorNavButtons.forEach(btn => btn.classList.remove('active'));
 
             if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
-                if (analyticsSection) analyticsSection.style.display = 'block';
-                if (analyticsBtn) analyticsBtn.classList.add('active');
-                if (creatorHomeSection) creatorHomeSection.style.display = 'none';
-                fetchCreatorStats();
+                // Изначально показываем "Мои треки"
+                if (myTracksSection) myTracksSection.style.display = 'block';
+                if (myTracksBtn) myTracksBtn.classList.add('active');
+                fetchMyTracks(); // Запускаем загрузку треков
             } else {
                 if (creatorHomeSection) creatorHomeSection.style.display = 'block';
                 if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
@@ -1212,6 +1269,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
         creatorNavButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
+                // Удаляем обработчик скролла при переключении вкладок
+                mainContent.removeEventListener('scroll', handleMyTracksScroll);
+
                 creatorNavButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
@@ -1222,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (btn.id === 'myTracksBtn') {
                     if (myTracksSection) myTracksSection.style.display = 'block';
                     if (viewTitle) viewTitle.textContent = 'Мои треки';
-                    fetchMyTracks();
+                    fetchMyTracks(); // Эта функция теперь инициирует постраничную загрузку
                 } else if (btn.id === 'analyticsBtn') {
                     if (analyticsSection) analyticsSection.style.display = 'block';
                     if (viewTitle) viewTitle.textContent = 'Аналитика';
@@ -1826,7 +1886,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (deleteMyTrackBtn) {
                 e.stopPropagation();
                 const trackId = e.target.closest('.my-track-card').dataset.trackId;
-                const track = myTracks.find(t => t.id == trackId);
+                const track = myTracks.find(t => t.id == trackId) || allMedia.find(t => t.id == trackId);
                 if (confirm(`Вы уверены, что хотите удалить трек "${track.title}"?`)) {
                     try {
                         const res = await fetchWithAuth(`${api}/api/creator/my-tracks/${trackId}`, {
@@ -1841,7 +1901,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         const result = await res.json();
                         alert(result.message);
-                        if (res.ok) fetchMyTracks();
+                        if (res.ok) {
+                            // Удаляем карточку из DOM вместо полной перезагрузки
+                            e.target.closest('.my-track-card').remove();
+                        }
                     } catch (err) {
                         console.error(err);
                     }
