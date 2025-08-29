@@ -38,6 +38,17 @@
                 <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
             </nav>
             <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <div class="user-info-container">
+                        <div class="user-avatar" id="userAvatar"></div>
+                        <div class="user-text">
+                            <span id="welcomeMessage" class="welcome-message"></span>
+                            <span id="userRole" class="user-role"></span>
+                        </div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
+                </div>
+                <button class="login-btn" id="loginBtn"><span>Войти</span></button>
             </div>
         </aside>
 
@@ -48,8 +59,6 @@
                     <div class="search-bar-wrapper">
                         <input type="text" id="searchInput" placeholder="Поиск...">
                     </div>
-                    <button class="login-btn" id="loginBtn"><span>Войти</span></button>
-                    <span id="welcomeMessage" style="display: none; margin-left: 20px;"></span>
                 </div>
             </header>
 
@@ -164,7 +173,7 @@
         </main>
     </div>
 
-    <div class="player">
+    <div class="player player--default">
         <div class="player-header">
             <div class="track-info">
                 <img src="default.svg" alt="Track Art" id="playerCover">
@@ -175,13 +184,34 @@
             </div>
         </div>
         
+        <div class="track-info-copy" style="display: none;">
+            <img src="default.svg" alt="Track Art" id="playerCoverCopy">
+            <div>
+                <span class="title" id="playerTitleCopy"></span>
+                <span class="artist" id="playerArtistCopy"></span>
+            </div>
+        </div>
+
         <div class="control-buttons-and-progress">
             <div class="control-buttons">
-                <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-                <button id="prevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button class="play-button" id="playPauseBtn" title="Воспроизвести"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
-                <button id="nextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h2v16h-2V4zm-8 2h2v12H8V6z"/></svg></button>
-                <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">❤</button>
+                <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор">
+                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                </button>
+                <button id="prevBtn" class="control-btn" title="Назад">
+                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                </button>
+                <button class="play-button" id="playPauseBtn" title="Воспроизвести">
+                    <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                </button>
+                <button id="nextBtn" class="control-btn" title="Вперед">
+                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
+                </button>
+                <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-heart">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                </button>
             </div>
             
             <div class="progress-bar">
@@ -193,11 +223,11 @@
                 </div>
                 <span id="duration">0:00</span>
             </div>
-        </div>
-        
-        <div class="volume-controls">
-            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            <input type="range" id="volumeBar" class="slider" min="0" max="1" step="0.01" value="1">
+            
+            <div class="volume-controls">
+                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                <input type="range" id="volumeBar" class="slider" min="0" max="1" step="0.01" value="1">
+            </div>
         </div>
     </div>
     
@@ -281,6 +311,13 @@
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2>Настройки</h2>
             <div class="form-group">
+                <label for="blurToggle">Фоновое размытие</label>
+                <label class="switch">
+                    <input type="checkbox" id="blurToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="form-group">
                 <label for="opacitySlider">Непрозрачность интерфейса</label>
                 <div class="slider-wrapper">
                     <input type="range" id="opacitySlider" min="0.1" max="1" step="0.05">
@@ -288,11 +325,11 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="blurToggle">Размытие фона</label>
-                <label class="switch">
-                    <input type="checkbox" id="blurToggle" checked>
-                    <span class="slider round"></span>
-                </label>
+                <label>Стиль плеера</label>
+                <div class="player-style-selector">
+                    <button class="style-btn active" data-style="default">Default</button>
+                    <button class="style-btn" data-style="copy">Copy</button>
+                </div>
             </div>
             <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
         </div>

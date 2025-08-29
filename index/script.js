@@ -1,2162 +1,3325 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const api = '';
-    let allMedia = [];
-    let myTracks = [];
-    let moderationTracks = [];
-    let currentTrackIndex = -1;
-    let isDragging = false;
-    let currentUser = null;
-    let userFavorites = [];
-    let repeatMode = false;
-    const audioPlayer = new Audio();
-    const videoPlayer = document.getElementById('backgroundVideo');
-    let activeMediaElement = audioPlayer;
-    let currentPage = 1;
-    const tracksPerPage = 20;
-    const BLUR_KEY = "blur_enabled";
+:root {
+    --primary-color: #9147FF;
+    --primary-hover-color: #7a3ee0;
+    --accent-color: #00BFFF;
+    --accent-glow: rgba(0, 191, 255, 0.3);
+    --dark-bg: #0E0E10;
+    --sidebar-bg-rgb: 24, 24, 27;
+    --main-bg-rgb: 14, 14, 16;
+    --player-bg-rgb: 24, 24, 27;
+    --ui-opacity: 0.5;
+    --card-bg: #1F1F23;
+    --card-hover-bg: #26262A;
+    --text-primary: #EFEFF1;
+    --text-secondary: #A0A0A0;
+    --border-color: #404040;
+    --font-family: 'Inter', sans-serif;
+    --blur-value: 8px;
 
-    // Новые элементы для жанров
-    const determineGenreBtn = document.getElementById('determineGenreBtn');
-    const selectGenreBtn = document.getElementById('selectGenreBtn');
-    const selectedGenreName = document.getElementById('selectedGenreName');
-    const selectedGenreId = document.getElementById('selectedGenreId'); // hidden input to store genre name
-    const genreSelectionModal = document.getElementById('genreSelectionModal');
-    const genreList = document.getElementById('genreList');
+    /* Новые цвета для Creator Studio */
+    --creator-primary-color: #4A90E2;
+    --creator-primary-hover: #357ABD;
+    --creator-bg: #F4F6F9;
+    --creator-card-bg: #FFFFFF;
+    --creator-text-primary: #333333;
+    --creator-text-secondary: #666666;
+    --creator-border-color: #DDDDDD;
 
-    const ACCESS_TOKEN_KEY = "access_token"
-    const REFRESH_TOKEN_KEY = "refresh_token"
-    const VOLUME_KEY = "volume_level"
+    /* Новые переменные для плеера */
+    --player-button-size: 40px;
+    --player-icon-color: var(--text-primary);
+    --player-icon-hover-color: var(--primary-color);
+    --player-icon-fill-color: var(--text-secondary);
 
-    const mainContent = document.querySelector('.main-content');
-    const allGridContainer = document.getElementById('allGridContainer');
-    const popularCategoriesGrid = document.getElementById('popularCategoriesGrid');
-    const allCategoriesGrid = document.getElementById('allCategoriesGrid');
-    const customCategoriesGrid = document.getElementById('customCategoriesGrid');
-    const specificCategoryView = document.getElementById('specificCategoryView');
-    const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-    const specificCategoryGrid = document.getElementById('specificCategoryGrid');
-    const homeView = document.getElementById('homeView');
-    const searchBarWrapper = document.querySelector('.search-bar-wrapper');
-    const searchInput = document.getElementById('searchInput');
-    const navHome = document.getElementById('navHome');
-    const navCategories = document.getElementById('navCategories');
-    const navFavorites = document.getElementById('navFavorites');
-    const views = document.querySelectorAll('.view');
-    const viewTitle = document.getElementById('viewTitle');
-    const player = document.querySelector('.player');
-    const playerHeader = document.querySelector('.player-header');
-    const playerTrackInfo = player.querySelector('.track-info');
-    const playerCover = document.getElementById('playerCover');
-    const playerTitle = document.getElementById('playerTitle');
-    const playerArtist = document.getElementById('playerArtist');
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const playIcon = document.getElementById('playIcon');
-    const pauseIcon = document.getElementById('pauseIcon');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const repeatBtn = document.getElementById('repeatBtn');
-    const favoritePlayerBtn = document.getElementById('favoritePlayerBtn');
-    const progressBarContainer = document.querySelector('.progress-bar-container');
-    const progressFilled = document.querySelector('.progress-filled');
-    const progressThumb = document.querySelector('.progress-thumb');
-    const currentTimeEl = document.getElementById('currentTime');
-    const durationEl = document.getElementById('duration');
-    const volumeBar = document.getElementById('volumeBar');
-    const videoBackgroundContainer = document.getElementById('videoBackgroundContainer');
-    const controlButtonsAndProgress = document.querySelector('.control-buttons-and-progress');
-    const volumeControls = document.querySelector('.volume-controls');
+    /* Стили для нового плеера */
+    --player-copy-bg: #1a1a1a;
+    --player-copy-border: #333;
+    --player-copy-text: #fff;
+    --player-copy-secondary-text: #aaa;
+    --player-copy-progress: #FFC107;
+    --player-copy-thumb: #FFC107;
 
-    const uploadModal = document.getElementById('uploadModal');
-    const closeUploadBtn = uploadModal.querySelector('.close-btn');
-    const uploadForm = document.getElementById('uploadForm');
-    const uploadTypeRadios = document.querySelectorAll('input[name="uploadType"]');
-    const audioFields = document.getElementById('audioFields');
-    const videoFields = document.getElementById('videoFields');
-    const uploadManager = document.getElementById('uploadManager');
-    const uploadProgressBar = document.querySelector('.upload-progress-fill');
-    const uploadStatusText = document.getElementById('uploadStatusText');
-    const uploadSubmitBtn = document.querySelector('#uploadForm button[type="submit"]');
-    const categorySelect = document.getElementById('categorySelect');
-    const artistFields = document.getElementById('artistFields');
-    const isForeignArtist = document.getElementById('isForeignArtist');
-    const fileStatusText = document.getElementById('fileStatusText');
+    /* Новые переменные для плеера Copy, основанные на изображении */
+    --player-copy-bg-new: #363636;
+    --player-copy-border-new: #4F4F4F;
+    --player-copy-text-new: #ffffff;
+    --player-copy-secondary-text-new: #a0a0a0;
+    --player-copy-progress-new: #F98F29;
+    --player-copy-progress-thumb: #F98F29;
+    --player-copy-button-active: #ffffff;
+    --player-copy-icon-hover: #F98F29;
+}
 
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const closeSettingsBtn = settingsModal.querySelector('.close-btn');
-    const opacitySlider = document.getElementById('opacitySlider');
-    const opacityValue = document.getElementById('opacityValue');
-    const blurToggle = document.getElementById('blurToggle');
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-    const loginModal = document.getElementById('loginModal');
-    const loginBtn = document.getElementById('loginBtn');
-    const loginForm = document.getElementById('loginForm');
-    const closeLoginBtn = loginModal.querySelector('.close-btn');
-    const switchToRegisterBtn = document.getElementById('switchToRegister');
-    const registerModal = document.getElementById('registerModal');
-    const registerForm = document.getElementById('registerForm');
-    const closeRegisterBtn = registerModal.querySelector('.close-btn');
-    const switchToLoginBtn = document.getElementById('switchToLogin');
-    const favoritesView = document.getElementById('favoritesView');
-    const favoritesGridContainer = document.getElementById('favoritesGridContainer');
-    const welcomeMessage = document.getElementById('welcomeMessage');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const headerControls = document.querySelector('.header-controls');
+body {
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    overflow: hidden;
+    transition: background-color 1.5s ease-in-out, color 1.5s ease-in-out;
+}
 
-    const creatorStudioBtn = document.getElementById('creatorStudioBtn');
-    const backToXMusicBtn = document.getElementById('backToXMusicBtn');
-    const xmusicNav = document.getElementById('xmusicNav');
-    const xcreatorNav = document.getElementById('xcreatorNav');
-    const xmusicLogo = document.getElementById('xmusicLogo');
-    const xcreatorLogo = document.getElementById('xcreatorLogo');
-    const creatorView = document.getElementById('creatorView');
-    const creatorHomeSection = document.getElementById('creatorHomeSection');
-    const myTracksSection = document.getElementById('myTracksSection');
-    const analyticsSection = document.getElementById('analyticsSection');
+.app-container, .player, .logo, .modal-content {
+    position: relative;
+    z-index: 2;
+    transition: opacity 0.5s ease-in-out, background-color 0.5s, backdrop-filter 0.5s;
+}
 
-    const creatorHomeBtn = document.getElementById('creatorHomeBtn');
-    const myTracksBtn = document.getElementById('myTracksBtn');
-    const analyticsBtn = document.getElementById('analyticsBtn');
-    const adminApplicationsBtn = document.getElementById('adminApplicationsBtn');
-    const adminUsersBtn = document.getElementById('adminUsersBtn');
-    const adminModerationBtn = document.getElementById('adminModerationBtn');
-    const adminStatsBtn = document.getElementById('adminStatsBtn');
-    const adminCategoriesBtn = document.getElementById('adminCategoriesBtn');
-    const adminApplicationsSection = document.getElementById('adminApplicationsSection');
-    const adminUsersSection = document.getElementById('adminUsersSection');
-    const adminModerationSection = document.getElementById('adminModerationSection');
-    const adminStatsSection = document.getElementById('adminStatsSection');
-    const adminCategoriesSection = document.getElementById('adminCategoriesSection');
-    const applicationsList = document.getElementById('applicationsList');
-    const usersList = document.getElementById('usersList');
-    const moderationTracksList = document.getElementById('moderationTracksList');
-    const statsContent = document.getElementById('statsContent');
+.video-background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s;
+    background-color: #000;
+    pointer-events: none;
+}
 
-    const applicationModal = document.getElementById('applicationModal');
-    const closeApplicationBtn = applicationModal.querySelector('.close-btn');
-    const applicationForm = document.getElementById('applicationForm');
-    const applyBtn = document.getElementById('applyBtn');
+.video-background-container.visible {
+    opacity: 1;
+}
 
-    const videoModal = document.getElementById('videoModal');
-    const videoPlayerModal = document.getElementById('videoPlayerModal');
-    const closeVideoBtn = document.getElementById('closeVideoBtn');
+#backgroundVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.35;
+}
 
-    const categoriesView = document.getElementById('categoriesView');
+.app-container {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: 100vh;
+}
 
-    const xrecomenSection = document.getElementById('xrecomenSection');
-    const xrecomenBtn = document.getElementById('xrecomenBtn');
-    const xrecomenTitle = document.querySelector('.xrecomen-title');
-    const xrecomenSubtitle = document.querySelector('.xrecomen-subtitle');
-    const youLikeSection = document.getElementById('youLikeSection');
-    const youLikeGrid = document.getElementById('youLikeGrid');
-    const youMayLikeSection = document.getElementById('youMayLikeSection');
-    const youMayLikeGrid = document.getElementById('youMayLikeGrid');
-    const favoriteCollectionsSection = document.getElementById('favoriteCollectionsSection');
-    const favoriteCollectionsGrid = document.getElementById('favoriteCollectionsGrid');
-    const nowPlayingText = document.getElementById('nowPlayingText');
+.sidebar {
+    background-color: rgba(var(--sidebar-bg-rgb), var(--ui-opacity));
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    transition: all 1.5s ease-in-out;
+}
 
-    const moderationModal = document.getElementById('moderationModal');
-    const closeModerationBtn = document.getElementById('closeModerationBtn');
-    const moderationTitle = document.getElementById('moderationTitle');
-    const moderationArtist = document.getElementById('moderationArtist');
-    const moderationPlayer = document.getElementById('moderationPlayer');
-    const moderationPlayerCover = document.getElementById('moderationPlayerCover');
-    const moderationApproveBtn = document.getElementById('moderationApproveBtn');
-    const moderationRejectBtn = document.getElementById('moderationRejectBtn');
-    const moderationVideoPlayer = document.getElementById('moderationVideoPlayer');
+.main-content {
+    background-color: rgba(var(--main-bg-rgb), var(--ui-opacity));
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
+    padding: 24px 40px;
+    overflow-y: auto;
+    height: 100vh;
+    transition: all 1.5s ease-in-out;
+}
 
-    const analyticsChart = document.getElementById('analyticsChart');
-    const analyticsTrackTableBody = document.getElementById('analyticsTrackTableBody');
-    const totalPlaysEl = document.getElementById('totalPlays');
+/* Обновлённые стили для плеера */
+.player {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 380px;
+    height: 220px;
+    background: rgba(var(--player-bg-rgb), var(--ui-opacity));
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    z-index: 3;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-    const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
+.logo {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 40px;
+    transition: color 1.5s ease-in-out;
+}
 
-    // Новые элементы для управления категориями
-    const categoryModal = document.getElementById('categoryModal');
-    const closeCategoryModalBtn = document.getElementById('closeCategoryModalBtn');
-    const categoryForm = document.getElementById('categoryForm');
-    const categoryIdInput = document.getElementById('categoryId');
-    const categoryNameInput = document.getElementById('categoryName');
-    const userSearchInput = document.getElementById('userSearchInput');
-    const userSearchStatus = document.getElementById('userSearchStatus');
-    const selectedUsersContainer = document.getElementById('selectedUsersContainer');
-    let selectedUsers = [];
+.main-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 
-    let chartInstance = null;
-    let playTimer;
-    let userSearchTimeout;
-    let currentTrack = null;
+.main-nav a, .creator-nav-btn, .creator-btn, .go-back-btn, .back-to-categories-btn {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 1.5s ease-in-out, background-color 0.2s, color 0.2s;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
 
-    async function fetchWithAuth(url, options = {}) {
-        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-        options.headers = options.headers || {};
-        if (accessToken) {
-            options.headers['Authorization'] = `Bearer ${accessToken}`;
-        }
-        let response = await fetch(url, options);
-        if (response.status === 401) {
-            localStorage.removeItem(ACCESS_TOKEN_KEY);
-            localStorage.removeItem(REFRESH_TOKEN_KEY);
-            alert("Ошибко токено овторизоции")
-            localStorage.removeItem('currentUser');
-            updateUIForAuth(null);
-            toggleCreatorMode(false);
-            loginModal.style.display = "flex"
-        }
-        return response;
+.main-nav a:hover, .main-nav a.active, .creator-nav-btn:hover, .creator-nav-btn.active, .creator-btn:hover, .go-back-btn:hover, .back-to-categories-btn:hover {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+/* Новые стили для профиля пользователя */
+.user-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background-color: rgba(var(--sidebar-bg-rgb), 0.7);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    margin-top: auto;
+}
+
+.user-info-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.welcome-message {
+    font-size: 1em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.login-btn, .logout-btn {
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.login-btn:hover, .logout-btn:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.settings-btn {
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    margin-top: -10px;
+    transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.settings-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slider-wrapper input[type="range"] {
+    flex-grow: 1;
+}
+
+.slider-wrapper span {
+    font-weight: 600;
+    min-width: 45px;
+    text-align: right;
+    color: var(--text-primary);
+}
+
+.view {
+    display: none;
+}
+
+.view.active-view {
+    display: block;
+    animation: view-fade-in 0.5s;
+}
+
+@keyframes view-fade-in {
+    from {
+        opacity: 0;
     }
-
-    function setTokens(accessToken) {
-        localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    to {
+        opacity: 1;
     }
+}
 
-    function clearTokens() {
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.main-header h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    transition: color 1.5s ease-in-out;
+}
+
+.search-bar-wrapper {
+    width: 100%;
+    max-width: 350px;
+}
+
+#searchInput {
+    width: 100%;
+    height: 40px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 1em;
+    transition: all 0.2s ease;
+}
+
+#searchInput:hover {
+    border-color: var(--accent-color);
+}
+
+#searchInput:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    animation: pulse-glow 2s infinite alternate;
+}
+
+@keyframes pulse-glow {
+    50% {
+        box-shadow: 0 0 15px var(--accent-glow);
     }
-
-    const renderSearchResults = (mediaToRender, searchTerm) => {
-        let searchResultsContainer = document.querySelector('.search-results-container');
-        if (searchTerm.length > 0) {
-            if (!searchResultsContainer) {
-                searchResultsContainer = document.createElement('div');
-                searchResultsContainer.className = 'grid-container search-results-container';
-                const searchSection = document.createElement('section');
-                searchSection.className = 'section search-results-section';
-                searchSection.innerHTML = '<h2 class="section-title">Результаты поиска</h2>';
-                searchSection.appendChild(searchResultsContainer);
-                homeView.prepend(searchSection);
-            }
-            renderMediaInContainer(searchResultsContainer, mediaToRender, true);
-        } else {
-            if (searchResultsContainer) {
-                searchResultsContainer.parentElement.remove();
-            }
-        }
-    };
-
-
-    const fetchAndRenderAll = async () => {
-        try {
-            const response = await fetchWithAuth(`${api}/api/tracks`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            allMedia = await response.json();
-            if (currentUser) {
-                fetchFavorites();
-                fetchXrecomen();
-            } else {
-                fetchXrecomen();
-            }
-            renderAllTracks(allMedia);
-        } catch (error) {
-            console.error('Ошибка:', error);
-        }
-    };
-
-    const fetchXrecomen = async () => {
-        if (!currentUser) {
-            if (youLikeSection) youLikeSection.style.display = 'block';
-            if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
-
-            if (xrecomenBtn) {
-                if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-                if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
-            }
-
-            if (youLikeGrid) {
-                youLikeGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
-            }
-
-            if (favoriteCollectionsGrid) {
-                favoriteCollectionsGrid.innerHTML = '<p>Для отображения войдите в аккаунт.</p>';
-            }
-
-            const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
-            if (bestTracksResponse.ok) {
-                const bestTracks = await bestTracksResponse.json();
-                renderAllTracks(bestTracks);
-            }
-            return;
-        }
-
-        if (xrecomenSection) xrecomenSection.style.display = 'flex';
-        if (youLikeSection) youLikeSection.style.display = 'block';
-        if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
-
-        try {
-            const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
-            const data = await response.json();
-
-            if (data.xrecomenTrack) {
-                if (!allMedia.some(t => t.id === data.xrecomenTrack.id)) {
-                    allMedia.push(data.xrecomenTrack);
-                }
-                const index = allMedia.findIndex(t => t.id === data.xrecomenTrack.id);
-                if (xrecomenBtn && index !== -1) {
-                    xrecomenBtn.dataset.index = index;
-                    xrecomenBtn.dataset.isRandom = 'false';
-                    if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-                    if (xrecomenSubtitle) xrecomenSubtitle.textContent = `Возможно, вам понравится трек "${data.xrecomenTrack.title}"`;
-                }
-            } else {
-                if (allMedia.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * allMedia.length);
-                    if (xrecomenBtn) {
-                        xrecomenBtn.dataset.index = randomIndex;
-                        xrecomenBtn.dataset.isRandom = 'true';
-                    }
-                } else {
-                    if (xrecomenSection) xrecomenSection.style.display = 'none';
-                }
-                if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-                if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'Лучший алгоритм для подбора треков';
-            }
-
-            if (youLikeGrid) {
-                if (data.youLike && data.youLike.length > 0) {
-                    renderMediaInContainer(youLikeGrid, data.youLike, true);
-                } else {
-                    youLikeGrid.innerHTML = '<p>Добавьте треки в избранное для отображения.</p>';
-                }
-            }
-
-            const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
-            if (bestTracksResponse.ok) {
-                const bestTracks = await bestTracksResponse.json();
-                renderAllTracks(bestTracks);
-            }
-
-            if (favoriteCollectionsGrid) {
-                renderFavoriteCollections(data.favoriteCollections);
-            }
-        } catch (error) {
-            console.error('Ошибка при получении рекомендаций:', error);
-            if (xrecomenSection) xrecomenSection.style.display = 'none';
-        }
-    };
-
-    const renderXrecomen = (track) => {
-        const index = allMedia.findIndex(t => t.id === track.id);
-        if (xrecomenBtn && index !== -1) {
-            xrecomenBtn.dataset.index = index;
-            xrecomenBtn.querySelector('.xrecomen-title').textContent = track.title;
-            xrecomenBtn.querySelector('.xrecomen-subtitle').textContent = `От ${track.artist || track.creator_name}`;
-        } else {
-            if (xrecomenSection) xrecomenSection.style.display = 'none';
-        }
-    };
-
-    const renderFavoriteCollections = (collections) => {
-        if (favoriteCollectionsGrid) {
-            favoriteCollectionsGrid.innerHTML = '';
-            collections.forEach(col => {
-                const card = document.createElement('div');
-                card.className = 'collection-card';
-                card.dataset.categoryId = col.id;
-                card.innerHTML = `<h3>${col.name}</h3><p>${col.track_count} треков</p>`;
-                favoriteCollectionsGrid.appendChild(card);
-            });
-        }
-    };
-
-    const fetchCategories = async () => {
-        try {
-            const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
-            if (!categoriesRes.ok) throw new Error('Ошибка при получении категорий');
-            const categoriesData = await categoriesRes.json();
-            if (allCategoriesGrid) {
-                allCategoriesGrid.innerHTML = '';
-                const allTracksCard = document.createElement('div');
-                allTracksCard.className = 'category-card';
-                allTracksCard.dataset.categoryId = 'all';
-                allTracksCard.innerHTML = `<h3>Все треки</h3>`;
-                allCategoriesGrid.appendChild(allTracksCard);
-
-                categoriesData.forEach(cat => {
-                    const catCard = document.createElement('div');
-                    catCard.className = 'category-card';
-                    catCard.dataset.categoryId = cat.id;
-                    catCard.innerHTML = `<h3>${cat.name}</h3>`;
-                    allCategoriesGrid.appendChild(catCard);
-                });
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-        }
-    };
-
-    const fetchAndRenderCategoryTracks = async (categoryId) => {
-        try {
-            const response = await fetchWithAuth(`${api}/api/tracks?categoryId=${categoryId}`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const categoryTracks = await response.json();
-            if (specificCategoryGrid) {
-                renderMediaInContainer(specificCategoryGrid, categoryTracks, true);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-        }
-    };
-
-    const updateUIForAuth = (user) => {
-        if (user) {
-            currentUser = user;
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            loginBtn.style.display = 'none';
-            if (navFavorites) navFavorites.style.display = 'flex';
-            if (creatorStudioBtn) creatorStudioBtn.style.display = 'block';
-            if (welcomeMessage) {
-                welcomeMessage.textContent = `Привет, ${user.username}!`;
-                welcomeMessage.style.display = 'block';
-            }
-            if (logoutBtn) logoutBtn.style.display = 'block';
-            fetchFavorites();
-            fetchXrecomen();
-
-            if (user.role === 'creator' || user.role === 'admin') {
-                if (myTracksBtn) myTracksBtn.style.display = 'flex';
-                if (analyticsBtn) analyticsBtn.style.display = 'flex';
-                if (creatorHomeBtn) creatorHomeBtn.style.display = 'none';
-                fetchCreatorCategories();
-            } else {
-                if (creatorHomeBtn) creatorHomeBtn.style.display = 'flex';
-            }
-
-            if (user.role === 'admin') {
-                document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'flex');
-            } else {
-                document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'none');
-            }
-        } else {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            if (loginBtn) loginBtn.style.display = 'block';
-            if (navFavorites) navFavorites.style.display = 'none';
-            if (creatorStudioBtn) creatorStudioBtn.style.display = 'none';
-            if (welcomeMessage) welcomeMessage.style.display = 'none';
-            if (logoutBtn) logoutBtn.style.display = 'none';
-            userFavorites = [];
-            if (myTracksBtn) myTracksBtn.style.display = 'none';
-            if (analyticsBtn) analyticsBtn.style.display = 'none';
-            document.querySelectorAll('.admin-section').forEach(btn => btn.style.display = 'none');
-            if (document.querySelector('.view.active-view').id === 'favoritesView') {
-                switchView('homeView');
-            }
-            fetchXrecomen();
-        }
-    };
-
-    const fetchCreatorCategories = async () => {
-        if (!currentUser) return;
-        try {
-            const response = await fetchWithAuth(`${api}/api/creator/my-categories/${currentUser.id}`);
-            if (!response.ok) throw new Error('Ошибка при получении категорий.');
-            const categories = await response.json();
-            if (categorySelect) {
-                categorySelect.innerHTML = '<option value="">Общее</option>';
-                categories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat.id;
-                    option.textContent = cat.name;
-                    categorySelect.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const fetchFavorites = async () => {
-        if (!currentUser) return;
-        try {
-            const response = await fetchWithAuth(`${api}/api/favorites`);
-            if (!response.ok) throw new Error('Ошибка при получении избранного.');
-            userFavorites = await response.json();
-            renderFavorites();
-            renderAllTracks(allMedia);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const renderFavorites = () => {
-        const favoriteMedia = allMedia.filter(item => userFavorites.includes(item.file));
-        if (favoritesGridContainer) {
-            renderMediaInContainer(favoritesGridContainer, favoriteMedia, true, true);
-        }
-    };
-
-    const renderAllTracks = (mediaToRender) => {
-        if (allGridContainer) {
-            allGridContainer.innerHTML = '';
-            if (mediaToRender.length === 0) {
-                allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
-                return;
-            }
-            renderMediaInContainer(allGridContainer, mediaToRender, true);
-        }
-    };
-
-    const renderMediaInContainer = (container, media, isAllTracksView, isFavoritesView = false) => {
-        container.innerHTML = '';
-        if (media.length === 0) {
-            container.innerHTML = `<p>${isFavoritesView ? 'Здесь пока ничего нет. Добавьте медиа в избранное!' : 'Ничего не найдено'}.</p>`;
-            return;
-        }
-        media.forEach((item) => {
-            if (!item || !item.title || !item.file) {
-                console.warn("Пропущен трек из-за неполных данных:", item);
-                return;
-            }
-            const globalIndex = allMedia.findIndex(t => t.id === item.id);
-            const isFavorite = currentUser ? userFavorites.includes(item.file) : false;
-            const card = document.createElement('div');
-            card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
-            card.dataset.index = globalIndex;
-
-            if (globalIndex === -1) {
-                allMedia.push(item);
-                card.dataset.index = allMedia.length - 1;
-            }
-
-            let cardActionsHtml = '';
-            if (currentUser && currentUser.role === 'admin') {
-                cardActionsHtml = `
-                    <div class="card-actions">
-                        <button class="rename-btn" data-track-id="${item.id}" data-type="${item.type}" title="Переименовать"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="delete-btn" data-track-id="${item.id}" data-type="${item.type}" title="Удалить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
-                    </div>
-                `;
-            } else if (currentUser && currentUser.role === 'creator') {
-                cardActionsHtml = `
-                    <div class="card-actions">
-                        <button class="delete-btn" data-track-id="${item.id}" data-type="${item.type}" title="Удалить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
-                    </div>
-                `;
-            }
-
-            if (favoritePlayerBtn) {
-                const isCurrentTrackFavorite = userFavorites.includes(item.file);
-                if (isCurrentTrackFavorite) {
-                    favoritePlayerBtn.classList.add('favorited');
-                    favoritePlayerBtn.title = 'Удалить из избранного';
-                } else {
-                    favoritePlayerBtn.classList.remove('favorited');
-                    favoritePlayerBtn.title = 'Добавить в избранное';
-                }
-            }
-
-
-            card.innerHTML = `
-                <div class="card-image-wrapper">
-                    <img src="/fon/${item.cover}" onerror="this.src='/fon/default.png';" class="card-image" alt="${item.title}">
-                    ${cardActionsHtml}
-                    ${currentUser ? `<button class="favorite-btn ${isFavorite ? 'favorited' : ''}" data-file="${item.file}" title="${isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}">❤</button>` : ''}
-                </div>
-                <p class="card-title">${item.title} ${item.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
-                <p class="card-artist">${item.artist || item.creator_name}</p>
-            `;
-            container.appendChild(card);
-        });
-    };
-
-    const playModerationMedia = (track) => {
-        if (track.type === 'video') {
-            activeMediaElement.pause();
-            activeMediaElement.currentTime = 0;
-            if (player) player.style.display = 'none';
-            videoPlayerModal.src = `/temp_uploads/${track.file_name}`;
-            if (videoModal) videoModal.style.display = 'flex';
-            videoPlayerModal.play();
-        } else {
-            videoPlayerModal.pause();
-            videoPlayerModal.currentTime = 0;
-            if (videoModal) videoModal.style.display = 'none';
-            if (player) player.style.display = 'grid';
-            if (playerCover) playerCover.src = `/temp_uploads/${track.cover_name}`;
-            if (playerTitle) playerTitle.textContent = track.title;
-            if (playerArtist) playerArtist.textContent = `от ${track.username}`;
-            activeMediaElement = audioPlayer;
-            activeMediaElement.src = `/temp_uploads/${track.file_name}`;
-            activeMediaElement.play().catch(e => console.error("Ошибка воспроизведения:", e));
-        }
-    };
-
-    const playMedia = async (index) => {
-        if (index < 0 || index >= allMedia.length) return;
-        currentTrack = allMedia[index];
-
-        hideVideo();
-        activeMediaElement.pause();
-        activeMediaElement.currentTime = 0;
-        currentTrackIndex = index;
-        const item = allMedia[index];
-
-        if (nowPlayingText) {
-            nowPlayingText.textContent = `Сейчас играет: ${item.title} от ${item.artist || item.creator_name}`;
-        }
-
-        if (playerTrackInfo) playerTrackInfo.classList.add('fading');
-        setTimeout(() => {
-            if (playerCover) playerCover.src = `/fon/${item.cover}`;
-            if (playerTitle) playerTitle.textContent = item.title;
-            if (playerArtist) playerArtist.textContent = `от ${item.artist || item.creator_name}`;
-
-            if (item.type === 'audio') {
-                activeMediaElement = audioPlayer;
-                activeMediaElement.src = `/music/${item.file}`;
-                hideVideo();
-            } else if (item.type === 'video') {
-                activeMediaElement = videoPlayer;
-                activeMediaElement.src = `/video/${item.file}`;
-                showVideo();
-            }
-            activeMediaElement.play().catch(e => console.error("Ошибка воспроизведения:", e));
-            if (playerTrackInfo) playerTrackInfo.classList.remove('fading');
-        }, 150);
-
-        if (favoritePlayerBtn && currentUser) {
-            const isFavorite = userFavorites.includes(item.file);
-            favoritePlayerBtn.classList.toggle('favorited', isFavorite);
-            favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
-        }
-
-        if (playTimer) clearTimeout(playTimer);
-        playTimer = setTimeout(async () => {
-            if (currentUser && activeMediaElement.duration) {
-                await fetchWithAuth(`${api}/api/update-playback`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        trackId: item.id,
-                        currentTime: activeMediaElement.currentTime,
-                        duration: activeMediaElement.duration
-                    })
-                });
-            }
-        }, 5000);
-    };
-
-    const fetchMyTracks = async () => {
-        if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
-        try {
-            const response = await fetchWithAuth(`${api}/api/creator/my-tracks/${currentUser.id}`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            myTracks = await response.json();
-            if (myTracksSection) {
-                renderMyTracks(myTracks);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            if (myTracksSection) myTracksSection.innerHTML = `<p>Не удалось загрузить ваши треки.</p>`;
-        }
-    };
-
-    const renderMyTracks = (tracksToRender) => {
-        myTracksSection.innerHTML = '';
-        const uploadBtn = document.createElement('button');
-        uploadBtn.className = 'submit-btn';
-        uploadBtn.id = 'uploadTrackBtn';
-        uploadBtn.textContent = 'Загрузить трек';
-
-        const controlsDiv = document.createElement('div');
-        controlsDiv.style.display = 'flex';
-        controlsDiv.style.gap = '15px';
-        controlsDiv.style.flexWrap = 'wrap';
-        controlsDiv.style.marginBottom = '20px';
-        controlsDiv.appendChild(uploadBtn);
-        myTracksSection.appendChild(controlsDiv);
-
-        const myTracksGrid = document.createElement('div');
-        myTracksGrid.className = 'grid-container';
-        if (tracksToRender.length === 0) {
-            myTracksGrid.innerHTML = `<p>Вы еще не загрузили ни одного трека.</p>`;
-        } else {
-            tracksToRender.forEach(track => {
-                const card = document.createElement('div');
-                card.className = `card my-track-card ${track.type === 'video' ? 'card--video' : ''}`;
-                card.dataset.trackId = track.id;
-                card.innerHTML = `
-                    <div class="card-image-wrapper">
-                        <img src="/fon/${track.cover}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
-                    </div>
-                    <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
-                    <p class="card-artist">от ${track.artist || track.creator_name}</p>
-                    <div class="card-actions">
-                        <button class="delete-my-track-btn" data-track-id="${track.id}">Удалить</button>
-                    </div>
-                `;
-                myTracksGrid.appendChild(card);
-            });
-        }
-        myTracksSection.appendChild(myTracksGrid);
-
-        document.getElementById('uploadTrackBtn').addEventListener('click', () => {
-            if (uploadModal) uploadModal.style.display = 'flex';
-        });
-    };
-
-    const fetchCreatorStats = async () => {
-        if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
-        try {
-            const response = await fetchWithAuth(`${api}/api/creator/stats/${currentUser.id}`);
-            const stats = await response.json();
-
-            if (totalPlaysEl) totalPlaysEl.textContent = stats.totalPlays;
-
-            const ctx = analyticsChart.getContext('2d');
-            const dates = stats.dailyPlays.map(d => d.date);
-            const plays = stats.dailyPlays.map(d => d.count);
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Прослушивания',
-                        borderColor: '#9147FF',
-                        backgroundColor: 'rgba(145, 71, 255, 0.2)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-
-            if (analyticsTrackTableBody) {
-                analyticsTrackTableBody.innerHTML = '';
-                stats.trackStats.forEach(track => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${track.title}</td><td>${track.plays}</td>`;
-                    analyticsTrackTableBody.appendChild(row);
-                });
-            }
-        } catch (error) {
-            console.error(error);
-            if (analyticsSection) analyticsSection.innerHTML = `<p>Не удалось загрузить статистику.</p>`;
-        }
-    };
-
-    const applyOpacity = (value) => {
-        document.documentElement.style.setProperty('--ui-opacity', value);
-        if (opacitySlider) opacitySlider.value = value;
-        if (opacityValue) opacityValue.textContent = `${Math.round(value * 100)}%`;
-    };
-
-    const saveOpacitySetting = (value) => {
-        localStorage.setItem('uiOpacity', value);
-    };
-
-    const loadOpacitySetting = () => {
-        const savedOpacity = localStorage.getItem('uiOpacity') || 0.5;
-        applyOpacity(savedOpacity);
-    };
-    
-    const applyBlur = (enabled) => {
-        const blurValue = enabled ? '8px' : '0px';
-        document.documentElement.style.setProperty('--blur-value', blurValue);
-        if (blurToggle) {
-            blurToggle.checked = enabled;
-        }
-    };
-
-    const saveBlurSetting = (enabled) => {
-        localStorage.setItem(BLUR_KEY, enabled);
-    };
-
-    const loadBlurSetting = () => {
-        const savedBlur = localStorage.getItem(BLUR_KEY) === 'true';
-        applyBlur(savedBlur);
-    };
-
-
-    const saveVolumeSetting = (value) => {
-        localStorage.setItem(VOLUME_KEY, value);
-    };
-
-    const loadVolumeSetting = () => {
-        const savedVolume = localStorage.getItem(VOLUME_KEY) || 1;
-        const volumeValue = parseFloat(savedVolume);
-        if (volumeBar) {
-            volumeBar.value = volumeValue;
-            audioPlayer.volume = videoPlayer.volume = volumeValue;
-        }
-    };
-
-    const showVideo = () => {
-        if (videoBackgroundContainer) videoBackgroundContainer.classList.add('visible');
-    };
-    const hideVideo = () => {
-        if (videoBackgroundContainer) videoBackgroundContainer.classList.remove('visible');
-    };
-    const formatTime = (seconds) => {
-        if (isNaN(seconds)) return '0:00';
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
-    };
-
-    const switchView = (viewIdToShow) => {
-        document.querySelectorAll('.nav-link, .creator-nav-btn').forEach(l => l.classList.remove('active'));
-
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
-
-        const viewToShow = document.getElementById(viewIdToShow);
-        if (viewToShow) viewToShow.classList.add('active-view');
-
-        if (backToCategoriesBtn) {
-            backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
-        }
-
-        if (viewIdToShow === 'homeView') {
-            if (navHome) navHome.classList.add('active');
-            if (viewTitle) viewTitle.textContent = 'Главная';
-            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'grid';
-                player.classList.remove('creator-mode');
-            }
-            fetchXrecomen();
-        } else if (viewIdToShow === 'categoriesView') {
-            if (navCategories) navCategories.classList.add('active');
-            if (viewTitle) viewTitle.textContent = 'Категории';
-            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'grid';
-                player.classList.remove('creator-mode');
-            }
-            fetchCategories();
-        } else if (viewIdToShow === 'favoritesView') {
-            if (navFavorites) navFavorites.classList.add('active');
-            if (viewTitle) viewTitle.textContent = 'Избранное';
-            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'grid';
-                player.classList.remove('creator-mode');
-            }
-            fetchFavorites();
-        } else if (viewIdToShow === 'creatorView') {
-            if (viewTitle) viewTitle.textContent = 'Creator Studio';
-            if (searchBarWrapper) searchBarWrapper.style.display = 'none';
-            if (player) player.classList.add('creator-mode'); // Плеер остается видимым
-            if (currentUser && currentUser.role === 'admin') {
-                if (adminApplicationsBtn) adminApplicationsBtn.classList.add('active');
-                if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
-                fetchAdminApplications();
-            } else if (currentUser) {
-                if (analyticsBtn) analyticsBtn.classList.add('active');
-                if (analyticsSection) analyticsSection.style.display = 'block';
-                fetchCreatorStats();
-            }
-        } else if (viewIdToShow === 'specificCategoryView') {
-            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'grid';
-                player.classList.remove('creator-mode');
-            }
-        }
-    };
-
-    const toggleCreatorMode = (enable) => {
-        if (enable) {
-            document.body.classList.add('creator-mode');
-            hideVideo();
-            activeMediaElement.pause();
-            activeMediaElement.currentTime = 0;
-
-            if (xmusicLogo) xmusicLogo.style.display = 'none';
-            if (xcreatorLogo) xcreatorLogo.style.display = 'block';
-            if (xmusicNav) xmusicNav.style.display = 'none';
-            if (xcreatorNav) xcreatorNav.style.display = 'flex';
-
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
-            if (creatorView) creatorView.classList.add('active-view');
-            
-            // Player remains visible, just changes its style
-            if(player) player.classList.add('creator-mode');
-            
-            document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
-            const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
-            creatorNavButtons.forEach(btn => btn.classList.remove('active'));
-
-            if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
-                if (analyticsSection) analyticsSection.style.display = 'block';
-                if (analyticsBtn) analyticsBtn.classList.add('active');
-                if (creatorHomeSection) creatorHomeSection.style.display = 'none';
-                fetchCreatorStats();
-            } else {
-                if (creatorHomeSection) creatorHomeSection.style.display = 'block';
-                if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
-            }
-        } else {
-            document.body.classList.remove('creator-mode');
-            if (xcreatorLogo) xcreatorLogo.style.display = 'none';
-            if (xcreatorNav) xcreatorNav.style.display = 'none';
-            if (xmusicLogo) xmusicLogo.style.display = 'block';
-            if (xmusicNav) xmusicNav.style.display = 'flex';
-            
-            if(player) player.classList.remove('creator-mode');
-
-            showVideo();
-
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
-            if (homeView) homeView.classList.add('active-view');
-
-            fetchAndRenderAll();
-        }
-    };
-
-    const fetchAdminApplications = async () => {
-        try {
-            const res = await fetchWithAuth(`${api}/api/admin/applications`);
-            const applications = await res.json();
-            if (applicationsList) {
-                applicationsList.innerHTML = '';
-                if (applications.length === 0) {
-                    applicationsList.innerHTML = '<p>Нет новых заявок.</p>';
-                    return;
-                }
-                applications.forEach(app => {
-                    const appDiv = document.createElement('div');
-                    appDiv.className = 'admin-card';
-                    appDiv.innerHTML = `
-                        <h3>Заявка от: ${app.username}</h3>
-                        <p><strong>Имя:</strong> ${app.full_name}</p>
-                        <p><strong>Телефон:</strong> ${app.phone_number}</p>
-                        <p><strong>Почта:</strong> ${app.email}</p>
-                        <button class="approve-app-btn" data-user-id="${app.user_id}">Одобрить</button>
-                        <button class="reject-app-btn" data-app-id="${app.id}">Отклонить</button>
-                    `;
-                    applicationsList.appendChild(appDiv);
-                });
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const fetchAdminCategories = async () => {
-        try {
-            const res = await fetchWithAuth(`${api}/api/admin/categories`);
-            const categories = await res.json();
-            if (adminCategoriesSection) {
-                const categoriesList = document.getElementById('adminCategoriesList');
-                if (categoriesList) {
-                    categoriesList.innerHTML = '';
-                    categories.forEach(cat => {
-                        const catDiv = document.createElement('div');
-                        catDiv.className = 'admin-card';
-                        catDiv.innerHTML = `
-                            <h3>${cat.name}</h3>
-                            <div class="category-actions">
-                                <button class="edit-category-btn" data-category-id="${cat.id}">Редактировать</button>
-                                <button class="delete-category-btn" data-category-id="${cat.id}">Удалить</button>
-                            </div>
-                        `;
-                        categoriesList.appendChild(catDiv);
-                    });
-                }
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const fetchAdminUsers = async () => {
-        try {
-            const res = await fetchWithAuth(`${api}/api/admin/users`);
-            const users = await res.json();
-            if (usersList) {
-                usersList.innerHTML = '';
-                users.forEach(user => {
-                    const userDiv = document.createElement('div');
-                    userDiv.className = 'admin-card';
-                    userDiv.innerHTML = `
-                        <h3>${user.username}</h3>
-                        <p>Роль: ${user.role}</p>
-                        <button class="change-role-btn" data-user-id="${user.id}" data-current-role="${user.role}">Сменить роль</button>
-                        <button class="change-password-btn" data-user-id="${user.id}">Сменить пароль</button>
-                        <button class="delete-user-btn" data-user-id="${user.id}">Удалить</button>
-                    `;
-                    usersList.appendChild(userDiv);
-                });
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const fetchModerationTracks = async () => {
-        try {
-            const res = await fetchWithAuth(`${api}/api/admin/moderation-tracks`);
-            const tracks = await res.json();
-            moderationTracks = tracks;
-            if (moderationTracksList) {
-                moderationTracksList.innerHTML = '';
-                if (tracks.length === 0) {
-                    moderationTracksList.innerHTML = '<p>Нет треков на модерации.</p>';
-                    return;
-                }
-                tracks.forEach((track, index) => {
-                    const trackCard = document.createElement('div');
-                    trackCard.className = `card creator-moderation-card ${track.type === 'video' ? 'card--video' : ''}`;
-                    trackCard.dataset.index = index;
-                    trackCard.innerHTML = `
-                        <div class="card-image-wrapper">
-                            <img src="/temp_uploads/${track.cover_name}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
-                        </div>
-                        <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
-                        <p class="card-artist">от ${track.username}</p>
-                        <div class="moderation-actions">
-                            <button class="moderation-check-btn" data-track-id="${track.id}">Проверить</button>
-                        </div>
-                    `;
-                    moderationTracksList.appendChild(trackCard);
-                });
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const fetchAdminStats = async () => {
-        try {
-            const res = await fetchWithAuth(`${api}/api/admin/stats`);
-            const stats = await res.json();
-            if (statsContent) {
-                statsContent.innerHTML = `
-                    <p>Всего пользователей: ${stats.userCount}</p>
-                    <p>Треков в медиатеке: ${stats.trackCount}</p>
-                `;
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const initEventListeners = () => {
-        [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
-            if (el) {
-                el.loop = false;
-            }
-        });
-
-        if (uploadTypeRadios) {
-            uploadTypeRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    if (radio.value === 'audio') {
-                        audioFields.style.display = 'block';
-                        videoFields.style.display = 'none';
-                        document.getElementById('audioFile').setAttribute('required', 'required');
-                        document.getElementById('videoFile').removeAttribute('required');
-                    } else if (radio.value === 'video') {
-                        audioFields.style.display = 'none';
-                        videoFields.style.display = 'block';
-                        document.getElementById('audioFile').removeAttribute('required');
-                        document.getElementById('videoFile').setAttribute('required', 'required');
-                    }
-                });
-            });
-        }
-
-        if (navHome) navHome.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('homeView');
-        });
-        if (navCategories) navCategories.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('categoriesView');
-        });
-        if (navFavorites) navFavorites.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (currentUser) {
-                switchView('favoritesView');
-                renderFavorites();
-            } else {
-                alert('Пожалуйста, войдите, чтобы просмотреть избранное.');
-            }
-        });
-
-        if (backToCategoriesBtn) backToCategoriesBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('categoriesView');
-            if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
-        });
-
-        if (creatorStudioBtn) creatorStudioBtn.addEventListener('click', () => {
-            if (currentUser) {
-                toggleCreatorMode(true);
-            } else {
-                alert('Пожалуйста, войдите, чтобы получить доступ к Creator Studio.');
-            }
-        });
-
-        if (backToXMusicBtn) backToXMusicBtn.addEventListener('click', () => {
-            toggleCreatorMode(false);
-        });
-
-        const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
-        creatorNavButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                creatorNavButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => {
-                    if (sec) sec.style.display = 'none';
-                });
-
-                if (btn.id === 'myTracksBtn') {
-                    if (myTracksSection) myTracksSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Мои треки';
-                    fetchMyTracks();
-                } else if (btn.id === 'analyticsBtn') {
-                    if (analyticsSection) analyticsSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Аналитика';
-                    fetchCreatorStats();
-                } else if (btn.id === 'adminApplicationsBtn') {
-                    if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Заявки в Creator';
-                    fetchAdminApplications();
-                } else if (btn.id === 'adminUsersBtn') {
-                    if (adminUsersSection) adminUsersSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Аккаунты';
-                    fetchAdminUsers();
-                } else if (btn.id === 'adminModerationBtn') {
-                    if (adminModerationSection) adminModerationSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Треки на модерации';
-                    fetchModerationTracks();
-                } else if (btn.id === 'adminStatsBtn') {
-                    if (adminStatsSection) adminStatsSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Статистика';
-                    fetchAdminStats();
-                } else if (btn.id === 'adminCategoriesBtn') {
-                    if (adminCategoriesSection) adminCategoriesSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Категории';
-                    fetchAdminCategories();
-                } else {
-                    if (creatorHomeSection) creatorHomeSection.style.display = 'block';
-                    if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
-                }
-            });
-        });
-
-        if (applyBtn) applyBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!currentUser) {
-                alert('Пожалуйста, войдите, чтобы подать заявку.');
-                return;
-            }
-            if (applicationModal) applicationModal.style.display = 'flex';
-        });
-        
-        // ОБРАБОТЧИК ДЛЯ ОТПРАВКИ ФОРМЫ ЗАЯВКИ
-        if (applicationForm) {
-            applicationForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const fullName = document.getElementById('fullName').value;
-                const phoneNumber = document.getElementById('phoneNumber').value;
-                const email = document.getElementById('email').value;
-                
-                try {
-                    const res = await fetchWithAuth(`${api}/api/apply-for-creator`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            fullName,
-                            phoneNumber,
-                            email
-                        })
-                    });
-                    const result = await res.json();
-                    alert(result.message);
-                    if (res.ok) {
-                        if (applicationModal) applicationModal.style.display = 'none';
-                        applicationForm.reset();
-                    }
-                } catch (err) {
-                    alert('Ошибка при подаче заявки.');
-                }
-            });
-        }
-        
-        if (closeApplicationBtn) closeApplicationBtn.addEventListener('click', () => {
-            if (applicationModal) applicationModal.style.display = 'none';
-        });
-        if (applicationModal) applicationModal.addEventListener('click', (e) => {
-            if (e.target === applicationModal) {
-                applicationModal.style.display = 'none';
-            }
-        });
-
-        const uploadTrackBtn = document.getElementById('uploadTrackBtn');
-        if (uploadTrackBtn) uploadTrackBtn.addEventListener('click', () => {
-            if (uploadModal) uploadModal.style.display = 'flex';
-            if (uploadManager) uploadManager.style.display = 'block';
-            const submitButton = document.querySelector('#uploadForm button[type="submit"]');
-            if (submitButton) submitButton.textContent = 'Отправить на модерацию';
-        });
-
-        if (closeUploadBtn) closeUploadBtn.addEventListener('click', () => {
-            if (uploadModal) uploadModal.style.display = 'none';
-        });
-        if (uploadModal) uploadModal.addEventListener('click', (e) => {
-            if (e.target === uploadModal) {
-                uploadModal.style.display = 'none';
-            }
-        });
-
-        if (isForeignArtist) isForeignArtist.addEventListener('change', () => {
-            if (artistFields) artistFields.style.display = isForeignArtist.checked ? 'block' : 'none';
-        });
-
-        if (settingsBtn) settingsBtn.addEventListener('click', () => {
-            if (settingsModal) settingsModal.style.display = 'flex';
-        });
-        if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => {
-            if (settingsModal) settingsModal.style.display = 'none';
-        });
-        if (settingsModal) settingsModal.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                settingsModal.style.display = 'none';
-            }
-        });
-
-        if (loginBtn) loginBtn.addEventListener('click', () => {
-            if (loginModal) loginModal.style.display = 'flex';
-        });
-        if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => {
-            if (loginModal) loginModal.style.display = 'none';
-        });
-        if (closeRegisterBtn) closeRegisterBtn.addEventListener('click', () => {
-            if (registerModal) registerModal.style.display = 'none';
-        });
-        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => {
-            if (loginModal) loginModal.style.display = 'none';
-            if (registerModal) registerModal.style.display = 'flex';
-        });
-        if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => {
-            if (registerModal) registerModal.style.display = 'none';
-            if (loginModal) loginModal.style.display = 'flex';
-        });
-        
-        if (logoutBtn) logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('currentUser');
-            updateUIForAuth(null);
-            toggleCreatorMode(false);
-            if (settingsModal) settingsModal.style.display = 'none';
-        });
-
-
-        if (closeVideoBtn) closeVideoBtn.addEventListener('click', () => {
-            videoPlayerModal.pause();
-            videoPlayerModal.currentTime = 0;
-            if (videoModal) videoModal.style.display = 'none';
-        });
-
-        if (closeModerationBtn) closeModerationBtn.addEventListener('click', () => {
-            if (moderationModal) moderationModal.style.display = 'none';
-            moderationPlayer.pause();
-            moderationPlayer.currentTime = 0;
-            moderationVideoPlayer.pause();
-            moderationVideoPlayer.currentTime = 0;
-        });
-
-        if (closeCategoryModalBtn) closeCategoryModalBtn.addEventListener('click', () => {
-            if (categoryModal) categoryModal.style.display = 'none';
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (uploadModal) uploadModal.style.display = 'none';
-                if (settingsModal) settingsModal.style.display = 'none';
-                if (loginModal) loginModal.style.display = 'none';
-                if (registerModal) registerModal.style.display = 'none';
-                if (videoModal) videoModal.style.display = 'none';
-                if (moderationModal) moderationModal.style.display = 'none';
-                if (categoryModal) categoryModal.style.display = 'none';
-            }
-        });
-
-        if (categoryModal) categoryModal.addEventListener('click', (e) => {
-            if (e.target === categoryModal) {
-                categoryModal.style.display = 'none';
-            }
-        });
-
-        if (userSearchInput) {
-            userSearchInput.addEventListener('input', () => {
-                const query = userSearchInput.value.trim();
-                clearTimeout(userSearchTimeout);
-                userSearchStatus.textContent = '';
-                userSearchStatus.className = '';
-
-                if (query.length === 0) {
-                    return;
-                }
-
-                userSearchTimeout = setTimeout(async () => {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/admin/categories/users?q=${query}`);
-                        const users = await res.json();
-                        const user = users.find(u => u.username === query);
-                        if (user) {
-                            const userExists = selectedUsers.some(su => su.id === user.id);
-                            if (userExists) {
-                                userSearchStatus.textContent = 'Пользователь уже добавлен';
-                                userSearchStatus.className = 'status-warning';
-                            } else if (user.role !== 'creator' && user.role !== 'admin') {
-                                userSearchStatus.textContent = 'Не является креатором';
-                                userSearchStatus.className = 'status-invalid';
-                            } else {
-                                userSearchStatus.innerHTML = '&#10004;';
-                                userSearchStatus.className = 'status-valid';
-                                userSearchInput.dataset.userId = user.id;
-                            }
-                        } else {
-                            userSearchStatus.textContent = 'Не найден';
-                            userSearchStatus.className = 'status-invalid';
-                        }
-                    } catch (err) {
-                        userSearchStatus.textContent = 'Ошибка';
-                        userSearchStatus.className = 'status-invalid';
-                    }
-                }, 500);
-            });
-
-            userSearchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const username = userSearchInput.value.trim();
-                    const userId = userSearchInput.dataset.userId;
-
-                    if (userId && userSearchStatus.classList.contains('status-valid')) {
-                        const userExists = selectedUsers.some(user => user.id == userId);
-                        if (!userExists) {
-                            selectedUsers.push({ id: parseInt(userId, 10), username: username });
-                            renderSelectedUsers();
-                        }
-                        userSearchInput.value = '';
-                        userSearchInput.dataset.userId = '';
-                        userSearchStatus.textContent = '';
-                        userSearchStatus.className = '';
-                    }
-                }
-            });
-        }
-
-        if (selectedUsersContainer) selectedUsersContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-user')) {
-                const userIdToRemove = parseInt(e.target.dataset.userId, 10);
-                selectedUsers = selectedUsers.filter(user => user.id !== userIdToRemove);
-                renderSelectedUsers();
-            }
-        });
-
-        const renderSelectedUsers = () => {
-            if (selectedUsersContainer) {
-                selectedUsersContainer.innerHTML = '';
-                selectedUsers.forEach(user => {
-                    const span = document.createElement('span');
-                    span.className = 'selected-user';
-                    span.innerHTML = `${user.username} <button type="button" class="remove-user" data-user-id="${user.id}">&times;</button>`;
-                    selectedUsersContainer.appendChild(span);
-                });
-            }
-        };
-
-        const openCategoryModalForEdit = async (categoryId) => {
-            try {
-                const res = await fetchWithAuth(`${api}/api/admin/categories`);
-                const allCategories = await res.json();
-                const category = allCategories.find(c => c.id == categoryId);
-                if (!category) {
-                    alert('Категория не найдена.');
-                    return;
-                }
-
-                const usersRes = await fetchWithAuth(`${api}/api/admin/categories/users-in-category/${categoryId}`);
-                const users = await usersRes.json();
-
-                categoryIdInput.value = category.id;
-                categoryNameInput.value = category.name;
-                selectedUsers = users;
-                renderSelectedUsers();
-
-                if (categoryModal) categoryModal.style.display = 'flex';
-                if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Редактировать категорию';
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка при загрузке данных категории.');
-            }
-        };
-
-        if (categoryForm) categoryForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const categoryName = categoryNameInput.value.trim();
-            const categoryId = categoryIdInput.value;
-            const allowedUsers = selectedUsers.map(user => user.id);
-
-            if (!categoryName) {
-                alert('Название категории не может быть пустым.');
-                return;
-            }
-
-            const method = categoryId ? 'PUT' : 'POST';
-            const url = categoryId ? `${api}/api/admin/categories/${categoryId}` : `${api}/api/admin/categories`;
-
-            try {
-                const res = await fetchWithAuth(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: categoryName,
-                        allowedUsers: allowedUsers
-                    })
-                });
-                const result = await res.json();
-                alert(result.message);
-                if (res.ok) {
-                    if (categoryModal) categoryModal.style.display = 'none';
-                    fetchAdminCategories();
-                }
-            } catch (err) {
-                alert('Ошибка при сохранении категории.');
-            }
-        });
-
-        if (uploadForm) uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const audioFile = document.getElementById('audioFile').files[0];
-            const videoFile = document.getElementById('videoFile').files[0];
-            const coverFile = document.getElementById('coverFile').files[0];
-            const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
-
-            if (uploadType === 'audio' && !audioFile) {
-                alert('Пожалуйста, выберите аудиофайл.');
-                return;
-            } else if (uploadType === 'video' && !videoFile) {
-                alert('Пожалуйста, выберите видеофайл.');
-                return;
-            }
-
-            if (!coverFile) {
-                alert('Пожалуйста, выберите файл обложки.');
-                return;
-            }
-
-
-            if (uploadManager) uploadManager.style.display = 'block';
-            if (uploadProgressBar) uploadProgressBar.style.width = '0%';
-            if (uploadStatusText) uploadStatusText.textContent = 'Подготовка к загрузке...';
-            if (uploadSubmitBtn) uploadSubmitBtn.disabled = true;
-
-            const formData = new FormData(uploadForm);
-            formData.append('userId', currentUser.id);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${api}/api/moderation/upload`, true);
-
-            const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-            if (accessToken) {
-                xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
-            }
-
-            xhr.upload.addEventListener('progress', (event) => {
-                if (event.lengthComputable) {
-                    const percent = Math.round((event.loaded / event.total) * 100);
-                    if (uploadProgressBar) uploadProgressBar.style.width = `${percent}%`;
-                    if (uploadStatusText) uploadStatusText.textContent = `Загрузка: ${percent}%`;
-                }
-            });
-
-            xhr.onload = () => {
-                if (xhr.status === 201) {
-                    if (uploadStatusText) uploadStatusText.textContent = 'Загружено! Ожидайте модерации.';
-                    setTimeout(() => {
-                        if (uploadModal) uploadModal.style.display = 'none';
-                        if (uploadForm) uploadForm.reset();
-                        if (uploadManager) uploadManager.style.display = 'none';
-                        if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
-                        alert('Трек отправлен на модерацию. Ожидайте одобрения.');
-                    }, 1000);
-                } else {
-                    const contentType = xhr.getResponseHeader('Content-Type');
-                    let result = { message: 'Произошла неизвестная ошибка.' };
-
-                    if (contentType && contentType.includes('application/json')) {
-                        try {
-                            result = JSON.parse(xhr.responseText);
-                        } catch (e) {
-                            console.error('Не удалось разобрать JSON:', e);
-                        }
-                    } else {
-                        console.error('Сервер вернул не-JSON ответ:', xhr.responseText);
-                    }
-
-                    if (uploadStatusText) uploadStatusText.textContent = `Ошибка загрузки: ${result.message}`;
-                    if (uploadProgressBar) uploadProgressBar.style.width = '0%';
-                    if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
-                }
-            };
-
-            xhr.onerror = () => {
-                if (uploadStatusText) uploadStatusText.textContent = 'Сетевая ошибка. Попробуйте снова.';
-                if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
-            };
-
-            xhr.send(formData);
-        });
-
-        if (loginForm) loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            try {
-                const res = await fetchWithAuth(`${api}/api/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password
-                    })
-                });
-                const result = await res.json();
-                if (res.ok) {
-                    setTokens(result.token)
-                    localStorage.setItem('currentUser', JSON.stringify(result.user));
-                    updateUIForAuth(result.user);
-                    if (loginModal) loginModal.style.display = 'none';
-                    alert('Вход успешен!');
-                } else {
-                    alert(result.message);
-                }
-            } catch (err) {
-                alert('Ошибка входа.');
-            }
-        });
-
-        if (registerForm) registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-            try {
-                const res = await fetchWithAuth(`${api}/api/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password
-                    })
-                });
-                const result = await res.json();
-                if (res.ok) {
-                    alert(result.message + ' Теперь вы можете войти.');
-                    if (registerModal) registerModal.style.display = 'none';
-                    if (loginModal) loginModal.style.display = 'flex';
-                } else {
-                    alert(result.message);
-                }
-            } catch (err) {
-                alert('Ошибка регистрации.');
-            }
-        });
-
-        if (opacitySlider) opacitySlider.addEventListener('input', () => {
-            applyOpacity(opacitySlider.value);
-            saveOpacitySetting(opacitySlider.value);
-        });
-        
-        if (blurToggle) {
-            blurToggle.addEventListener('change', () => {
-                const enabled = blurToggle.checked;
-                applyBlur(enabled);
-                saveBlurSetting(enabled);
-            });
-        }
-
-        if (searchInput) searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            let mediaToFilter = allMedia;
-            if (document.querySelector('.view.active-view').id === 'favoritesView') {
-                mediaToFilter = allMedia.filter(item => userFavorites.includes(item.file));
-            }
-
-            const filteredMedia = mediaToFilter.filter(item => {
-                const titleMatch = item.title.toLowerCase().includes(searchTerm);
-                const artistMatch = item.artist && item.artist.toLowerCase().includes(searchTerm);
-                const creatorMatch = item.creator_name && item.creator_name.toLowerCase().includes(searchTerm);
-                return titleMatch || artistMatch || creatorMatch;
-            });
-
-            const homeSections = document.querySelectorAll('#homeView .section');
-            if (searchTerm.length > 0) {
-                homeSections.forEach(sec => sec.style.display = 'none');
-                renderSearchResults(filteredMedia, searchTerm);
-            } else {
-                homeSections.forEach(sec => sec.style.display = 'block');
-                renderSearchResults([], '');
-                fetchXrecomen();
-            }
-        });
-
-        if (xrecomenBtn) xrecomenBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const index = parseInt(e.currentTarget.dataset.index, 10);
-            if (index >= 0) playMedia(index);
-        });
-
-        mainContent.addEventListener('click', async (e) => {
-            const card = e.target.closest('.card');
-            const deleteBtn = e.target.closest('.delete-btn');
-            const renameBtn = e.target.closest('.rename-btn');
-            const favoriteBtn = e.target.closest('.favorite-btn');
-            const approveAppBtn = e.target.closest('.approve-app-btn');
-            const rejectAppBtn = e.target.closest('.reject-app-btn');
-            const moderationCheckBtn = e.target.closest('.moderation-check-btn');
-            const changeRoleBtn = e.target.closest('.change-role-btn');
-            const changePasswordBtn = e.target.closest('.change-password-btn');
-            const deleteUserBtn = e.target.closest('.delete-user-btn');
-            const deleteMyTrackBtn = e.target.closest('.delete-my-track-btn');
-            const createCategoryBtn = e.target.closest('.create-category-btn');
-            const editCategoryBtn = e.target.closest('.edit-category-btn');
-            const deleteCategoryBtn = e.target.closest('.delete-category-btn');
-            const categoryCard = e.target.closest('.category-card');
-            const collectionCard = e.target.closest('.collection-card');
-
-            if (renameBtn) {
-                e.stopPropagation();
-                const {
-                    trackId,
-                    type
-                } = renameBtn.dataset;
-                const track = allMedia.find(t => t.id == trackId);
-                const newTitle = prompt('Введите новое название:', track.title);
-                if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/rename`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                trackId,
-                                newTitle: newTitle.trim()
-                            })
-                        });
-                        if (res.ok) fetchAndRenderAll();
-                        else alert('Ошибка при переименовании');
-                    } catch (err) {
-                        console.error(err);
-                    }
-                }
-            } else if (deleteBtn) {
-                e.stopPropagation();
-                const {
-                    trackId
-                } = deleteBtn.dataset;
-                const track = allMedia.find(t => t.id == trackId);
-                if (confirm(`Вы уверены, что хотите удалить "${track.title}"?`)) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/tracks/${trackId}`, {
-                            method: 'DELETE'
-                        });
-                        if (res.ok) fetchAndRenderAll();
-                        else alert('Ошибка при удалении');
-                    } catch (err) {
-                        console.error(err);
-                    }
-                }
-            } else if (deleteMyTrackBtn) {
-                e.stopPropagation();
-                const trackId = e.target.closest('.my-track-card').dataset.trackId;
-                const track = myTracks.find(t => t.id == trackId);
-                if (confirm(`Вы уверены, что хотите удалить трек "${track.title}"?`)) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/creator/my-tracks/${trackId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId: currentUser.id,
-                                userRole: currentUser.role
-                            })
-                        });
-                        const result = await res.json();
-                        alert(result.message);
-                        if (res.ok) fetchMyTracks();
-                    } catch (err) {
-                        console.error(err);
-                    }
-                }
-            } else if (favoriteBtn && currentUser) {
-                e.stopPropagation();
-                const mediaFile = favoriteBtn.dataset.file;
-                const isFavorite = favoriteBtn.classList.contains('favorited');
-                try {
-                    const res = await fetchWithAuth(`${api}/api/favorites`, {
-                        method: isFavorite ? 'DELETE' : 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            mediaFile
-                        })
-                    });
-                    if (res.ok) {
-                        if (isFavorite) {
-                            userFavorites = userFavorites.filter(f => f !== mediaFile);
-                            favoritePlayerBtn.classList.remove('favorited');
-                            favoritePlayerBtn.title = 'Добавить в избранное';
-                            fetchXrecomen();
-                        } else {
-                            userFavorites.push(currentTrack.file);
-                            favoritePlayerBtn.classList.add('favorited');
-                            favoritePlayerBtn.title = 'Удалить из избранного';
-                            fetchXrecomen();
-                        }
-                    } else {
-                        alert('Ошибка при изменении избранного.');
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            } else if (approveAppBtn) {
-                e.stopPropagation();
-                const userId = approveAppBtn.dataset.userId;
-                try {
-                    const res = await fetchWithAuth(`${api}/api/admin/approve-application`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId
-                        })
-                    });
-                    const result = await res.json();
-                    alert(result.message);
-                    if (res.ok) fetchAdminApplications();
-                } catch (err) {
-                    alert('Ошибка при одобрении заявки.');
-                }
-            } else if (rejectAppBtn) {
-                e.stopPropagation();
-                const appId = rejectAppBtn.dataset.appId;
-                try {
-                    const res = await fetchWithAuth(`${api}/api/admin/reject-application`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            appId
-                        })
-                    });
-                    const result = await res.json();
-                    alert(result.message);
-                    if (res.ok) fetchAdminApplications();
-                } catch (err) {
-                    alert('Ошибка при отклонении заявки.');
-                }
-            } else if (moderationCheckBtn) {
-                e.stopPropagation();
-                const trackIndex = e.target.closest('.creator-moderation-card').dataset.index;
-                const track = moderationTracks[trackIndex];
-
-                if (moderationTitle) moderationTitle.textContent = track.title;
-                if (moderationArtist) moderationArtist.textContent = `Исполнитель: ${track.artist || track.username}`;
-
-                if (track.type === 'audio') {
-                    if (moderationPlayer) moderationPlayer.src = `/temp_uploads/${track.file_name}`;
-                    if (moderationPlayerCover) moderationPlayerCover.src = `/temp_uploads/${track.cover_name}`;
-                    if (moderationPlayer) moderationPlayer.style.display = 'block';
-                    if (moderationPlayerCover) moderationPlayerCover.style.display = 'block';
-                    if (moderationVideoPlayer) {
-                        moderationVideoPlayer.style.display = 'none';
-                        moderationVideoPlayer.pause();
-                    }
-                } else if (track.type === 'video') {
-                    if (moderationPlayer) {
-                        moderationPlayer.style.display = 'none';
-                        moderationPlayer.pause();
-                    }
-                    if (moderationPlayerCover) moderationPlayerCover.style.display = 'none';
-                    if (moderationVideoPlayer) {
-                        moderationVideoPlayer.src = `/temp_uploads/${track.file_name}`;
-                        moderationVideoPlayer.style.display = 'block';
-                    }
-                }
-
-                if (moderationApproveBtn) {
-                    moderationApproveBtn.dataset.trackId = track.id;
-                    moderationApproveBtn.dataset.fileName = track.file_name;
-                    moderationApproveBtn.dataset.coverName = track.cover_name;
-                    moderationApproveBtn.dataset.title = track.title;
-                    moderationApproveBtn.dataset.type = track.type;
-                    moderationApproveBtn.dataset.creatorId = track.user_id;
-                    moderationApproveBtn.dataset.artist = track.artist;
-                    moderationApproveBtn.dataset.categoryId = track.category_id;
-                }
-
-                if (moderationRejectBtn) moderationRejectBtn.dataset.trackId = track.id;
-
-                if (moderationModal) moderationModal.style.display = 'flex';
-            } else if (changeRoleBtn) {
-                e.stopPropagation();
-                const userId = changeRoleBtn.dataset.userId;
-                const currentRole = changeRoleBtn.dataset.currentRole;
-                const newRole = prompt(`Сменить роль пользователя на: 'user', 'creator' или 'admin'. Текущая роль: ${currentRole}`);
-                if (newRole && ['user', 'creator', 'admin'].includes(newRole)) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/admin/update-role`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId,
-                                role: newRole
-                            })
-                        });
-                        const result = await res.json();
-                        alert(result.message);
-                        if (res.ok) fetchAdminUsers();
-                    } catch (err) {
-                        alert('Ошибка при смене роли.');
-                    }
-                }
-            } else if (changePasswordBtn) {
-                e.stopPropagation();
-                const userId = changePasswordBtn.dataset.userId;
-                const newPassword = prompt('Введите новый пароль:');
-                if (newPassword && newPassword.trim()) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/admin/change-password`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId,
-                                newPassword
-                            })
-                        });
-                        const result = await res.json();
-                        alert(result.message);
-                        if (res.ok) fetchAdminUsers();
-                    } catch (err) {
-                        alert('Ошибка при смене пароля.');
-                    }
-                }
-            } else if (deleteUserBtn) {
-                e.stopPropagation();
-                const userId = deleteUserBtn.dataset.userId;
-                if (confirm('Вы уверены, что хотите удалить этого пользователя? Это действие необратимо.')) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/admin/delete-user/${userId}`, {
-                            method: 'DELETE'
-                        });
-                        const result = await res.json();
-                        alert(result.message);
-                        if (res.ok) fetchAdminUsers();
-                    } catch (err) {
-                        alert('Ошибка при удалении пользователя.');
-                    }
-                }
-            } else if (createCategoryBtn) {
-                e.stopPropagation();
-                categoryIdInput.value = '';
-                categoryNameInput.value = '';
-                selectedUsers = [];
-                renderSelectedUsers();
-                if (categoryModal) categoryModal.style.display = 'flex';
-                if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Создать категорию';
-            } else if (editCategoryBtn) {
-                e.stopPropagation();
-                const categoryId = editCategoryBtn.dataset.categoryId;
-                openCategoryModalForEdit(categoryId);
-            } else if (deleteCategoryBtn) {
-                e.stopPropagation();
-                const categoryId = deleteCategoryBtn.dataset.categoryId;
-                if (confirm('Вы уверены, что хотите удалить эту категорию? Треки, привязанные к ней, останутся.')) {
-                    try {
-                        const res = await fetchWithAuth(`${api}/api/admin/categories/${categoryId}`, { method: 'DELETE' });
-                        const result = await res.json();
-                        alert(result.message);
-                        if (res.ok) fetchAdminCategories();
-                    } catch (err) {
-                        alert('Ошибка при удалении категории.');
-                    }
-                }
-            } else if (card && card.dataset.index) {
-                const index = parseInt(card.dataset.index, 10);
-                if (index >= 0) playMedia(index);
-            } else if (categoryCard || collectionCard) {
-                const targetCard = categoryCard || collectionCard;
-                const categoryId = targetCard.dataset.categoryId;
-                if (categoryId === 'all') {
-                    if (viewTitle) viewTitle.textContent = 'Все треки';
-                    switchView('specificCategoryView');
-                    if (allGridContainer) allGridContainer.style.display = 'grid';
-                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'none';
-                    fetchAndRenderAll();
-                } else {
-                    if (viewTitle) viewTitle.textContent = targetCard.querySelector('h3').textContent;
-                    switchView('specificCategoryView');
-                    if (allGridContainer) allGridContainer.style.display = 'none';
-                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'grid';
-                    fetchAndRenderCategoryTracks(categoryId);
-                }
-            }
-        });
-
-        if (moderationApproveBtn) moderationApproveBtn.addEventListener('click', async () => {
-            const trackId = moderationApproveBtn.dataset.trackId;
-            const fileName = moderationApproveBtn.dataset.fileName;
-            const coverName = moderationApproveBtn.dataset.coverName;
-            const title = moderationApproveBtn.dataset.title;
-            const type = moderationApproveBtn.dataset.type;
-            const creatorId = moderationApproveBtn.dataset.creatorId;
-            const artist = moderationApproveBtn.dataset.artist;
-            const categoryId = moderationApproveBtn.dataset.categoryId;
-
-            try {
-                const res = await fetchWithAuth(`${api}/api/admin/approve-track`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        trackId,
-                        fileName,
-                        coverName,
-                        title,
-                        type,
-                        creatorId,
-                        artist,
-                        categoryId
-                    })
-                });
-                const result = await res.json();
-                alert(result.message);
-                if (res.ok) {
-                    if (moderationModal) moderationModal.style.display = 'none';
-                    if (moderationPlayer) moderationPlayer.pause();
-                    if (moderationVideoPlayer) moderationVideoPlayer.pause();
-                    fetchModerationTracks();
-                    fetchAndRenderAll();
-                }
-            } catch (err) {
-                alert('Ошибка при одобрении трека.');
-            }
-        });
-
-        if (moderationRejectBtn) moderationRejectBtn.addEventListener('click', async () => {
-            const trackId = moderationRejectBtn.dataset.trackId;
-            if (confirm('Вы уверены, что хотите отклонить этот трек?')) {
-                try {
-                    const res = await fetchWithAuth(`${api}/api/admin/reject-track/${trackId}`, {
-                        method: 'DELETE'
-                    });
-                    const result = await res.json();
-                    alert(result.message);
-                    if (res.ok) {
-                        if (moderationModal) moderationModal.style.display = 'none';
-                        if (moderationPlayer) moderationPlayer.pause();
-                        if (moderationVideoPlayer) moderationVideoPlayer.pause();
-                        fetchModerationTracks();
-                    }
-                } catch (err) {
-                    alert('Ошибка при отклонении трека.');
-                }
-            }
-        });
-
-        if (playPauseBtn) playPauseBtn.addEventListener('click', () => {
-            if (activeMediaElement.paused) {
-                if (currentTrackIndex === -1 && allMedia.length > 0) playMedia(0);
-                else activeMediaElement.play();
-            } else {
-                activeMediaElement.pause();
-            }
-        });
-
-        if (repeatBtn) repeatBtn.addEventListener('click', () => {
-            repeatMode = !repeatMode;
-            if (repeatBtn) repeatBtn.classList.toggle('active', repeatMode);
-            [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => el.loop = repeatMode);
-        });
-
-        if (favoritePlayerBtn) {
-            favoritePlayerBtn.addEventListener('click', async () => {
-                if (!currentUser) {
-                    alert('Пожалуйста, войдите, чтобы добавлять в избранное.');
-                    return;
-                }
-                if (currentTrackIndex === -1 || !allMedia[currentTrackIndex]) {
-                    alert('Сначала выберите трек.');
-                    return;
-                }
-                const trackToAdd = allMedia[currentTrackIndex];
-                const isFavorite = userFavorites.includes(trackToAdd.file);
-
-                try {
-                    const res = await fetchWithAuth(`${api}/api/favorites`, {
-                        method: isFavorite ? 'DELETE' : 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            mediaFile: trackToAdd.file
-                        })
-                    });
-                    if (res.ok) {
-                        if (isFavorite) {
-                            userFavorites = userFavorites.filter(f => f !== trackToAdd.file);
-                            favoritePlayerBtn.classList.remove('favorited');
-                            favoritePlayerBtn.title = 'Добавить в избранное';
-                            fetchXrecomen();
-                        } else {
-                            userFavorites.push(trackToAdd.file);
-                            favoritePlayerBtn.classList.add('favorited');
-                            favoritePlayerBtn.title = 'Удалить из избранного';
-                            fetchXrecomen();
-                        }
-                    } else {
-                        alert('Ошибка при изменении избранного.');
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            });
-        }
-
-        const onPlay = () => {
-            if (playIcon) playIcon.style.display = 'none';
-            if (pauseIcon) pauseIcon.style.display = 'block';
-            if (nowPlayingText) {
-                if (currentTrackIndex !== -1 && allMedia[currentTrackIndex]) {
-                    const track = allMedia[currentTrackIndex];
-                    nowPlayingText.textContent = `Сейчас играет: ${track.title} от ${track.artist || track.creator_name}`;
-                }
-            }
-        };
-
-        const onPause = () => {
-            if (playIcon) playIcon.style.display = 'block';
-            if (pauseIcon) pauseIcon.style.display = 'none';
-        };
-
-        const onEnded = () => {
-            if (!repeatMode) {
-                const nextIndex = (currentTrackIndex + 1) % allMedia.length;
-                playMedia(nextIndex);
-            }
-        };
-
-        [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
-            if (el) {
-                el.addEventListener('play', onPlay);
-                el.addEventListener('pause', onPause);
-                el.addEventListener('ended', onEnded);
-                el.addEventListener('timeupdate', () => {
-                    if (!isDragging) {
-                        const progress = (el.currentTime / el.duration) * 100 || 0;
-                        if (progressFilled) progressFilled.style.width = `${progress}%`;
-                        if (progressThumb) progressThumb.style.left = `${progress}%`;
-                    }
-                    if (currentTimeEl) currentTimeEl.textContent = formatTime(el.currentTime);
-                });
-                el.addEventListener('loadedmetadata', () => {
-                    if (!isNaN(el.duration) && durationEl) durationEl.textContent = formatTime(el.duration);
-                });
-            }
-        });
-
-        if (nextBtn) nextBtn.addEventListener('click', () => {
-            if (allMedia.length > 0) playMedia((currentTrackIndex + 1) % allMedia.length);
-        });
-        if (prevBtn) prevBtn.addEventListener('click', () => {
-            if (allMedia.length > 0) playMedia((currentTrackIndex - 1 + allMedia.length) % allMedia.length);
-        });
-
-        const scrub = (e) => {
-            e.preventDefault();
-            const rect = progressBarContainer.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let percentage = (clientX - rect.left) / rect.width;
-            percentage = Math.max(0, Math.min(1, percentage));
-            if (activeMediaElement.duration) {
-                activeMediaElement.currentTime = activeMediaElement.duration * percentage;
-            }
-        };
-
-        if (progressBarContainer) progressBarContainer.addEventListener('mousedown', (e) => {
-            if (allMedia.length > 0) {
-                isDragging = true;
-                scrub(e);
-            }
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) scrub(e);
-        });
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-        if (progressBarContainer) progressBarContainer.addEventListener('touchstart', (e) => {
-            if (allMedia.length > 0) {
-                isDragging = true;
-                scrub(e);
-            }
-        });
-        window.addEventListener('touchmove', (e) => {
-            if (isDragging) scrub(e);
-        });
-        window.addEventListener('touchend', () => {
-            isDragging = false;
-        });
-
-        if (volumeBar) volumeBar.addEventListener('input', () => {
-            audioPlayer.volume = videoPlayer.volume = videoPlayerModal.volume = moderationPlayer.volume = moderationVideoPlayer.volume = volumeBar.value;
-            saveVolumeSetting(volumeBar.value);
-        });
-    };
-
-    loadOpacitySetting();
-    loadBlurSetting();
-    loadVolumeSetting();
-    initEventListeners();
-    fetchAndRenderAll();
-    fetchCategories();
-
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        updateUIForAuth(JSON.parse(savedUser));
+}
+
+.section {
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+.section-title {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    transition: color 1.5s ease-in-out;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+/* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
+/* Стиль для grid-контейнера в разделе "Лучшее", чтобы отобразить 10 карточек в одну строку */
+#allGridContainer {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 20px;
+    padding-bottom: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#allGridContainer::-webkit-scrollbar {
+    display: none;
+}
+
+#allGridContainer .card {
+    flex: 0 0 auto;
+    width: 180px;
+}
+/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
+
+.search-results-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 20px;
+    padding-bottom: 20px;
+}
+
+.card {
+    background: var(--card-bg);
+    padding: 16px;
+    border-radius: 12px;
+    position: relative;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+}
+
+.card-image-wrapper {
+    position: relative;
+}
+
+.card-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+}
+
+.card-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-artist {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 5px;
+}
+
+.card--video .card-title {
+    color: var(--accent-color);
+}
+
+.card--video .card-image-wrapper::after {
+    content: '🎥';
+    font-family: sans-serif;
+    position: absolute;
+    bottom: 18px;
+    right: 12px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    padding-left: 2px;
+}
+
+.card-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.card:hover .card-actions {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.card-actions button {
+    background-color: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.card-actions button:hover {
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.card-actions button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.featured-card {
+    display: flex;
+    gap: 30px;
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: 16px;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.featured-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+}
+
+.featured-card .card-image-wrapper {
+    width: 180px;
+    height: 180px;
+    flex-shrink: 0;
+}
+
+.featured-card .card-image {
+    margin-bottom: 0;
+}
+
+.featured-card-info {
+    min-width: 0;
+}
+
+.featured-card-info h3 {
+    font-size: 1em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.featured-card-info .card-title {
+    font-size: 2.8em;
+    font-weight: 800;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+/* Обновлённые стили для плеера */
+.player {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 380px;
+    height: 220px;
+    background: rgba(var(--player-bg-rgb), var(--ui-opacity));
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    z-index: 3;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player .player-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 15px;
+}
+
+.player .track-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.player .track-info div {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    min-width: 0;
+}
+
+.player .track-info img {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.player .track-info .title {
+    font-weight: 600;
+    font-size: 1.1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player .track-info .artist {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player .control-buttons-and-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.player .control-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.player .control-btn, .player .play-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.player .control-buttons svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--text-secondary);
+    transition: fill 0.2s, transform 0.2s;
+}
+
+.player .control-buttons .control-btn:hover svg {
+    fill: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.player .play-button {
+    background-color: var(--card-bg);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    border: 1px solid var(--border-color);
+}
+
+.player .play-button svg {
+    fill: var(--text-primary);
+    width: 30px;
+    height: 30px;
+}
+
+.player .play-button:hover {
+    transform: scale(1.1);
+    background-color: var(--card-hover-bg);
+    border-color: var(--primary-color);
+}
+
+.player .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.player .progress-bar span {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    width: 40px;
+    text-align: center;
+}
+
+.player .progress-bar-container {
+    flex-grow: 1;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.player .progress-track, .player .progress-filled {
+    position: absolute;
+    height: 6px;
+    width: 100%;
+    border-radius: 3px;
+}
+
+.player .progress-track {
+    background-color: #4d4d4d;
+}
+
+.player .progress-filled {
+    background-color: var(--primary-color);
+    width: 0;
+}
+
+.player .progress-thumb {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: var(--text-primary);
+    border-radius: 50%;
+    left: 0;
+    transform: translateX(-50%) scale(0);
+    pointer-events: none;
+    transition: transform 0.2s;
+}
+
+.player .progress-bar-container:hover .progress-thumb {
+    transform: translateX(-50%) scale(1);
+}
+
+/* Новые стили для ползунка громкости */
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.player .volume-controls input {
+    width: 150px;
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+
+/* Стили для кнопки "Избранное" в плеере */
+.player #favoritePlayerBtn {
+    background-color: transparent;
+    border: none;
+    font-size: 1.2em;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.player #favoritePlayerBtn:hover {
+    color: var(--primary-color);
+    transform: scale(1.2);
+}
+
+.player #favoritePlayerBtn.favorited {
+    color: red;
+    animation: heart-beat 0.5s ease-in-out;
+}
+
+/* Стили для кнопки "Повтор" */
+.player .repeat-btn svg {
+    fill: var(--text-secondary);
+}
+
+.player .repeat-btn.active svg {
+    fill: var(--primary-color);
+}
+
+.track-info.fading {
+    opacity: 0;
+}
+
+.logout-btn {
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.3s ease, color 0.3s ease;
+    margin-top: auto;
+}
+
+.logout-btn:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* Стили для режима Creator Studio (светлая тема) */
+body.creator-mode {
+    background-color: var(--creator-bg);
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .sidebar {
+    background-color: var(--creator-card-bg);
+    border-right: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .main-content {
+    background-color: transparent;
+}
+
+.creator-mode .player {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.player .player-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.player .track-info {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+}
+.player .track-info div {
+    text-align: left;
+}
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+}
+.player .player-header .track-info {
+    flex-grow: 1;
+}
+
+.player .control-buttons-and-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+.player .control-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+.player .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .main-nav a span, .creator-mode .creator-nav-btn span, .creator-mode .creator-btn span, .creator-mode .go-back-btn span, .creator-mode .settings-btn span, .creator-mode .logout-btn span {
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .main-nav a:hover, .creator-mode .main-nav a.active, .creator-mode .creator-nav-btn:hover, .creator-mode .creator-nav-btn.active, .creator-mode .creator-btn:hover, .creator-mode .go-back-btn:hover {
+    background-color: var(--creator-border-color);
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .player-controls .control-btn svg, .creator-mode .volume-controls svg {
+    fill: var(--creator-text-secondary);
+}
+
+.creator-mode .player-controls .control-btn:hover svg {
+    fill: var(--creator-primary-color);
+}
+
+.creator-mode .player-controls .play-button {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .player-controls .play-button:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.creator-mode .progress-filled {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .progress-thumb {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .volume-controls .slider::-webkit-slider-thumb {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .main-header h1 {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .search-bar-wrapper {
+    display: none;
+}
+
+.creator-mode .section-title {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .card, .creator-mode .featured-card {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .card:hover, .creator-mode .featured-card:hover {
+    background-color: #f0f2f5;
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .card-title, .creator-mode .card-artist {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .card--video .card-title {
+    color: var(--creator-primary-color);
+}
+
+.creator-mode .card-actions button {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--creator-border-color);
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .card-actions button:hover {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .favorite-btn {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--creator-text-secondary);
+    border-color: var(--creator-border-color);
+}
+
+.creator-mode .favorite-btn.favorited {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .modal-content {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .modal-content h2, .creator-mode .modal-content label, .creator-mode .modal-content .link-btn {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .upload-type-selector {
+    background-color: var(--creator-bg);
+}
+
+.creator-mode .upload-type-selector input:checked + span {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
+}
+
+.creator-mode .submit-btn {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
+}
+
+.creator-mode .submit-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.creator-mode .creator-main-screen {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2em;
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .creator-main-screen h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .apply-btn {
+    margin-top: 30px;
+    padding: 15px 30px;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--creator-card-bg);
+    background-color: var(--creator-primary-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.creator-mode .apply-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.admin-card {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-card h3 {
+    margin-top: 0;
+    color: var(--creator-text-primary);
+}
+
+.admin-card p {
+    margin: 5px 0;
+    color: var(--creator-text-secondary);
+}
+
+.admin-card button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.approve-app-btn, .approve-track-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.reject-app-btn, .reject-track-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.change-role-btn, .change-password-btn, .delete-user-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.admin-card button:hover {
+    opacity: 0.8;
+}
+
+.creator-moderation-card {
+    background-color: var(--creator-card-bg);
+}
+
+.video-icon {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+.video-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.video-modal-content {
+    position: relative;
+    width: 80%;
+    max-width: 1000px;
+    background-color: black;
+}
+
+#videoPlayerModal {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#closeVideoBtn {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+    color: white;
+    cursor: pointer;
+}
+
+.upload-status-bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--card-bg);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.player .track-info {
+    margin-bottom: auto;
+    align-self: flex-start;
+    padding-top: 10px;
+}
+
+.player .track-info div {
+    text-align: left;
+}
+
+/* Исправлена обложка плеера для правильного размера */
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Исправленные стили для ползунка громкости */
+.player--default .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.player--copy .volume-controls {
+    order: 4;
+    width: 120px;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 10px;
+}
+
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.player .volume-controls input {
+    width: 120px;
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+
+/* Исправленные стили для кнопки избранного */
+.favorite-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(4px);
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    padding-bottom: 2px;
+    transition: all 0.2s;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.card:hover .favorite-btn {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.favorite-btn.favorited {
+    color: red;
+}
+
+.favorite-btn:hover {
+    color: red;
+    transform: scale(1.1);
+}
+
+/* Анимация для лайка */
+@keyframes heart-beat {
+    0% {
+        transform: scale(1);
     }
-});
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Новые стили для главной страницы */
+.now-playing-section {
+    position: fixed;
+    top: 15px;
+    left: 265px;
+    width: auto;
+    z-index: 5;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    padding: 8px 15px;
+    transform: translateX(-150%);
+    transition: transform 0.5s ease-out;
+}
+
+.now-playing-section.visible {
+    transform: translateX(0);
+}
+
+.now-playing-text {
+    font-size: 1em;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.xrecomen-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    width: 100%;
+    margin-bottom: 50px;
+    margin-top: 50px;
+}
+
+#xrecomenBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    color: white;
+    text-shadow: none;
+    transition: color 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#xrecomenBtn:hover {
+    color: var(--text-primary);
+}
+
+.xrecomen-title {
+    font-size: 4em;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.xrecomen-subtitle {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 10px;
+}
+
+.equalizer {
+    display: none;
+}
+
+.scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    display: flex;
+    gap: 20px;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+}
+
+.scroll-container .card {
+    min-width: 140px;
+    max-width: 140px;
+    display: inline-block;
+}
+
+.collection-card {
+    min-width: 180px;
+    height: 180px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.collection-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+}
+
+.category-card, .genre-card {
+    min-width: 180px;
+    height: 180px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.category-card:hover, .genre-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.category-card h3, .genre-card h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: color 0.2s;
+}
+
+.category-card p, .genre-card p {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.categories-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.moderation-modal {
+    display: none;
+    position: fixed;
+    z-index: 1002;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.moderation-content {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 700px;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+}
+
+.moderation-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.moderation-player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.moderation-player-controls button {
+    padding: 10px 20px;
+}
+
+.analytics-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.analytics-block {
+    background-color: var(--card-bg);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-block.full-width {
+    grid-column: 1 / -1;
+}
+
+.analytics-block h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.stat-value {
+    color: var(--text-primary);
+}
+
+.analytics-block canvas {
+    background-color: var(--dark-bg);
+    padding: 10px;
+    border-radius: 8px;
+    width: 100% !important;
+    height: 300px !important;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.analytics-table th, .analytics-table td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.analytics-table th {
+    color: var(--text-secondary);
+}
+
+.analytics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.analytics-table tr:hover {
+    background-color: var(--card-hover-bg);
+}
+
+.card--video .card-title {
+    color: var(--accent-color);
+}
+
+.video-icon {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+/* Добавляем стили для chart-container */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+/* Добавленные стили для модального окна категорий */
+#categoryModal .modal-content {
+    max-width: 600px;
+}
+
+#categoryModal .form-group {
+    position: relative;
+}
+
+#userSearchResults {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#userSearchResults li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#userSearchResults li:hover {
+    background-color: var(--card-hover-bg);
+}
+
+#selectedUsersContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.selected-user {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.selected-user .remove-user {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.admin-card .category-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Стили для нового функционала */
+.user-input-wrapper {
+    margin-bottom: 10px;
+}
+
+.user-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.user-input-container #userSearchInput {
+    padding-right: 40px;
+}
+
+#userSearchStatus {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+#userSearchStatus.status-valid {
+    color: #4CAF50;
+}
+
+#userSearchStatus.status-invalid {
+    color: #f44336;
+    font-size: 1.2em;
+}
+
+#userSearchStatus.status-warning {
+    color: #FFC107;
+    font-size: 1em;
+}
+
+/* Добавлены стили для модального окна модерации, чтобы отображать видеоплеер */
+#moderationPlayer {
+    display: none;
+    width: 100%;
+    margin-top: 20px;
+}
+
+#moderationVideoPlayer {
+    display: none;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Стили для статуса загрузки */
+#uploadManager {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#fileStatusText {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+/* Обновленные стили для модального окна настроек */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modal .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 2em;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal .close-btn:hover {
+    color: var(--text-primary);
+}
+
+.modal h2 {
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.modal .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal .form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal input[type="text"],
+.modal input[type="password"],
+.modal input[type="tel"],
+.modal input[type="email"] {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-hover-bg);
+    color: var(--text-primary);
+    font-size: 1em;
+}
+
+.modal input[type="text"]:focus,
+.modal input[type="password"]:focus,
+.modal input[type="tel"]:focus,
+.modal input[type="email"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.modal .submit-btn,
+.modal .link-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal .submit-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.modal .submit-btn:hover {
+    background-color: var(--primary-hover-color);
+}
+
+.modal .link-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--primary-color);
+    margin-top: 10px;
+}
+
+.modal .link-btn:hover {
+    border-color: var(--primary-color);
+}
+
+/* Стили для переключателя (toggle switch) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 28px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Стили для селектора стиля плеера */
+.player-style-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.player-style-selector .style-btn {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.player-style-selector .style-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.player-style-selector .style-btn:hover {
+    background-color: var(--card-hover-bg);
+    color: var(--text-primary);
+}
+
+/* Обновлённые стили для плеера "Copy" */
+.player--copy {
+    width: 100%;
+    max-width: 900px;
+    height: 60px;
+    background-color: #363636;
+    border: 1px solid #4F4F4F;
+    border-radius: 8px;
+    padding: 5px 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 20px;
+    z-index: 100;
+}
+
+.player--copy .player-header,
+.player--copy #favoritePlayerBtn,
+.player--copy .repeat-btn,
+.player--copy .progress-bar-container ~ span {
+    display: none;
+}
+
+.player--copy .track-info-copy {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.player--copy .track-info-copy img {
+    width: 45px;
+    height: 45px;
+    border-radius: 4px;
+}
+
+.player--copy .track-info-copy div {
+    display: flex;
+    flex-direction: column;
+}
+
+.player--copy .track-info-copy .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player--copy .track-info-copy .artist {
+    font-size: 12px;
+    color: #a0a0a0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player--copy .control-buttons-and-progress {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    width: auto;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.player--copy .control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player--copy .control-buttons .control-btn {
+    width: 30px;
+    height: 30px;
+}
+
+.player--copy .control-buttons .control-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #a0a0a0;
+}
+
+.player--copy .control-buttons .control-btn:hover svg {
+    fill: #F98F29;
+}
+
+.player--copy .play-button {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+}
+
+.player--copy .play-button svg {
+    width: 28px;
+    height: 28px;
+    fill: #ffffff;
+}
+
+.player--copy .play-button:hover {
+    transform: scale(1.1);
+}
+
+.player--copy .progress-bar {
+    order: 3;
+    flex-grow: 1;
+    gap: 5px;
+}
+
+.player--copy .progress-bar span {
+    display: none;
+}
+
+.player--copy .progress-bar-container {
+    height: 8px;
+    cursor: pointer;
+}
+
+.player--copy .progress-track,
+.player--copy .progress-filled {
+    height: 4px;
+}
+.player--copy .progress-track {
+    background-color: #4F4F4F;
+}
+.player--copy .progress-filled {
+    background-color: #F98F29;
+}
+
+.player--copy .progress-thumb {
+    width: 10px;
+    height: 10px;
+    background-color: #F98F29;
+    border-radius: 50%;
+}
+
+.player--copy .volume-controls {
+    order: 4;
+    width: 120px;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.player--copy .volume-controls svg {
+    fill: #ffffff;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.player--copy .volume-controls input {
+    width: 80px;
+    height: 4px;
+    background: #4F4F4F;
+    border-radius: 2px;
+}
+
+.player--copy .volume-controls input::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    background: #F98F29;
+    border-radius: 50%;
+}
+
+.track-info.fading {
+    opacity: 0;
+}
+
+.logout-btn {
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.3s ease, color 0.3s ease;
+    margin-top: auto;
+}
+
+.logout-btn:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* Стили для режима Creator Studio (светлая тема) */
+body.creator-mode {
+    background-color: var(--creator-bg);
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .sidebar {
+    background-color: var(--creator-card-bg);
+    border-right: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .main-content {
+    background-color: transparent;
+}
+
+.creator-mode .player {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.player .player-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.player .track-info {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+}
+.player .track-info div {
+    text-align: left;
+}
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+}
+.player .player-header .track-info {
+    flex-grow: 1;
+}
+
+.player .control-buttons-and-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+.player .control-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+.player .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .main-nav a span, .creator-mode .creator-nav-btn span, .creator-mode .creator-btn span, .creator-mode .go-back-btn span, .creator-mode .settings-btn span, .creator-mode .logout-btn span {
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .main-nav a:hover, .creator-mode .main-nav a.active, .creator-mode .creator-nav-btn:hover, .creator-mode .creator-nav-btn.active, .creator-mode .creator-btn:hover, .creator-mode .go-back-btn:hover {
+    background-color: var(--creator-border-color);
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .player-controls .control-btn svg, .creator-mode .volume-controls svg {
+    fill: var(--creator-text-secondary);
+}
+
+.creator-mode .player-controls .control-btn:hover svg {
+    fill: var(--creator-primary-color);
+}
+
+.creator-mode .player-controls .play-button {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .player-controls .play-button:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.creator-mode .progress-filled {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .progress-thumb {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .volume-controls .slider::-webkit-slider-thumb {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .main-header h1 {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .search-bar-wrapper {
+    display: none;
+}
+
+.creator-mode .section-title {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .card, .creator-mode .featured-card {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .card:hover, .creator-mode .featured-card:hover {
+    background-color: #f0f2f5;
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .card-title, .creator-mode .card-artist {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .card--video .card-title {
+    color: var(--creator-primary-color);
+}
+
+.creator-mode .card-actions button {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--creator-border-color);
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .card-actions button:hover {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .favorite-btn {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--creator-text-secondary);
+    border-color: var(--creator-border-color);
+}
+
+.creator-mode .favorite-btn.favorited {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .modal-content {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .modal-content h2, .creator-mode .modal-content label, .creator-mode .modal-content .link-btn {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .upload-type-selector {
+    background-color: var(--creator-bg);
+}
+
+.creator-mode .upload-type-selector input:checked + span {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
+}
+
+.creator-mode .submit-btn {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
+}
+
+.creator-mode .submit-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.creator-mode .creator-main-screen {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2em;
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .creator-main-screen h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .apply-btn {
+    margin-top: 30px;
+    padding: 15px 30px;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--creator-card-bg);
+    background-color: var(--creator-primary-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.creator-mode .apply-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.admin-card {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-card h3 {
+    margin-top: 0;
+    color: var(--creator-text-primary);
+}
+
+.admin-card p {
+    margin: 5px 0;
+    color: var(--creator-text-secondary);
+}
+
+.admin-card button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.approve-app-btn, .approve-track-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.reject-app-btn, .reject-track-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.change-role-btn, .change-password-btn, .delete-user-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.admin-card button:hover {
+    opacity: 0.8;
+}
+
+.creator-moderation-card {
+    background-color: var(--creator-card-bg);
+}
+
+.video-icon {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+.video-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.video-modal-content {
+    position: relative;
+    width: 80%;
+    max-width: 1000px;
+    background-color: black;
+}
+
+#videoPlayerModal {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#closeVideoBtn {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+    color: white;
+    cursor: pointer;
+}
+
+.upload-status-bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--card-bg);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.player .track-info {
+    margin-bottom: auto;
+    align-self: flex-start;
+    padding-top: 10px;
+}
+
+.player .track-info div {
+    text-align: left;
+}
+
+/* Исправлена обложка плеера для правильного размера */
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Исправленные стили для ползунка громкости */
+.player--default .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.player--copy .volume-controls {
+    order: 4;
+    width: 120px;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 10px;
+}
+
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.player .volume-controls input {
+    width: 120px;
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+
+/* Исправленные стили для кнопки избранного */
+.favorite-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(4px);
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    padding-bottom: 2px;
+    transition: all 0.2s;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.card:hover .favorite-btn {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.favorite-btn.favorited {
+    color: red;
+}
+
+.favorite-btn:hover {
+    color: red;
+    transform: scale(1.1);
+}
+
+/* Анимация для лайка */
+@keyframes heart-beat {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Новые стили для главной страницы */
+.now-playing-section {
+    position: fixed;
+    top: 15px;
+    left: 265px;
+    width: auto;
+    z-index: 5;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    padding: 8px 15px;
+    transform: translateX(-150%);
+    transition: transform 0.5s ease-out;
+}
+
+.now-playing-section.visible {
+    transform: translateX(0);
+}
+
+.now-playing-text {
+    font-size: 1em;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.xrecomen-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    width: 100%;
+    margin-bottom: 50px;
+    margin-top: 50px;
+}
+
+#xrecomenBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    color: white;
+    text-shadow: none;
+    transition: color 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#xrecomenBtn:hover {
+    color: var(--text-primary);
+}
+
+.xrecomen-title {
+    font-size: 4em;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.xrecomen-subtitle {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 10px;
+}
+
+.equalizer {
+    display: none;
+}
+
+.scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    display: flex;
+    gap: 20px;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+}
+
+.scroll-container .card {
+    min-width: 140px;
+    max-width: 140px;
+    display: inline-block;
+}
+
+.collection-card {
+    min-width: 180px;
+    height: 180px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.collection-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+}
+
+.category-card, .genre-card {
+    min-width: 180px;
+    height: 180px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.category-card:hover, .genre-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.category-card h3, .genre-card h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: color 0.2s;
+}
+
+.category-card p, .genre-card p {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.categories-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.moderation-modal {
+    display: none;
+    position: fixed;
+    z-index: 1002;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.moderation-content {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 700px;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+}
+
+.moderation-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.moderation-player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.moderation-player-controls button {
+    padding: 10px 20px;
+}
+
+.analytics-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.analytics-block {
+    background-color: var(--card-bg);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-block.full-width {
+    grid-column: 1 / -1;
+}
+
+.analytics-block h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.stat-value {
+    color: var(--text-primary);
+}
+
+.analytics-block canvas {
+    background-color: var(--dark-bg);
+    padding: 10px;
+    border-radius: 8px;
+    width: 100% !important;
+    height: 300px !important;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.analytics-table th, .analytics-table td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.analytics-table th {
+    color: var(--text-secondary);
+}
+
+.analytics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.analytics-table tr:hover {
+    background-color: var(--card-hover-bg);
+}
+
+.card--video .card-title {
+    color: var(--accent-color);
+}
+
+.video-icon {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+/* Добавляем стили для chart-container */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+/* Добавленные стили для модального окна категорий */
+#categoryModal .modal-content {
+    max-width: 600px;
+}
+
+#categoryModal .form-group {
+    position: relative;
+}
+
+#userSearchResults {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#userSearchResults li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#userSearchResults li:hover {
+    background-color: var(--card-hover-bg);
+}
+
+#selectedUsersContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.selected-user {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.selected-user .remove-user {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.admin-card .category-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Стили для нового функционала */
+.user-input-wrapper {
+    margin-bottom: 10px;
+}
+
+.user-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.user-input-container #userSearchInput {
+    padding-right: 40px;
+}
+
+#userSearchStatus {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+#userSearchStatus.status-valid {
+    color: #4CAF50;
+}
+
+#userSearchStatus.status-invalid {
+    color: #f44336;
+    font-size: 1.2em;
+}
+
+#userSearchStatus.status-warning {
+    color: #FFC107;
+    font-size: 1em;
+}
+
+/* Добавлены стили для модального окна модерации, чтобы отображать видеоплеер */
+#moderationPlayer {
+    display: none;
+    width: 100%;
+    margin-top: 20px;
+}
+
+#moderationVideoPlayer {
+    display: none;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Стили для статуса загрузки */
+#uploadManager {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#fileStatusText {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+/* Обновленные стили для модального окна настроек */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modal .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 2em;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal .close-btn:hover {
+    color: var(--text-primary);
+}
+
+.modal h2 {
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.modal .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal .form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal input[type="text"],
+.modal input[type="password"],
+.modal input[type="tel"],
+.modal input[type="email"] {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-hover-bg);
+    color: var(--text-primary);
+    font-size: 1em;
+}
+
+.modal input[type="text"]:focus,
+.modal input[type="password"]:focus,
+.modal input[type="tel"]:focus,
+.modal input[type="email"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.modal .submit-btn,
+.modal .link-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal .submit-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.modal .submit-btn:hover {
+    background-color: var(--primary-hover-color);
+}
+
+.modal .link-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--primary-color);
+    margin-top: 10px;
+}
+
+.modal .link-btn:hover {
+    border-color: var(--primary-color);
+}
+
+/* Стили для переключателя (toggle switch) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 28px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Стили для селектора стиля плеера */
+.player-style-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.player-style-selector .style-btn {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.player-style-selector .style-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.player-style-selector .style-btn:hover {
+    background-color: var(--card-hover-bg);
+    color: var(--text-primary);
+}
+
+/* Обновлённые стили для плеера "Copy" */
+.player--copy {
+    width: 100%;
+    max-width: 900px;
+    height: 60px;
+    background-color: #363636;
+    border: 1px solid #4F4F4F;
+    border-radius: 8px;
+    padding: 5px 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 20px;
+    z-index: 100;
+}
+
+.player--copy .player-header,
+.player--copy #favoritePlayerBtn,
+.player--copy .repeat-btn,
+.player--copy .progress-bar-container ~ span {
+    display: none;
+}
+
+.player--copy .track-info-copy {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.player--copy .track-info-copy img {
+    width: 45px;
+    height: 45px;
+    border-radius: 4px;
+}
+
+.player--copy .track-info-copy div {
+    display: flex;
+    flex-direction: column;
+}
+
+.player--copy .track-info-copy .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player--copy .track-info-copy .artist {
+    font-size: 12px;
+    color: #a0a0a0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player--copy .control-buttons-and-progress {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    width: auto;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.player--copy .control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player--copy .control-buttons .control-btn {
+    width: 30px;
+    height: 30px;
+}
+
+.player--copy .control-buttons .control-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #a0a0a0;
+}
+
+.player--copy .control-buttons .control-btn:hover svg {
+    fill: #F98F29;
+}
+
+.player--copy .play-button {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+}
+
+.player--copy .play-button svg {
+    width: 28px;
+    height: 28px;
+    fill: #ffffff;
+}
+
+.player--copy .play-button:hover {
+    transform: scale(1.1);
+}
+
+.player--copy .progress-bar {
+    order: 3;
+    flex-grow: 1;
+    gap: 5px;
+}
+
+.player--copy .progress-bar span {
+    display: none;
+}
+
+.player--copy .progress-bar-container {
+    height: 8px;
+    cursor: pointer;
+}
+
+.player--copy .progress-track,
+.player--copy .progress-filled {
+    height: 4px;
+}
+.player--copy .progress-track {
+    background-color: #4F4F4F;
+}
+.player--copy .progress-filled {
+    background-color: #F98F29;
+}
+
+.player--copy .progress-thumb {
+    width: 10px;
+    height: 10px;
+    background-color: #F98F29;
+    border-radius: 50%;
+}
+
+.player--copy .volume-controls {
+    order: 4;
+    width: 120px;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.player--copy .volume-controls svg {
+    fill: #ffffff;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.player--copy .volume-controls input {
+    width: 80px;
+    height: 4px;
+    background: #4F4F4F;
+    border-radius: 2px;
+}
+
+.player--copy .volume-controls input::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    background: #F98F29;
+    border-radius: 50%;
+}
