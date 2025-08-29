@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
     let currentPage = 1;
-    const tracksPerPage = 50;
+    const tracksPerPage = 30; // Изменено на 30
     let isLoading = false;
     const BLUR_KEY = "blur_enabled";
 
@@ -242,7 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetchWithAuth(`${api}/api/tracks`);
             if (!response.ok) throw new Error('Network response was not ok');
-            allMedia = await response.json();
+            const newTracks = await response.json();
+            allMedia = newTracks;
             if (currentUser) {
                 fetchFavorites();
                 fetchXrecomen();
