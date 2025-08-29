@@ -1457,10 +1457,6 @@ body.creator-mode {
     max-width: 600px;
 }
 
-#categoryModal .form-group {
-    position: relative;
-}
-
 #userSearchResults {
     position: absolute;
     top: 100%;
@@ -1605,6 +1601,40 @@ body.creator-mode {
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+/* Новые стили для модального окна загрузки */
+#uploadModal .modal-content h2,
+#uploadModal .modal-content p,
+#uploadModal .modal-content label {
+    color: #000000;
+}
+
+#uploadModal .upload-type-selector label span {
+    color: #000000;
+}
+
+#uploadModal .upload-type-selector input:checked + span {
+    color: #ffffff;
+}
+
+#uploadModal #fileStatusText,
+#uploadModal #uploadStatusText {
+    color: #000000;
+}
+
+#uploadModal input[type="text"],
+#uploadModal input[type="file"],
+#uploadModal select,
+#uploadModal #artistFields input,
+#uploadModal .upload-status-bar {
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #000000;
+    border: 1px solid #ccc;
+}
+
+#uploadModal .upload-status-bar {
+    background-color: #f0f0f0;
 }
 
 .modal .close-btn {

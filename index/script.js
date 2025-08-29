@@ -1141,6 +1141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Исправленный блок для переключения полей загрузки
         if (uploadTypeRadios) {
             uploadTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
@@ -1157,6 +1158,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+        }
+        
+        // Устанавливаем начальное состояние полей
+        if (document.querySelector('input[name="uploadType"]:checked').value === 'video') {
+            audioFields.style.display = 'none';
+            videoFields.style.display = 'block';
+            document.getElementById('audioFile').removeAttribute('required');
+            document.getElementById('videoFile').setAttribute('required', 'required');
+        } else {
+            audioFields.style.display = 'block';
+            videoFields.style.display = 'none';
+            document.getElementById('audioFile').setAttribute('required', 'required');
+            document.getElementById('videoFile').removeAttribute('required');
         }
 
         if (navHome) navHome.addEventListener('click', (e) => {
