@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const favoritePlayerBtn = document.getElementById('favoritePlayerBtn');
     const progressBarContainer = document.querySelector('.progress-bar-container');
     const progressFilled = document.querySelector('.progress-filled');
-    const progressThumb = document.querySelector('.progress-thumb');
+    const progressThumb = document.getElementById('progressThumb');
     const currentTimeEl = document.getElementById('currentTime');
     const durationEl = document.getElementById('duration');
     const volumeBar = document.getElementById('volumeBar');
@@ -652,6 +652,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (favoritePlayerBtn && currentUser) {
             const isFavorite = userFavorites.includes(item.file);
             favoritePlayerBtn.classList.toggle('favorited', isFavorite);
+            const heartIcon = favoritePlayerBtn.querySelector('svg');
+            if (isFavorite) {
+                heartIcon.setAttribute('fill', 'red');
+                heartIcon.setAttribute('stroke', 'red');
+            } else {
+                heartIcon.setAttribute('fill', 'none');
+                heartIcon.setAttribute('stroke', 'currentColor');
+            }
             favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
         }
 
@@ -853,7 +861,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (viewToShow) viewToShow.classList.add('active-view');
 
         if (backToCategoriesBtn) {
-            // Исправленная логика: кнопка "Назад" всегда ведёт на главную
             backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
         }
 
@@ -1758,6 +1765,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         allFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
                         if (currentTrack && currentTrack.file === mediaFile) {
                            favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
+                           const heartIcon = favoritePlayerBtn.querySelector('svg');
+                           if (!isFavorite) {
+                                heartIcon.setAttribute('fill', 'red');
+                                heartIcon.setAttribute('stroke', 'red');
+                           } else {
+                                heartIcon.setAttribute('fill', 'none');
+                                heartIcon.setAttribute('stroke', 'currentColor');
+                           }
                         }
                     } else {
                         alert('Ошибка при изменении избранного.');
@@ -2054,6 +2069,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         allFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
                         if (currentTrack && currentTrack.file === mediaFile) {
                            favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
+                           const heartIcon = favoritePlayerBtn.querySelector('svg');
+                           if (!isFavorite) {
+                                heartIcon.setAttribute('fill', 'red');
+                                heartIcon.setAttribute('stroke', 'red');
+                           } else {
+                                heartIcon.setAttribute('fill', 'none');
+                                heartIcon.setAttribute('stroke', 'currentColor');
+                           }
                         }
                     } else {
                         alert('Ошибка при изменении избранного.');
