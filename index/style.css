@@ -116,8 +116,8 @@ body {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 380px; /* Увеличенная ширина */
-    height: 220px; /* Увеличенная высота */
+    width: 380px;
+    height: 220px;
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
     backdrop-filter: blur(var(--blur-value));
     -webkit-backdrop-filter: blur(var(--blur-value));
@@ -128,7 +128,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 15px; /* Увеличенный зазор */
+    gap: 15px;
     padding: 20px;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -203,7 +203,7 @@ body {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background-color: #4CAF50; /* Зеленый цвет */
+    background-color: #4CAF50;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -558,12 +558,29 @@ body {
     line-height: 1.2;
 }
 
-/* Обновлённые стили плеера */
+/* Обновлённые стили для плеера */
 .player {
-    /* ... (оставляем старые стили расположения) ... */
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 380px;
+    height: 220px;
+    background: rgba(var(--player-bg-rgb), var(--ui-opacity));
+    backdrop-filter: blur(var(--blur-value));
+    -webkit-backdrop-filter: blur(var(--blur-value));
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    z-index: 3;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Новая компоновка плеера */
 .player .player-header {
     display: flex;
     width: 100%;
@@ -587,7 +604,7 @@ body {
 }
 
 .player .track-info img {
-    width: 60px; /* Увеличенный размер обложки */
+    width: 60px;
     height: 60px;
     border-radius: 6px;
     flex-shrink: 0;
@@ -595,14 +612,14 @@ body {
 
 .player .track-info .title {
     font-weight: 600;
-    font-size: 1.1em; /* Увеличенный размер шрифта */
+    font-size: 1.1em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .player .track-info .artist {
-    font-size: 0.9em; /* Увеличенный размер шрифта */
+    font-size: 0.9em;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -621,7 +638,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px; /* Увеличенный зазор между кнопками */
+    gap: 20px;
     width: 100%;
 }
 
@@ -637,7 +654,7 @@ body {
 }
 
 .player .control-buttons svg {
-    width: 24px; /* Увеличенный размер иконок */
+    width: 24px;
     height: 24px;
     fill: var(--text-secondary);
     transition: fill 0.2s, transform 0.2s;
@@ -651,14 +668,14 @@ body {
 .player .play-button {
     background-color: var(--card-bg);
     border-radius: 50%;
-    width: 50px; /* Увеличенный размер кнопки */
+    width: 50px;
     height: 50px;
     border: 1px solid var(--border-color);
 }
 
 .player .play-button svg {
     fill: var(--text-primary);
-    width: 30px; /* Увеличенный размер иконок */
+    width: 30px;
     height: 30px;
 }
 
@@ -671,20 +688,20 @@ body {
 .player .progress-bar {
     display: flex;
     align-items: center;
-    gap: 10px; /* Увеличенный зазор */
+    gap: 10px;
     width: 100%;
 }
 
 .player .progress-bar span {
-    font-size: 0.8em; /* Увеличенный размер шрифта */
+    font-size: 0.8em;
     color: var(--text-secondary);
-    width: 40px; /* Увеличенная ширина */
+    width: 40px;
     text-align: center;
 }
 
 .player .progress-bar-container {
     flex-grow: 1;
-    height: 12px; /* Увеличенная высота */
+    height: 12px;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -693,9 +710,9 @@ body {
 
 .player .progress-track, .player .progress-filled {
     position: absolute;
-    height: 6px; /* Увеличенная высота */
+    height: 6px;
     width: 100%;
-    border-radius: 3px; /* Увеличенный радиус */
+    border-radius: 3px;
 }
 
 .player .progress-track {
@@ -709,7 +726,7 @@ body {
 
 .player .progress-thumb {
     position: absolute;
-    width: 14px; /* Увеличенный размер */
+    width: 14px;
     height: 14px;
     background-color: var(--text-primary);
     border-radius: 50%;
@@ -727,7 +744,7 @@ body {
 .player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: center; /* Центрируем ползунок */
+    justify-content: center;
     gap: 10px;
     width: 100%;
     margin-top: 10px;
@@ -741,7 +758,7 @@ body {
 }
 
 .player .volume-controls input {
-    width: 150px; /* Увеличенная ширина ползунка */
+    width: 150px;
     height: 6px;
     background: #4d4d4d;
     outline: none;
@@ -885,6 +902,7 @@ body.creator-mode {
     justify-content: center;
     gap: 10px;
     width: 100%;
+    margin-top: 10px;
 }
 
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
@@ -1165,13 +1183,25 @@ body.creator-mode {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.player .volume-controls {
+/* Исправленные стили для ползунка громкости */
+.player--default .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: center; /* Центрируем по горизонтали */
+    justify-content: center;
     gap: 10px;
     width: 100%;
-    margin-top: 10px; /* Дополнительный отступ сверху */
+    margin-top: 10px;
+}
+
+.player--copy .volume-controls {
+    display: none;
+}
+
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
 }
 
 .player .volume-controls input {
@@ -1180,6 +1210,8 @@ body.creator-mode {
     background: #4d4d4d;
     outline: none;
     border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .player .volume-controls input::-webkit-slider-thumb {
@@ -1938,7 +1970,7 @@ input:checked + .slider:before {
     order: 3;
     width: 120px;
     margin-top: 0;
-    display: none;
+    display: flex !important;
 }
 
 /* Копируем обложку и инфо в новый блок для нового стиля */
