@@ -1193,8 +1193,14 @@ body.creator-mode {
     margin-top: 10px;
 }
 
+/* Изменено: убираем display: none; */
 .player--copy .volume-controls {
-    display: none;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 120px;
+    margin-top: 0;
 }
 
 .player .volume-controls svg {
