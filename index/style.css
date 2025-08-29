@@ -363,8 +363,6 @@ body {
     gap: 20px;
 }
 
-/* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
-/* Стиль для grid-контейнера в разделе "Лучшее", чтобы отобразить 10 карточек в одну строку */
 #allGridContainer {
     display: flex;
     flex-wrap: nowrap;
@@ -383,7 +381,6 @@ body {
     flex: 0 0 auto;
     width: 180px;
 }
-/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
 .search-results-container {
     display: grid;
@@ -732,7 +729,7 @@ body {
     transform: translateX(-50%) scale(1);
 }
 
-/* Новые стили для ползунка громкости */
+/* Обновлённые стили для ползунка громкости и его бегунка */
 .player .volume-controls {
     display: flex;
     align-items: center;
@@ -753,32 +750,43 @@ body {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    background: transparent;
     width: 150px;
     height: 6px;
+    cursor: pointer;
+}
+
+.player .volume-controls input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
     background: #4d4d4d;
-    outline: none;
     border-radius: 3px;
 }
 
 .player .volume-controls input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  cursor: pointer;
-  margin-top: -5px;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    margin-top: -5px;
+}
+
+.player .volume-controls input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: #4d4d4d;
+    border-radius: 3px;
 }
 
 .player .volume-controls input[type=range]::-moz-range-thumb {
-  -moz-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  cursor: pointer;
+    -moz-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
 }
 
 
