@@ -93,7 +93,7 @@ def webserver(app,db,dirs):
             conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
             return jsonify({'message': 'Регистрация прошла успешно!'}), 201
-        except sqlite3.IntegrityError:
+        except db.sqlite3.IntegrityError:
             return jsonify({'message': 'Пользователь с таким именем уже существует.'}), 400
         finally:
             conn.close()
@@ -149,14 +149,20 @@ def webserver(app,db,dirs):
     def get_tracks():
         conn = db.get_db_connection()
         category_id = request.args.get('categoryId')
-
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 30, type=int)
+        offset = (page - 1) * per_page
+        
         query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
         params = []
 
-        if category_id:
+        if category_id and category_id != 'all':
             query += " WHERE t.category_id = ?"
             params.append(category_id)
-        
+
+        query += " ORDER BY t.id DESC LIMIT ? OFFSET ?"
+        params.extend([per_page, offset])
+
         tracks = conn.execute(query, params).fetchall()
         conn.close()
         return jsonify([dict(row) for row in tracks])
@@ -260,7 +266,6 @@ def webserver(app,db,dirs):
             return jsonify({'message': 'Ошибка при подаче заявки.'}), 500
         finally:
             conn.close()
-
 
 
     @app.route('/api/moderation/upload', methods=['POST'])
@@ -383,7 +388,6 @@ def webserver(app,db,dirs):
         categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ?", (user_id,)).fetchall()
         conn.close()
         return jsonify([dict(row) for row in categories])
-
 
 
     @app.route('/api/update-playback', methods=['POST'])
