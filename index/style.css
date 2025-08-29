@@ -1255,6 +1255,7 @@ body.creator-mode {
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
+    margin-top: -5px; /* Added to fix the vertical position */
 }
 .player .volume-controls input::-moz-range-thumb {
     -moz-appearance: none;
@@ -1265,7 +1266,6 @@ body.creator-mode {
     border-radius: 50%;
     cursor: pointer;
 }
-
 
 /* Исправленные стили для кнопки избранного */
 .favorite-btn {
