@@ -386,12 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchAndRenderCategoryTracks = async (categoryId) => {
+    const fetchAndRenderCategoryTracks = async (categoryId, clearGrid = true) => {
         if (isLoading) return;
         isLoading = true;
         currentCategoryId = categoryId;
-        currentPage = 1;
-        if (specificCategoryGrid) specificCategoryGrid.innerHTML = ''; // Очищаем старые треки при смене категории
+        if (clearGrid) {
+            currentPage = 1;
+            if (specificCategoryGrid) specificCategoryGrid.innerHTML = ''; 
+        }
         await loadMoreTracks();
         isLoading = false;
     };
@@ -1951,15 +1953,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (categoryId === 'all') {
                     if (viewTitle) viewTitle.textContent = 'Все треки';
                     switchView('specificCategoryView');
-                    if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
-                    if (allGridContainer) allGridContainer.style.display = 'grid';
-                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'none';
                     fetchAndRenderAll();
                 } else {
                     if (viewTitle) viewTitle.textContent = targetCard.querySelector('h3').textContent;
                     switchView('specificCategoryView');
-                    if (allGridContainer) allGridContainer.style.display = 'none';
-                    if (specificCategoryGrid) specificCategoryGrid.style.display = 'grid';
                     fetchAndRenderCategoryTracks(categoryId);
                 }
             }

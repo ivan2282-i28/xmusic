@@ -326,7 +326,7 @@ def get_tracks():
     query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
     params = []
 
-    if category_id:
+    if category_id and category_id != 'all':
         query += " WHERE t.category_id = ?"
         params.append(category_id)
 
@@ -339,7 +339,7 @@ def get_tracks():
 @app.route('/api/tracks/best')
 def get_best_tracks():
     conn = get_db_connection()
-    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY t.plays DESC LIMIT 9").fetchall()
+    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 9").fetchall()
     conn.close()
     return jsonify([dict(row) for row in tracks])
 
