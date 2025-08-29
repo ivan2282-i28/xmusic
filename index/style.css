@@ -1247,3 +1247,317 @@ body.creator-mode {
     border-radius: 50%;
     cursor: pointer;
 }
+.creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .main-nav a span, .creator-mode .creator-nav-btn span, .creator-mode .creator-btn span, .creator-mode .go-back-btn span, .creator-mode .settings-btn span, .creator-mode .logout-btn span {
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .main-nav a:hover, .creator-mode .main-nav a.active, .creator-mode .creator-nav-btn:hover, .creator-mode .creator-nav-btn.active, .creator-mode .creator-btn:hover, .creator-mode .go-back-btn:hover {
+    background-color: var(--creator-border-color);
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .player-controls .control-btn svg, .creator-mode .volume-controls svg {
+    fill: var(--creator-text-secondary);
+}
+
+.creator-mode .player-controls .control-btn:hover svg {
+    fill: var(--creator-primary-color);
+}
+
+.creator-mode .player-controls .play-button {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .player-controls .play-button:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.creator-mode .progress-filled {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .progress-thumb {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .volume-controls .slider::-webkit-slider-thumb {
+    background-color: var(--creator-primary-color);
+}
+
+.creator-mode .main-header h1 {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .search-bar-wrapper {
+    display: none;
+}
+
+.creator-mode .section-title {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .card, .creator-mode .featured-card {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .card:hover, .creator-mode .featured-card:hover {
+    background-color: #f0f2f5;
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .card-title, .creator-mode .card-artist {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .card--video .card-title {
+    color: var(--creator-primary-color);
+}
+
+.creator-mode .card-actions button {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--creator-border-color);
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .card-actions button:hover {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .favorite-btn {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--creator-text-secondary);
+    border-color: var(--creator-border-color);
+}
+
+.creator-mode .favorite-btn.favorited {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
+}
+
+.creator-mode .modal-content {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+}
+
+.creator-mode .modal-content h2, .creator-mode .modal-content label, .creator-mode .modal-content .link-btn {
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .upload-type-selector {
+    background-color: var(--creator-bg);
+}
+
+.creator-mode .upload-type-selector input:checked + span {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
+}
+
+.creator-mode .submit-btn {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
+}
+
+.creator-mode .submit-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.creator-mode .creator-main-screen {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2em;
+    color: var(--creator-text-secondary);
+}
+
+.creator-mode .creator-main-screen h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: var(--creator-text-primary);
+}
+
+.creator-mode .apply-btn {
+    margin-top: 30px;
+    padding: 15px 30px;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--creator-card-bg);
+    background-color: var(--creator-primary-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.creator-mode .apply-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+
+.admin-card {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-card h3 {
+    margin-top: 0;
+    color: var(--creator-text-primary);
+}
+
+.admin-card p {
+    margin: 5px 0;
+    color: var(--creator-text-secondary);
+}
+
+.admin-card button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.approve-app-btn, .approve-track-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.reject-app-btn, .reject-track-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.change-role-btn, .change-password-btn, .delete-user-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.admin-card button:hover {
+    opacity: 0.8;
+}
+
+.creator-moderation-card {
+    background-color: var(--creator-card-bg);
+}
+
+.video-icon {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+.video-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.video-modal-content {
+    position: relative;
+    width: 80%;
+    max-width: 1000px;
+    background-color: black;
+}
+
+#videoPlayerModal {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#closeVideoBtn {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+    color: white;
+    cursor: pointer;
+}
+
+.upload-status-bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--card-bg);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.player .track-info {
+    margin-bottom: auto;
+    align-self: flex-start;
+    padding-top: 10px;
+}
+
+.player .track-info div {
+    text-align: left;
+}
+
+/* Исправлена обложка плеера для правильного размера */
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Новые стили для ползунка громкости */
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.player .volume-controls input {
+    width: 150px;
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
