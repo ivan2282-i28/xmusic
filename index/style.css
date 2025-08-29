@@ -164,9 +164,68 @@ body {
 
 .sidebar-footer {
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
 }
 
-.upload-btn {
+/* Новые стили для профиля пользователя */
+.user-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background-color: rgba(var(--sidebar-bg-rgb), 0.7);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    margin-top: auto;
+}
+
+.user-info-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #4CAF50; /* Зеленый цвет */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.welcome-message {
+    font-size: 1em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.login-btn, .logout-btn {
     width: 100%;
     background-color: transparent;
     color: var(--text-secondary);
@@ -180,7 +239,7 @@ body {
     transition: border-color 0.3s ease, color 0.3s ease;
 }
 
-.upload-btn:hover {
+.login-btn:hover, .logout-btn:hover {
     color: var(--accent-color);
     border-color: var(--accent-color);
 }

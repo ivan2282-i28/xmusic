@@ -38,6 +38,17 @@
                 <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
             </nav>
             <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <div class="user-info-container">
+                        <div class="user-avatar" id="userAvatar"></div>
+                        <div class="user-text">
+                            <span id="welcomeMessage" class="welcome-message"></span>
+                            <span id="userRole" class="user-role"></span>
+                        </div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
+                </div>
+                <button class="login-btn" id="loginBtn"><span>Войти</span></button>
             </div>
         </aside>
 
@@ -48,8 +59,6 @@
                     <div class="search-bar-wrapper">
                         <input type="text" id="searchInput" placeholder="Поиск...">
                     </div>
-                    <button class="login-btn" id="loginBtn"><span>Войти</span></button>
-                    <span id="welcomeMessage" style="display: none; margin-left: 20px;"></span>
                 </div>
             </header>
 

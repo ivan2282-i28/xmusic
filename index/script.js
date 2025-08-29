@@ -100,8 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const switchToLoginBtn = document.getElementById('switchToLogin');
     const favoritesView = document.getElementById('favoritesView');
     const favoritesGridContainer = document.getElementById('favoritesGridContainer');
+    
+    // Новые элементы для профиля
+    const userProfile = document.getElementById('userProfile');
+    const userAvatar = document.getElementById('userAvatar');
     const welcomeMessage = document.getElementById('welcomeMessage');
+    const userRole = document.getElementById('userRole');
     const logoutBtn = document.getElementById('logoutBtn');
+
     const headerControls = document.querySelector('.header-controls');
 
     const creatorStudioBtn = document.getElementById('creatorStudioBtn');
@@ -474,13 +480,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
-            loginBtn.style.display = 'none';
+            
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (userProfile) userProfile.style.display = 'flex';
+            if (userAvatar) userAvatar.textContent = user.username.charAt(0).toUpperCase();
+            if (welcomeMessage) welcomeMessage.textContent = `Привет, ${user.username}!`;
+            if (userRole) userRole.textContent = `Ваша роль: ${user.role}`;
+
             if (navFavorites) navFavorites.style.display = 'flex';
             if (creatorStudioBtn) creatorStudioBtn.style.display = 'block';
-            if (welcomeMessage) {
-                welcomeMessage.textContent = `Привет, ${user.username}!`;
-                welcomeMessage.style.display = 'block';
-            }
             if (logoutBtn) logoutBtn.style.display = 'block';
             fetchFavorites();
             fetchXrecomen();
@@ -503,9 +511,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUser = null;
             localStorage.removeItem('currentUser');
             if (loginBtn) loginBtn.style.display = 'block';
+            if (userProfile) userProfile.style.display = 'none';
             if (navFavorites) navFavorites.style.display = 'none';
             if (creatorStudioBtn) creatorStudioBtn.style.display = 'none';
-            if (welcomeMessage) welcomeMessage.style.display = 'none';
             if (logoutBtn) logoutBtn.style.display = 'none';
             userFavorites = [];
             if (myTracksBtn) myTracksBtn.style.display = 'none';
@@ -1293,6 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (logoutBtn) logoutBtn.addEventListener('click', () => {
+            clearTokens();
             localStorage.removeItem('currentUser');
             updateUIForAuth(null);
             toggleCreatorMode(false);
