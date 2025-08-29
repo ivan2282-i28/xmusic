@@ -82,6 +82,35 @@ def webserver(app,db,dirs):
     def serve_temp_uploads(filename):
         return send_from_directory(dirs["TEMP_UPLOAD_DIR"], filename)
 
+    @app.route('/api/search')
+    def search_tracks():
+        query = request.args.get('q', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 30, type=int)
+        offset = (page - 1) * per_page
+
+        if not query:
+            return jsonify([])
+
+        search_term = f"%{query}%"
+        conn = db.get_db_connection()
+        
+        sql_query = """
+            SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, 
+                   t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id 
+            FROM tracks t 
+            LEFT JOIN users u ON t.creator_id = u.id
+            WHERE t.title LIKE ? OR t.artist LIKE ? OR u.username LIKE ?
+            ORDER BY t.plays DESC 
+            LIMIT ? OFFSET ?
+        """
+        params = [search_term, search_term, search_term, per_page, offset]
+
+        tracks = conn.execute(sql_query, params).fetchall()
+        conn.close()
+        
+        return jsonify([dict(row) for row in tracks])
+
     @app.route('/api/register', methods=['POST'])
     def register():
         data = request.json
@@ -105,7 +134,7 @@ def webserver(app,db,dirs):
         password = data.get('password')
 
         conn = db.get_db_connection()
-        user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+        user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
         conn.close()
         if user:
             sanuser = {"username":user["username"],"id":user["id"]}

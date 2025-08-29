@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
 
-    // --- Переменные для пагинации ---
+    // --- Переменные для пагинации категорий ---
     let currentPage = 1;
     const tracksPerPage = 30;
     let isLoading = false;
@@ -21,6 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Новые переменные для пагинации "Моих треков" ---
     let myTracksCurrentPage = 1;
     let myTracksIsLoading = false;
+
+    // --- НОВЫЕ переменные для пагинации ПОИСКА ---
+    let searchCurrentPage = 1;
+    let searchIsLoading = false;
+    let currentSearchQuery = '';
+    let searchTimeout;
 
 
     const ACCESS_TOKEN_KEY = "access_token"
@@ -82,6 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyProgressBarContainer = document.querySelector('.copy-progress-bar-container');
     const copyProgressFilled = document.querySelector('.copy-progress-filled');
     const copyVolumeBar = document.getElementById('copyVolumeBar');
+
+    // --- НОВЫЕ Элементы для поиска ---
+    const searchView = document.getElementById('searchView');
+    const searchResultsGrid = document.getElementById('searchResultsGrid');
+    const searchResultsTitle = document.getElementById('searchResultsTitle');
 
 
     const uploadModal = document.getElementById('uploadModal');
@@ -255,33 +266,17 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem(REFRESH_TOKEN_KEY);
     }
 
-    const renderSearchResults = (mediaToRender, searchTerm) => {
-        let searchResultsContainer = document.querySelector('.search-results-container');
-        if (searchTerm.length > 0) {
-            if (!searchResultsContainer) {
-                searchResultsContainer = document.createElement('div');
-                searchResultsContainer.className = 'grid-container search-results-container';
-                const searchSection = document.createElement('section');
-                searchSection.className = 'section search-results-section';
-                searchSection.innerHTML = '<h2 class="section-title">Результаты поиска</h2>';
-                searchSection.appendChild(searchResultsContainer);
-                homeView.prepend(searchSection);
-            }
-            renderMediaInContainer(searchResultsContainer, mediaToRender);
-        } else {
-            if (searchResultsContainer) {
-                searchResultsContainer.parentElement.remove();
-            }
-        }
-    };
-
-
     const fetchInitialData = async () => {
         try {
-            const response = await fetchWithAuth(`${api}/api/tracks`);
+            // Загружаем только лучшие треки для главной, чтобы не грузить все сразу
+            const response = await fetchWithAuth(`${api}/api/tracks/best`);
             if (!response.ok) throw new Error('Network response was not ok');
-            const newTracks = await response.json();
-            allMedia = newTracks;
+            const bestTracks = await response.json();
+            
+            // Очищаем allMedia перед добавлением новых данных
+            allMedia = [...bestTracks]; 
+            renderBestTracks(bestTracks);
+
             if (currentUser) {
                 fetchFavorites();
             }
@@ -290,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Ошибка:', error);
         }
     };
+
 
     const fetchXrecomen = async () => {
         if (!currentUser) {
@@ -499,12 +495,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- НОВАЯ ЛОГИКА ДЛЯ ПОИСКА ---
+    const startSearch = (query) => {
+        if (searchIsLoading) return;
+        currentSearchQuery = query;
+        searchCurrentPage = 1;
+        
+        // Очищаем allMedia, чтобы хранить только результаты поиска
+        allMedia = []; 
+        if(searchResultsGrid) searchResultsGrid.innerHTML = '';
+        
+        switchView('searchView', query);
+        loadMoreSearchResults();
+    };
+
+    const loadMoreSearchResults = async () => {
+        if (searchIsLoading || !currentSearchQuery) return;
+        searchIsLoading = true;
+
+        try {
+            const url = `${api}/api/search?q=${encodeURIComponent(currentSearchQuery)}&page=${searchCurrentPage}&per_page=${tracksPerPage}`;
+            const response = await fetchWithAuth(url);
+            if (!response.ok) throw new Error('Network response for search failed');
+            const newTracks = await response.json();
+            
+            if (newTracks.length > 0) {
+                 // Добавляем новые треки в allMedia, избегая дублирования
+                const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
+                allMedia.push(...newTracksToAdd);
+                renderMediaInContainer(searchResultsGrid, newTracks);
+                searchCurrentPage++;
+            } else {
+                if (searchCurrentPage === 1) { // Если первая страница и нет результатов
+                    searchResultsGrid.innerHTML = `<p>Ничего не найдено по запросу "${currentSearchQuery}".</p>`;
+                }
+                // Больше нет результатов, отключаем скролл
+                mainContent.removeEventListener('scroll', handleScroll);
+            }
+        } catch (error) {
+            console.error('Ошибка при поиске:', error);
+        } finally {
+            searchIsLoading = false;
+        }
+    };
+    // --- КОНЕЦ НОВОЙ ЛОГИКИ ПОИСКА ---
+
     const handleScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = mainContent;
-        const isActiveView = document.getElementById('specificCategoryView').classList.contains('active-view');
+        const isNearBottom = scrollTop + clientHeight >= scrollHeight - 500;
 
-        if (isActiveView && scrollTop + clientHeight >= scrollHeight - 500 && !isLoading) {
+        const isCategoryViewActive = specificCategoryView.classList.contains('active-view');
+        const isSearchViewActive = searchView.classList.contains('active-view');
+        
+        if (isCategoryViewActive && isNearBottom && !isLoading) {
             loadMoreTracks();
+        } else if (isSearchViewActive && isNearBottom && !searchIsLoading) {
+            loadMoreSearchResults();
         }
     };
 
@@ -622,11 +668,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!allMedia.some(t => t.id === item.id)) {
-                allMedia.push(item);
+            const trackIndex = allMedia.findIndex(t => t.id === item.id);
+            if (trackIndex === -1) {
+                console.warn("Трек не найден в allMedia, не удалось создать карточку:", item);
+                return;
             }
 
-            const trackIndex = allMedia.findIndex(t => t.id === item.id);
             const isFavorite = currentUser ? userFavorites.includes(item.file) : false;
             const card = document.createElement('div');
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
@@ -956,9 +1003,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    const switchView = (viewIdToShow) => {
+    const switchView = (viewIdToShow, ...args) => {
+        // Убираем обработчик скролла перед сменой вью
+        mainContent.removeEventListener('scroll', handleScroll);
+        
         document.querySelectorAll('.nav-link, .creator-nav-btn').forEach(l => l.classList.remove('active'));
-
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
 
         const viewToShow = document.getElementById(viewIdToShow);
@@ -968,32 +1017,37 @@ document.addEventListener('DOMContentLoaded', () => {
             backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
         }
 
+        const defaultPlayerDisplay = () => {
+            if (player) {
+                player.style.display = 'flex';
+                player.classList.remove('creator-mode');
+            }
+        };
+
         if (viewIdToShow === 'homeView') {
             if (navHome) navHome.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Главная';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'flex';
-                player.classList.remove('creator-mode');
-            }
+            defaultPlayerDisplay();
             fetchXrecomen();
+        } else if (viewIdToShow === 'searchView') {
+            const query = args[0] || '';
+            if (viewTitle) viewTitle.textContent = `Поиск: "${query}"`;
+            if (searchBarWrapper) searchBarWrapper.style.display = 'block';
+            defaultPlayerDisplay();
+            // Добавляем обработчик скролла для результатов поиска
+            mainContent.addEventListener('scroll', handleScroll);
         } else if (viewIdToShow === 'categoriesView') {
             if (navCategories) navCategories.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Категории';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'flex';
-                player.classList.remove('creator-mode');
-            }
+            defaultPlayerDisplay();
             fetchCategories();
         } else if (viewIdToShow === 'favoritesView') {
             if (navFavorites) navFavorites.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Избранное';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'flex';
-                player.classList.remove('creator-mode');
-            }
+            defaultPlayerDisplay();
             fetchFavorites();
         } else if (viewIdToShow === 'creatorView') {
             if (viewTitle) viewTitle.textContent = 'Creator Studio';
@@ -1010,10 +1064,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (viewIdToShow === 'specificCategoryView') {
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
-            if (player) {
-                player.style.display = 'flex';
-                player.classList.remove('creator-mode');
-            }
+            defaultPlayerDisplay();
+             // Добавляем обработчик скролла для категорий
+            mainContent.addEventListener('scroll', handleScroll);
         }
     };
 
@@ -1191,6 +1244,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const debounce = (func, delay) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(func, delay);
+    };
+
     const initEventListeners = () => {
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
             if (el) {
@@ -1198,7 +1256,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Исправленный блок для переключения полей загрузки
         if (uploadTypeRadios) {
             uploadTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
@@ -1217,7 +1274,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // Устанавливаем начальное состояние полей
         if (document.querySelector('input[name="uploadType"]:checked').value === 'video') {
             audioFields.style.display = 'none';
             videoFields.style.display = 'block';
@@ -1796,30 +1852,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadPlayerStyle();
 
-        if (searchInput) searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            let mediaToFilter = allMedia;
-            if (document.querySelector('.view.active-view').id === 'favoritesView') {
-                mediaToFilter = allMedia.filter(item => userFavorites.includes(item.file));
-            }
-
-            const filteredMedia = mediaToFilter.filter(item => {
-                const titleMatch = item.title.toLowerCase().includes(searchTerm);
-                const artistMatch = item.artist && item.artist.toLowerCase().includes(searchTerm);
-                const creatorMatch = item.creator_name && item.creator_name.toLowerCase().includes(searchTerm);
-                return titleMatch || artistMatch || creatorMatch;
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.trim();
+                if (searchTerm.length > 0) {
+                    debounce(() => startSearch(searchTerm), 300);
+                } else {
+                    clearTimeout(searchTimeout);
+                    switchView('homeView');
+                }
             });
-
-            const homeSections = document.querySelectorAll('#homeView .section');
-            if (searchTerm.length > 0) {
-                homeSections.forEach(sec => sec.style.display = 'none');
-                renderSearchResults(filteredMedia, searchTerm);
-            } else {
-                homeSections.forEach(sec => sec.style.display = 'block');
-                renderSearchResults([], '');
-                fetchXrecomen();
-            }
-        });
+        }
 
         if (xrecomenBtn) xrecomenBtn.addEventListener('click', (e) => {
             e.preventDefault();
