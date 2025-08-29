@@ -1192,15 +1192,16 @@ body.creator-mode {
     width: 100%;
     margin-top: 10px;
 }
-
-/* Изменено: убираем display: none; */
+/* Старый баг, убираем display: none; */
 .player--copy .volume-controls {
-    display: flex !important;
+    order: 4;
+    width: 120px;
+    margin-top: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    width: 120px;
-    margin-top: 0;
+    margin-left: 10px;
 }
 
 .player .volume-controls svg {
@@ -1903,18 +1904,18 @@ input:checked + .slider:before {
 .player--copy .player-header {
     display: none;
 }
-
+/* Изменения для player--copy */
 .player--copy .control-buttons-and-progress {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 15px;
     width: auto;
     flex-grow: 1;
 }
 
 .player--copy .control-buttons {
-    order: 1;
+    order: 2; /* Порядок кнопок после информации о треке */
     gap: 10px;
 }
 
@@ -1941,7 +1942,7 @@ input:checked + .slider:before {
 }
 
 .player--copy .progress-bar {
-    order: 2;
+    order: 3; /* Порядок после кнопок */
     flex-grow: 1;
     gap: 5px;
 }
@@ -1972,11 +1973,16 @@ input:checked + .slider:before {
     background-color: var(--player-copy-thumb);
 }
 
+/* Изменение для правильного отображения ползунка */
 .player--copy .volume-controls {
-    order: 3;
+    order: 4;
     width: 120px;
     margin-top: 0;
-    display: flex !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 10px;
 }
 
 /* Копируем обложку и инфо в новый блок для нового стиля */
@@ -1984,7 +1990,7 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     gap: 15px;
-    order: 0;
+    order: 1; /* Порядок до кнопок */
     flex-shrink: 0;
     min-width: 0;
 }
