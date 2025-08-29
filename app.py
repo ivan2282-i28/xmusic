@@ -588,13 +588,13 @@ def approve_track():
     file_name = data.get('fileName')
     cover_name = data.get('coverName')
     title = data.get('title')
-    track_type = data.get('type')
+    type = data.get('type')
     creator_id = data.get('creatorId')
     artist = data.get('artist')
     category_id = data.get('categoryId')
 
     sanitized_title = secure_filename(title.strip())
-    media_dir = MUSIC_DIR if track_type == 'audio' else VIDEO_DIR
+    media_dir = MUSIC_DIR if type == 'audio' else VIDEO_DIR
 
     conn = None
     try:
@@ -609,7 +609,7 @@ def approve_track():
 
         conn = get_db_connection()
         conn.execute("INSERT INTO tracks (title, file_name, cover_name, type, creator_id, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                     (title, new_file_name, new_cover_name, track_type, creator_id, artist, category_id))
+                     (title, new_file_name, new_cover_name, type, creator_id, artist, category_id))
         conn.execute("DELETE FROM track_moderation WHERE id = ?", (track_id,))
         conn.commit()
         return jsonify({'message': 'Трек одобрен и добавлен в медиатеку.'})

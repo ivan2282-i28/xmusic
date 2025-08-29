@@ -249,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 fetchXrecomen();
             }
-            renderAllTracks(allMedia);
         } catch (error) {
             console.error('Ошибка:', error);
         }
@@ -392,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isLoading = true;
         currentCategoryId = categoryId;
         currentPage = 1;
-        specificCategoryGrid.innerHTML = ''; // Очищаем старые треки при смене категории
+        if (specificCategoryGrid) specificCategoryGrid.innerHTML = ''; // Очищаем старые треки при смене категории
         await loadMoreTracks();
         isLoading = false;
     };
@@ -500,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Ошибка при получении избранного.');
             userFavorites = await response.json();
             renderFavorites();
-            renderAllTracks(allMedia);
         } catch (error) {
             console.error(error);
         }
@@ -510,17 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const favoriteMedia = allMedia.filter(item => userFavorites.includes(item.file));
         if (favoritesGridContainer) {
             renderMediaInContainer(favoritesGridContainer, favoriteMedia, true, true);
-        }
-    };
-
-    const renderAllTracks = (mediaToRender) => {
-        if (allGridContainer) {
-            allGridContainer.innerHTML = '';
-            if (mediaToRender.length === 0) {
-                allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
-                return;
-            }
-            renderMediaInContainer(allGridContainer, mediaToRender, true);
         }
     };
 
@@ -549,16 +536,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const globalIndex = allMedia.findIndex(t => t.id === item.id);
+            if (globalIndex === -1) {
+                allMedia.push(item);
+            }
+
+            const trackIndex = allMedia.findIndex(t => t.id === item.id);
             const isFavorite = currentUser ? userFavorites.includes(item.file) : false;
             const card = document.createElement('div');
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
-            card.dataset.index = globalIndex;
+            card.dataset.index = trackIndex;
             card.dataset.id = item.id;
 
-            if (globalIndex === -1) {
-                allMedia.push(item);
-                card.dataset.index = allMedia.length - 1;
-            }
 
             let cardActionsHtml = '';
             if (currentUser && currentUser.role === 'admin') {
@@ -1963,6 +1951,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (categoryId === 'all') {
                     if (viewTitle) viewTitle.textContent = 'Все треки';
                     switchView('specificCategoryView');
+                    if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
                     if (allGridContainer) allGridContainer.style.display = 'grid';
                     if (specificCategoryGrid) specificCategoryGrid.style.display = 'none';
                     fetchAndRenderAll();
