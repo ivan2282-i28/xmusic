@@ -38,8 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const views = document.querySelectorAll('.view');
     const viewTitle = document.getElementById('viewTitle');
     const player = document.querySelector('.player');
+    const videoBackgroundContainer = document.getElementById('videoBackgroundContainer');
+    
+    // --- Элементы плеера DEFAULT ---
+    const playerDefaultStyle = document.querySelector('.player-style-default');
     const playerHeader = document.querySelector('.player-header');
-    const playerTrackInfo = player.querySelector('.track-info');
     const playerCover = document.getElementById('playerCover');
     const playerTitle = document.getElementById('playerTitle');
     const playerArtist = document.getElementById('playerArtist');
@@ -52,13 +55,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const favoritePlayerBtn = document.getElementById('favoritePlayerBtn');
     const progressBarContainer = document.querySelector('.progress-bar-container');
     const progressFilled = document.querySelector('.progress-filled');
-    const progressThumb = document.getElementById('progressThumb');
+    const progressThumb = document.querySelector('.progress-thumb');
     const currentTimeEl = document.getElementById('currentTime');
     const durationEl = document.getElementById('duration');
     const volumeBar = document.getElementById('volumeBar');
-    const videoBackgroundContainer = document.getElementById('videoBackgroundContainer');
-    const controlButtonsAndProgress = document.querySelector('.control-buttons-and-progress');
-    const volumeControls = document.querySelector('.volume-controls');
+
+    // --- Элементы плеера COPY ---
+    const playerCopyStyle = document.querySelector('.player-style-copy');
+    const copyPlayerCover = document.getElementById('copyPlayerCover');
+    const copyPlayerTitle = document.getElementById('copyPlayerTitle');
+    const copyPlayerArtist = document.getElementById('copyPlayerArtist');
+    const copyPlayPauseBtn = document.getElementById('copyPlayPauseBtn');
+    const copyPlayIcon = document.getElementById('copyPlayIcon');
+    const copyPauseIcon = document.getElementById('copyPauseIcon');
+    const copyPrevBtn = document.getElementById('copyPrevBtn');
+    const copyNextBtn = document.getElementById('copyNextBtn');
+    const copyFavoriteBtn = document.getElementById('copyFavoriteBtn');
+    const copyProgressBarContainer = document.querySelector('.copy-progress-bar-container');
+    const copyProgressFilled = document.querySelector('.copy-progress-filled');
+    const copyVolumeBar = document.getElementById('copyVolumeBar');
+
 
     const uploadModal = document.getElementById('uploadModal');
     const closeUploadBtn = uploadModal.querySelector('.close-btn');
@@ -646,11 +662,19 @@ document.addEventListener('DOMContentLoaded', () => {
             nowPlayingText.textContent = `Сейчас играет: ${item.title} от ${item.artist || item.creator_name}`;
         }
 
+        // Обновляем оба плеера
         if (playerHeader) playerHeader.classList.add('fading');
         setTimeout(() => {
+            // Default Player
             if (playerCover) playerCover.src = `/fon/${item.cover}`;
             if (playerTitle) playerTitle.textContent = item.title;
             if (playerArtist) playerArtist.textContent = `от ${item.artist || item.creator_name}`;
+            
+            // Copy Player
+            if (copyPlayerCover) copyPlayerCover.src = `/fon/${item.cover}`;
+            if (copyPlayerTitle) copyPlayerTitle.textContent = item.title;
+            if (copyPlayerArtist) copyPlayerArtist.textContent = `от ${item.artist || item.creator_name}`;
+
 
             if (item.type === 'audio') {
                 activeMediaElement = audioPlayer;
@@ -665,19 +689,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (playerHeader) playerHeader.classList.remove('fading');
         }, 150);
 
-        if (favoritePlayerBtn && currentUser) {
-            const isFavorite = userFavorites.includes(item.file);
-            favoritePlayerBtn.classList.toggle('favorited', isFavorite);
-            const heartIcon = favoritePlayerBtn.querySelector('svg');
-            if (isFavorite) {
-                heartIcon.setAttribute('fill', 'red');
-                heartIcon.setAttribute('stroke', 'red');
-            } else {
-                heartIcon.setAttribute('fill', 'none');
-                heartIcon.setAttribute('stroke', 'currentColor');
-            }
-            favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
-        }
+        updateFavoriteStatus(item.file);
+
 
         if (playTimer) clearTimeout(playTimer);
         playTimer = setTimeout(async () => {
@@ -695,6 +708,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 5000);
     };
+
+    const updateFavoriteStatus = (mediaFile) => {
+        if (!currentUser) return;
+        const isFavorite = userFavorites.includes(mediaFile);
+
+        // Default Player Button
+        if (favoritePlayerBtn) {
+            favoritePlayerBtn.classList.toggle('favorited', isFavorite);
+            const heartIcon = favoritePlayerBtn.querySelector('svg');
+            heartIcon.style.fill = isFavorite ? 'red' : 'none';
+            heartIcon.style.stroke = isFavorite ? 'red' : 'currentColor';
+            favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
+        }
+
+        // Copy Player Button
+        if (copyFavoriteBtn) {
+            copyFavoriteBtn.classList.toggle('favorited', isFavorite);
+            copyFavoriteBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
+        }
+    }
 
     const fetchMyTracks = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
@@ -848,10 +881,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadVolumeSetting = () => {
         const savedVolume = localStorage.getItem(VOLUME_KEY) || 1;
         const volumeValue = parseFloat(savedVolume);
-        if (volumeBar) {
-            volumeBar.value = volumeValue;
-            audioPlayer.volume = videoPlayer.volume = volumeValue;
-        }
+        audioPlayer.volume = videoPlayer.volume = volumeValue;
+        if (volumeBar) volumeBar.value = volumeValue;
+        if (copyVolumeBar) copyVolumeBar.value = volumeValue;
     };
 
     const showVideo = () => {
@@ -1666,9 +1698,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (style === 'default') {
                 player.classList.remove('player--copy');
                 player.classList.add('player--default');
+                playerDefaultStyle.style.display = 'flex';
+                playerCopyStyle.style.display = 'none';
             } else if (style === 'copy') {
                 player.classList.remove('player--default');
                 player.classList.add('player--copy');
+                playerDefaultStyle.style.display = 'none';
+                playerCopyStyle.style.display = 'flex';
             }
         };
 
@@ -1816,15 +1852,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const allFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${mediaFile}"]`);
                         allFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
                         if (currentTrack && currentTrack.file === mediaFile) {
-                           favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
-                           const heartIcon = favoritePlayerBtn.querySelector('svg');
-                           if (!isFavorite) {
-                                heartIcon.setAttribute('fill', 'red');
-                                heartIcon.setAttribute('stroke', 'red');
-                           } else {
-                                heartIcon.setAttribute('fill', 'none');
-                                heartIcon.setAttribute('stroke', 'currentColor');
-                           }
+                           updateFavoriteStatus(mediaFile);
                         }
                     } else {
                         alert('Ошибка при изменении избранного.');
@@ -2076,14 +2104,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (playPauseBtn) playPauseBtn.addEventListener('click', () => {
+        const togglePlayPause = () => {
             if (activeMediaElement.paused) {
                 if (currentTrackIndex === -1 && allMedia.length > 0) playMedia(0);
                 else activeMediaElement.play();
             } else {
                 activeMediaElement.pause();
             }
-        });
+        };
+        
+        if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
+        if (copyPlayPauseBtn) copyPlayPauseBtn.addEventListener('click', togglePlayPause);
+
 
         if (repeatBtn) repeatBtn.addEventListener('click', () => {
             repeatMode = !repeatMode;
@@ -2091,62 +2123,58 @@ document.addEventListener('DOMContentLoaded', () => {
             [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => el.loop = repeatMode);
         });
 
-        if (favoritePlayerBtn) {
-            favoritePlayerBtn.addEventListener('click', async () => {
-                if (!currentUser) {
-                    alert('Пожалуйста, войдите, чтобы добавлять в избранное.');
-                    return;
-                }
-                if (currentTrackIndex === -1 || !allMedia[currentTrackIndex]) {
-                    alert('Сначала выберите трек.');
-                    return;
-                }
-                const trackToAdd = allMedia[currentTrackIndex];
-                const isFavorite = favoritePlayerBtn.classList.contains('favorited');
+        const handleFavoriteClick = async () => {
+            if (!currentUser) {
+                alert('Пожалуйста, войдите, чтобы добавлять в избранное.');
+                return;
+            }
+            if (currentTrackIndex === -1 || !allMedia[currentTrackIndex]) {
+                alert('Сначала выберите трек.');
+                return;
+            }
+            const trackToToggle = allMedia[currentTrackIndex];
+            const isFavorite = userFavorites.includes(trackToToggle.file);
 
-                try {
-                    const res = await fetchWithAuth(`${api}/api/favorites`, {
-                        method: isFavorite ? 'DELETE' : 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            mediaFile: trackToAdd.file
-                        })
-                    });
-                    if (res.ok) {
-                        await fetchFavorites();
-                        const allFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${trackToAdd.file}"]`);
-                        allFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
-                        if (currentTrack && currentTrack.file === trackToAdd.file) {
-                           favoritePlayerBtn.classList.toggle('favorited', !isFavorite);
-                           const heartIcon = favoritePlayerBtn.querySelector('svg');
-                           if (!isFavorite) {
-                                heartIcon.setAttribute('fill', 'red');
-                                heartIcon.setAttribute('stroke', 'red');
-                           } else {
-                                heartIcon.setAttribute('fill', 'none');
-                                heartIcon.setAttribute('stroke', 'currentColor');
-                           }
-                        }
-                    } else {
-                        alert('Ошибка при изменении избранного.');
-                    }
-                } catch (err) {
-                    console.error(err);
+            try {
+                const res = await fetchWithAuth(`${api}/api/favorites`, {
+                    method: isFavorite ? 'DELETE' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        mediaFile: trackToToggle.file
+                    })
+                });
+                if (res.ok) {
+                    await fetchFavorites();
+                    const allCardFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${trackToToggle.file}"]`);
+                    allCardFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
+                    updateFavoriteStatus(trackToToggle.file);
+                } else {
+                    alert('Ошибка при изменении избранного.');
                 }
-            });
-        }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        if (favoritePlayerBtn) favoritePlayerBtn.addEventListener('click', handleFavoriteClick);
+        if (copyFavoriteBtn) copyFavoriteBtn.addEventListener('click', handleFavoriteClick);
+
 
         const onPlay = () => {
             if (playIcon) playIcon.style.display = 'none';
             if (pauseIcon) pauseIcon.style.display = 'block';
+            if (copyPlayIcon) copyPlayIcon.style.display = 'none';
+            if (copyPauseIcon) copyPauseIcon.style.display = 'block';
         };
 
         const onPause = () => {
             if (playIcon) playIcon.style.display = 'block';
             if (pauseIcon) pauseIcon.style.display = 'none';
+            if (copyPlayIcon) copyPlayIcon.style.display = 'block';
+            if (copyPauseIcon) copyPauseIcon.style.display = 'none';
         };
 
         const onEnded = () => {
@@ -2166,6 +2194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const progress = (el.currentTime / el.duration) * 100 || 0;
                         if (progressFilled) progressFilled.style.width = `${progress}%`;
                         if (progressThumb) progressThumb.style.left = `${progress}%`;
+                        if (copyProgressFilled) copyProgressFilled.style.width = `${progress}%`;
                     }
                     if (currentTimeEl) currentTimeEl.textContent = formatTime(el.currentTime);
                 });
@@ -2175,16 +2204,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (nextBtn) nextBtn.addEventListener('click', () => {
+        const playNext = () => {
             if (allMedia.length > 0) playMedia((currentTrackIndex + 1) % allMedia.length);
-        });
-        if (prevBtn) prevBtn.addEventListener('click', () => {
+        };
+        const playPrev = () => {
             if (allMedia.length > 0) playMedia((currentTrackIndex - 1 + allMedia.length) % allMedia.length);
-        });
+        };
 
-        const scrub = (e) => {
+        if (nextBtn) nextBtn.addEventListener('click', playNext);
+        if (copyNextBtn) copyNextBtn.addEventListener('click', playNext);
+        if (prevBtn) prevBtn.addEventListener('click', playPrev);
+        if (copyPrevBtn) copyPrevBtn.addEventListener('click', playPrev);
+
+        const scrub = (e, container) => {
             e.preventDefault();
-            const rect = progressBarContainer.getBoundingClientRect();
+            const rect = container.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let percentage = (clientX - rect.left) / rect.width;
             percentage = Math.max(0, Math.min(1, percentage));
@@ -2195,21 +2229,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (progressBarContainer) {
             progressBarContainer.addEventListener('mousedown', (e) => {
-                if (allMedia.length > 0) { isDragging = true; scrub(e); }
+                if (allMedia.length > 0) { isDragging = true; scrub(e, progressBarContainer); }
             });
             progressBarContainer.addEventListener('touchstart', (e) => {
-                if (allMedia.length > 0) { isDragging = true; scrub(e); }
+                if (allMedia.length > 0) { isDragging = true; scrub(e, progressBarContainer); }
             });
         }
-        window.addEventListener('mousemove', (e) => { if (isDragging) scrub(e); });
-        window.addEventListener('touchmove', (e) => { if (isDragging) scrub(e); });
+        if (copyProgressBarContainer) {
+            copyProgressBarContainer.addEventListener('mousedown', (e) => {
+                if (allMedia.length > 0) { isDragging = true; scrub(e, copyProgressBarContainer); }
+            });
+            copyProgressBarContainer.addEventListener('touchstart', (e) => {
+                if (allMedia.length > 0) { isDragging = true; scrub(e, copyProgressBarContainer); }
+            });
+        }
+
+        window.addEventListener('mousemove', (e) => { 
+            if (isDragging) {
+                const style = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+                const container = style === 'copy' ? copyProgressBarContainer : progressBarContainer;
+                scrub(e, container);
+            }
+        });
+        window.addEventListener('touchmove', (e) => { 
+            if (isDragging) {
+                const style = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+                const container = style === 'copy' ? copyProgressBarContainer : progressBarContainer;
+                scrub(e, container);
+            }
+        });
         window.addEventListener('mouseup', () => { isDragging = false; });
         window.addEventListener('touchend', () => { isDragging = false; });
         
-        if (volumeBar) volumeBar.addEventListener('input', () => {
-            audioPlayer.volume = videoPlayer.volume = volumeBar.value;
-            saveVolumeSetting(volumeBar.value);
-        });
+        const setVolume = (value) => {
+            audioPlayer.volume = videoPlayer.volume = value;
+            if(volumeBar) volumeBar.value = value;
+            if(copyVolumeBar) copyVolumeBar.value = value;
+            saveVolumeSetting(value);
+        };
+        
+        if (volumeBar) volumeBar.addEventListener('input', (e) => setVolume(e.target.value));
+        if (copyVolumeBar) copyVolumeBar.addEventListener('input', (e) => setVolume(e.target.value));
 
     };
 
