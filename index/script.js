@@ -95,12 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchResultsTitle = document.getElementById('searchResultsTitle');
 
 
+    // --- ОБНОВЛЕННЫЕ И НОВЫЕ ЭЛЕМЕНТЫ ОКНА ЗАГРУЗКИ ---
     const uploadModal = document.getElementById('uploadModal');
     const closeUploadBtn = uploadModal.querySelector('.close-btn');
     const uploadForm = document.getElementById('uploadForm');
     const uploadTypeRadios = document.querySelectorAll('input[name="uploadType"]');
-    const audioFields = document.getElementById('audioFields');
-    const videoFields = document.getElementById('videoFields');
     const uploadManager = document.getElementById('uploadManager');
     const uploadProgressBar = document.querySelector('.upload-progress-fill');
     const uploadStatusText = document.getElementById('uploadStatusText');
@@ -108,7 +107,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const categorySelect = document.getElementById('categorySelect');
     const artistFields = document.getElementById('artistFields');
     const isForeignArtist = document.getElementById('isForeignArtist');
-    const fileStatusText = document.getElementById('fileStatusText');
+    // Элементы для Drag-and-Drop
+    const coverDropArea = document.getElementById('coverDropArea');
+    const mediaDropArea = document.getElementById('mediaDropArea');
+    const coverPreview = document.getElementById('coverPreview');
+    const coverPlaceholder = document.getElementById('coverPlaceholder');
+    const mediaFileName = document.getElementById('mediaFileName');
+    const coverFileInput = document.getElementById('coverFile');
+    const audioFileInput = document.getElementById('audioFile');
+    const videoFileInput = document.getElementById('videoFile');
+
 
     const settingsModal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
@@ -1149,23 +1157,28 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetchWithAuth(`${api}/api/admin/categories`);
             const categories = await res.json();
-            if (adminCategoriesSection) {
-                const categoriesList = document.getElementById('adminCategoriesList');
-                if (categoriesList) {
-                    categoriesList.innerHTML = '';
-                    categories.forEach(cat => {
-                        const catDiv = document.createElement('div');
-                        catDiv.className = 'admin-card';
-                        catDiv.innerHTML = `
-                            <h3>${cat.name}</h3>
-                            <div class="category-actions">
-                                <button class="edit-category-btn" data-category-id="${cat.id}">Редактировать</button>
-                                <button class="delete-category-btn" data-category-id="${cat.id}">Удалить</button>
-                            </div>
-                        `;
-                        categoriesList.appendChild(catDiv);
-                    });
+            const categoriesList = document.getElementById('adminCategoriesList');
+            if (categoriesList) {
+                categoriesList.innerHTML = '';
+                if (categories.length === 0) {
+                    categoriesList.innerHTML = '<p>Категории еще не созданы.</p>';
                 }
+                categories.forEach(cat => {
+                    const catDiv = document.createElement('div');
+                    catDiv.className = 'category-management-item';
+                    catDiv.innerHTML = `
+                        <h3>${cat.name}</h3>
+                        <div class="category-actions">
+                            <button class="btn-edit" data-category-id="${cat.id}" title="Редактировать">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                            </button>
+                            <button class="btn-delete" data-category-id="${cat.id}" title="Удалить">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                            </button>
+                        </div>
+                    `;
+                    categoriesList.appendChild(catDiv);
+                });
             }
         } catch (err) {
             console.error(err);
@@ -1233,12 +1246,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetchWithAuth(`${api}/api/admin/stats`);
             const stats = await res.json();
-            if (statsContent) {
-                statsContent.innerHTML = `
-                    <p>Всего пользователей: ${stats.userCount}</p>
-                    <p>Треков в медиатеке: ${stats.trackCount}</p>
-                `;
-            }
+            const adminTotalUsersEl = document.getElementById('adminTotalUsers');
+            const adminTotalTracksEl = document.getElementById('adminTotalTracks');
+            if (adminTotalUsersEl) adminTotalUsersEl.textContent = stats.userCount;
+            if (adminTotalTracksEl) adminTotalTracksEl.textContent = stats.trackCount;
+
         } catch (err) {
             console.error(err);
         }
@@ -1256,35 +1268,116 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // --- НАЧАЛО: ИСПРАВЛЕННАЯ И НОВАЯ ЛОГИКА ОКНА ЗАГРУЗКИ ---
+        
+        // Переключение типа загрузки (Аудио/Видео)
         if (uploadTypeRadios) {
             uploadTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
+                    audioFileInput.value = '';
+                    videoFileInput.value = '';
+                    if (mediaFileName) mediaFileName.textContent = 'Файл не выбран';
+        
                     if (radio.value === 'audio') {
-                        audioFields.style.display = 'block';
-                        videoFields.style.display = 'none';
-                        document.getElementById('audioFile').setAttribute('required', 'required');
-                        document.getElementById('videoFile').removeAttribute('required');
+                        audioFileInput.setAttribute('required', 'required');
+                        videoFileInput.removeAttribute('required');
                     } else if (radio.value === 'video') {
-                        audioFields.style.display = 'none';
-                        videoFields.style.display = 'block';
-                        document.getElementById('audioFile').removeAttribute('required');
-                        document.getElementById('videoFile').setAttribute('required', 'required');
+                        audioFileInput.removeAttribute('required');
+                        videoFileInput.setAttribute('required', 'required');
                     }
                 });
             });
         }
         
-        if (document.querySelector('input[name="uploadType"]:checked').value === 'video') {
-            audioFields.style.display = 'none';
-            videoFields.style.display = 'block';
-            document.getElementById('audioFile').removeAttribute('required');
-            document.getElementById('videoFile').setAttribute('required', 'required');
-        } else {
-            audioFields.style.display = 'block';
-            videoFields.style.display = 'none';
-            document.getElementById('audioFile').setAttribute('required', 'required');
-            document.getElementById('videoFile').removeAttribute('required');
+        // Функция-обработчик для файлов
+        const handleFiles = (files, type) => {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+
+            if (type === 'cover') {
+                if (!file.type.startsWith('image/')) {
+                    alert('Пожалуйста, выберите файл изображения для обложки.');
+                    return;
+                }
+                coverFileInput.files = files;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    coverPreview.src = e.target.result;
+                    coverPreview.style.display = 'block';
+                    coverPlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            } else if (type === 'media') {
+                const selectedType = document.querySelector('input[name="uploadType"]:checked').value;
+                if (selectedType === 'audio') {
+                    if (!file.type.startsWith('audio/')) {
+                        alert('Пожалуйста, выберите аудиофайл.');
+                        return;
+                    }
+                    audioFileInput.files = files;
+                } else {
+                    if (!file.type.startsWith('video/')) {
+                        alert('Пожалуйста, выберите видеофайл.');
+                        return;
+                    }
+                    videoFileInput.files = files;
+                }
+                mediaFileName.textContent = file.name;
+            }
+        };
+
+        // Обработчики для зоны обложки
+        if (coverDropArea) {
+            coverDropArea.addEventListener('click', () => coverFileInput.click());
+            coverDropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                coverDropArea.classList.add('dragover');
+            });
+            coverDropArea.addEventListener('dragleave', () => coverDropArea.classList.remove('dragover'));
+            coverDropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                coverDropArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files, 'cover');
+            });
         }
+        if(coverFileInput) coverFileInput.addEventListener('change', () => handleFiles(coverFileInput.files, 'cover'));
+        
+        // Обработчики для зоны медиа-файла
+        if (mediaDropArea) {
+            mediaDropArea.addEventListener('click', () => {
+                const selectedType = document.querySelector('input[name="uploadType"]:checked').value;
+                if (selectedType === 'audio') audioFileInput.click();
+                else videoFileInput.click();
+            });
+            mediaDropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                mediaDropArea.classList.add('dragover');
+            });
+            mediaDropArea.addEventListener('dragleave', () => mediaDropArea.classList.remove('dragover'));
+            mediaDropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                mediaDropArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files, 'media');
+            });
+        }
+        if(audioFileInput) audioFileInput.addEventListener('change', () => handleFiles(audioFileInput.files, 'media'));
+        if(videoFileInput) videoFileInput.addEventListener('change', () => handleFiles(videoFileInput.files, 'media'));
+
+        // Сброс формы при закрытии модального окна
+        if (closeUploadBtn) {
+            closeUploadBtn.addEventListener('click', () => {
+                uploadForm.reset();
+                coverPreview.style.display = 'none';
+                coverPlaceholder.style.display = 'flex';
+                mediaFileName.textContent = 'Файл не выбран';
+                // Устанавливаем audio как тип по умолчанию при следующем открытии
+                document.querySelector('input[name="uploadType"][value="audio"]').checked = true;
+                audioFileInput.setAttribute('required', 'required');
+                videoFileInput.removeAttribute('required');
+            });
+        }
+
+        // --- КОНЕЦ: ИСПРАВЛЕННАЯ И НОВАЯ ЛОГИКА ОКНА ЗАГРУЗКИ ---
 
         if (navHome) navHome.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1659,21 +1752,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (uploadForm) uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const audioFile = document.getElementById('audioFile').files[0];
-            const videoFile = document.getElementById('videoFile').files[0];
-            const coverFile = document.getElementById('coverFile').files[0];
             const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
 
-            if (uploadType === 'audio' && !audioFile) {
+            if (uploadType === 'audio' && (!audioFileInput || !audioFileInput.files[0])) {
                 alert('Пожалуйста, выберите аудиофайл.');
                 return;
-            } else if (uploadType === 'video' && !videoFile) {
+            } else if (uploadType === 'video' && (!videoFileInput || !videoFileInput.files[0])) {
                 alert('Пожалуйста, выберите видеофайл.');
                 return;
             }
 
-            if (!coverFile) {
+            if (!coverFileInput || !coverFileInput.files[0]) {
                 alert('Пожалуйста, выберите файл обложки.');
                 return;
             }
@@ -1883,8 +1972,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteUserBtn = e.target.closest('.delete-user-btn');
             const deleteMyTrackBtn = e.target.closest('.delete-my-track-btn');
             const createCategoryBtn = e.target.closest('.create-category-btn');
-            const editCategoryBtn = e.target.closest('.edit-category-btn');
-            const deleteCategoryBtn = e.target.closest('.delete-category-btn');
+            const editCategoryBtn = e.target.closest('.btn-edit');
+            const deleteCategoryBtn = e.target.closest('.btn-delete');
             const categoryCard = e.target.closest('.category-card');
             const collectionCard = e.target.closest('.collection-card');
 
