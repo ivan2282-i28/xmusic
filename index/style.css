@@ -1909,10 +1909,10 @@ input:checked + .slider:before {
     border-radius: 8px;
     padding: 0;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    gap: 15px;
+    gap: 0;
     left: 50%;
     transform: translateX(-50%);
     bottom: 20px;
@@ -1944,6 +1944,7 @@ input:checked + .slider:before {
     border-radius: 0;
     background-color: var(--player-copy-progress-track);
     overflow: hidden;
+    cursor: pointer;
 }
 
 .player--copy .progress-track,
@@ -1968,6 +1969,10 @@ input:checked + .slider:before {
     transition: transform 0.2s;
 }
 
+.player--copy .progress-bar-container:hover .progress-thumb {
+    transform: translateX(-50%) scale(1);
+}
+
 .player--copy .control-buttons-and-progress {
     flex-direction: row;
     align-items: center;
@@ -1975,6 +1980,7 @@ input:checked + .slider:before {
     gap: 10px;
     width: 100%;
     padding: 0 15px;
+    flex-grow: 1;
 }
 
 .player--copy .track-info-copy {
@@ -2060,6 +2066,8 @@ input:checked + .slider:before {
     width: auto;
     margin: 0;
     padding: 0;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .player--copy .volume-controls svg {
