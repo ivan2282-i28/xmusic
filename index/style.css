@@ -108,13 +108,13 @@ body {
     transition: all 1.5s ease-in-out;
 }
 
-/* Обновлённые стили для плеера */
+/* Обновлённые стили для плеера - УВЕЛИЧЕНА ВЫСОТА И УМЕНЬШЕНЫ ВНУТРЕННИЕ ОТСТУПЫ */
 .player {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 320px; /* Уменьшаем ширину */
-    height: 120px; /* Уменьшаем высоту */
+    width: 320px;
+    height: 160px; /* ИЗМЕНЕНИЕ: Увеличенная высота, чтобы вместить все элементы */
     background: rgba(var(--player-bg-rgb), var(--ui-opacity));
     backdrop-filter: blur(var(--blur-value));
     -webkit-backdrop-filter: blur(var(--blur-value));
@@ -125,8 +125,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px; /* Уменьшаем отступ */
-    padding: 15px; /* Уменьшаем padding */
+    gap: 10px;
+    padding: 15px;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -201,8 +201,8 @@ body {
     font-weight: 600;
     cursor: pointer;
     text-align: center;
-    transition: border-color 0.3s ease, color 0.3s ease;
     margin-top: -10px;
+    transition: border-color 0.3s ease, color 0.3s ease;
 }
 
 .settings-btn:hover {
@@ -508,7 +508,7 @@ body {
 .player .track-info {
     display: flex;
     align-items: center;
-    gap: 10px; /* Уменьшаем отступ */
+    gap: 10px;
     margin-bottom: auto;
     align-self: flex-start;
     padding-top: 0px;
@@ -521,10 +521,10 @@ body {
 }
 
 .player .track-info img {
-    width: 40px; /* Уменьшаем размер обложки */
+    width: 40px;
     height: 40px;
     border-radius: 6px;
-    flex-shrink: 0; /* Предотвращаем сжатие */
+    flex-shrink: 0;
 }
 
 .player .track-info .title {
@@ -547,7 +547,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px; /* Уменьшаем отступ */
+    gap: 8px;
     width: 100%;
 }
 
@@ -555,7 +555,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px; /* Уменьшаем отступ */
+    gap: 15px;
     width: 100%;
 }
 
@@ -571,9 +571,9 @@ body {
 }
 
 .player .control-buttons svg {
-    width: 20px; /* Уменьшаем размер иконок */
+    width: 20px;
     height: 20px;
-    fill: var(--text-secondary); /* Делаем иконки светло-серыми по умолчанию */
+    fill: var(--text-secondary);
     transition: fill 0.2s, transform 0.2s;
 }
 
@@ -607,7 +607,7 @@ body {
     align-items: center;
     gap: 5px;
     width: 100%;
-    margin-top: -5px; /* Уменьшаем отступ */
+    margin-top: -5px;
 }
 
 .player .progress-bar span {
@@ -619,7 +619,7 @@ body {
 
 .player .progress-bar-container {
     flex-grow: 1;
-    height: 10px; /* Уменьшаем высоту */
+    height: 10px;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -628,7 +628,7 @@ body {
 
 .player .progress-track, .player .progress-filled {
     position: absolute;
-    height: 4px; /* Уменьшаем высоту полосы */
+    height: 4px;
     width: 100%;
     border-radius: 2px;
 }
@@ -638,13 +638,13 @@ body {
 }
 
 .player .progress-filled {
-    background-color: var(--primary-color); /* Используем основной цвет */
+    background-color: var(--primary-color);
     width: 0;
 }
 
 .player .progress-thumb {
     position: absolute;
-    width: 12px; /* Уменьшаем размер ползунка */
+    width: 12px;
     height: 12px;
     background-color: var(--text-primary);
     border-radius: 50%;
@@ -668,14 +668,14 @@ body {
 
 .player .volume-controls svg {
     fill: var(--text-secondary);
-    width: 18px; /* Уменьшаем размер иконки */
+    width: 18px;
     height: 18px;
     cursor: pointer;
 }
 
 .player .volume-controls .slider {
     -webkit-appearance: none;
-    width: 80px; /* Уменьшаем ширину */
+    width: 80px;
     height: 4px;
     background: #4d4d4d;
     outline: none;
@@ -696,10 +696,10 @@ body {
 .player #favoritePlayerBtn {
     background-color: transparent;
     border: none;
-    font-size: 1.2em; /* Размер иконки */
+    font-size: 1.2em;
     padding: 0;
     cursor: pointer;
-    color: var(--text-secondary); /* Иконка белая по умолчанию */
+    color: var(--text-secondary);
     transition: color 0.2s, transform 0.2s;
 }
 
@@ -709,7 +709,7 @@ body {
 }
 
 .player #favoritePlayerBtn.favorited {
-    color: red; /* Иконка становится красной, когда трек в избранном */
+    color: red;
     animation: heart-beat 0.5s ease-in-out;
 }
 
