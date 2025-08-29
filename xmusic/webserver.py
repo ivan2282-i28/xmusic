@@ -1,480 +1,923 @@
 from flask import Flask, request, jsonify, send_from_directory
+import sqlite3
 import os
 import shutil
 import time
 import random
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
 import jwt
 from functools import wraps
-import joblib  # Использовать joblib вместо pickle для совместимости
+from dotenv import load_dotenv
+import joblib
 import librosa
 import numpy as np
 
-from .api.admin import admin_api
+load_dotenv()
 
-def webserver(app,db,dirs):
+app = Flask(__name__)
+CORS(app)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
-     
+# Настройка директорий
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'database.db')
+MUSIC_DIR = os.path.join(BASE_DIR, 'music')
+FON_DIR = os.path.join(BASE_DIR, 'fon')
+VIDEO_DIR = os.path.join(BASE_DIR, 'video')
+TEMP_UPLOAD_DIR = os.path.join(BASE_DIR, 'temp_uploads')
+INDEX_DIR = os.path.join(BASE_DIR, 'index')
 
-    def auth_required(f):
+# Создание директорий, если они не существуют
+for directory in [MUSIC_DIR, FON_DIR, VIDEO_DIR, TEMP_UPLOAD_DIR, INDEX_DIR]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+# Загрузка модели ИИ
+try:
+    with open(os.path.join(BASE_DIR, 'music_genre_model.pkl'), 'rb') as model_file:
+        model = joblib.load(model_file)
+except FileNotFoundError:
+    model = None
+    print("Model file not found. AI genre detection will not be available.")
+except Exception as e:
+    model = None
+    print(f"Failed to load the model: {e}. AI genre detection will not be available.")
+
+# Определение списка жанров
+GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
+
+def extract_features(file_path):
+    y, sr = librosa.load(file_path, mono=True, duration=30)
+    S = np.abs(librosa.stft(y))
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
+    chroma = librosa.feature.chroma_stft(S=S, sr=sr)
+    mel = librosa.feature.melspectrogram(y=y, sr=sr)
+    features = np.concatenate((
+        np.mean(mfcc, axis=1),
+        np.mean(chroma, axis=1),
+        np.mean(mel, axis=1)
+    ))
+    return features.reshape(1, -1)
+
+# Настройка базы данных
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT DEFAULT 'user'
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS favorites (
+            user_id INTEGER,
+            media_file TEXT NOT NULL,
+            PRIMARY KEY (user_id, media_file),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS creator_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            full_name TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            email TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS category_users (
+            category_id INTEGER,
+            user_id INTEGER,
+            PRIMARY KEY (category_id, user_id),
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS track_moderation (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            file_name TEXT NOT NULL,
+            cover_name TEXT NOT NULL,
+            title TEXT NOT NULL,
+            type TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            genre TEXT,
+            artist TEXT,
+            category_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS tracks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            cover_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            creator_id INTEGER NOT NULL,
+            genre TEXT,
+            artist TEXT,
+            category_id INTEGER,
+            plays INTEGER DEFAULT 0,
+            duration REAL,
+            FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+        )
+    ''')
+    c.execute("PRAGMA table_info(tracks)")
+    columns = [column[1] for column in c.fetchall()]
+    if 'duration' not in columns:
+        c.execute("ALTER TABLE tracks ADD COLUMN duration REAL")
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS plays (
+            user_id INTEGER NOT NULL,
+            track_id INTEGER NOT NULL,
+            timestamp INTEGER NOT NULL,
+            listened_duration REAL,
+            PRIMARY KEY (user_id, track_id, timestamp),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INTEGER UNIQUE NOT NULL,
+            liked_genres TEXT,
+            liked_artists TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    c.execute("SELECT * FROM users WHERE username = 'root'")
+    if c.fetchone() is None:
+        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', 'defaultpassword', 'admin'))
+    conn.commit()
+    conn.close()
+
+init_db()
+
+app.config['UPLOAD_FOLDER'] = {
+    'music': MUSIC_DIR,
+    'fon': FON_DIR,
+    'video': VIDEO_DIR,
+    'temp_uploads': TEMP_UPLOAD_DIR,
+    'index': INDEX_DIR
+}
+
+def auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'message': 'Token is missing or invalid!'}), 401
+        
+        try:
+            token = token.split()[1]
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE id = ? AND username = ?", (data["id"], data["username"]))
+            user_exists = cursor.fetchone()
+            conn.close()
+
+            if not user_exists:
+                return jsonify({'message': 'Token is invalid'}), 401
+            
+            request.current_user = user_exists
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid!'}), 401
+        
+        return f(*args, **kwargs)
+    return decorated
+
+def role_required(roless: list):
+    def decorator(f):
         @wraps(f)
-        def decorated(*args, **kwargs):
-            token = request.headers.get('Authorization')
-            if not token or not token.startswith('Bearer '):
-                return jsonify({'message': 'Token is missing or invalid!'}), 401
-            
-            try:
-                token = token.split()[1]
-                data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-                
-                conn = db.get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM users WHERE id = ? AND username = ?", (data["id"], data["username"]))
-                user_exists = cursor.fetchone()
-                conn.close()
-
-                if not user_exists:
-                    return jsonify({'message': 'Token is invalid'}), 401
-                
-                request.current_user = user_exists
-            except jwt.ExpiredSignatureError:
-                return jsonify({'message': 'Token has expired!'}), 401
-            except jwt.InvalidTokenError:
-                return jsonify({'message': 'Token is invalid!'}), 401
-            
+        def decorated_function(*args, **kwargs):
+            if not request.current_user["role"] in roless:
+                return jsonify({'message': 'Invalid role'}), 403
             return f(*args, **kwargs)
-        return decorated
+        return decorated_function
+    return decorator
 
+@app.route('/')
+def serve_index():
+    return send_from_directory(INDEX_DIR, 'index.html')
 
-    def role_required(roless: list):
-        def decorator(f):
-            @wraps(f)
-            def decorated_function(*args, **kwargs):
-                if not request.current_user["role"] in roless:
-                    return jsonify({'message': 'Invalid role'}), 403
-                return f(*args, **kwargs)
-            return decorated_function
-        return decorator
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(INDEX_DIR, filename)
 
-    admin_api(app,db,auth_required,role_required,dirs)   
+@app.route('/music/<path:filename>')
+def serve_music(filename):
+    return send_from_directory(MUSIC_DIR, filename)
 
-    @app.route('/')
-    def serve_index():
-        return send_from_directory(dirs["INDEX_DIR"], 'index.html')
+@app.route('/fon/<path:filename>')
+def serve_fon(filename):
+    return send_from_directory(FON_DIR, filename)
 
-    @app.route('/<path:filename>')
-    def serve_static(filename):
-        return send_from_directory(dirs["INDEX_DIR"], filename)
+@app.route('/video/<path:filename>')
+def serve_video(filename):
+    return send_from_directory(VIDEO_DIR, filename)
 
-    @app.route('/music/<path:filename>')
-    def serve_music(filename):
-        return send_from_directory(dirs["MUSIC_DIR"], filename)
+@app.route('/temp_uploads/<path:filename>')
+def serve_temp_uploads(filename):
+    return send_from_directory(TEMP_UPLOAD_DIR, filename)
 
-    @app.route('/fon/<path:filename>')
-    def serve_fon(filename):
-        return send_from_directory(dirs["FON_DIR"], filename)
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        return jsonify({'message': 'Регистрация прошла успешно!'}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'message': 'Пользователь с таким именем уже существует.'}), 400
+    finally:
+        conn.close()
 
-    @app.route('/video/<path:filename>')
-    def serve_video(filename):
-        return send_from_directory(dirs["VIDEO_DIR"], filename)
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
 
-    @app.route('/temp_uploads/<path:filename>')
-    def serve_temp_uploads(filename):
-        return send_from_directory(dirs["TEMP_UPLOAD_DIR"], filename)
+    conn = get_db_connection()
+    user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+    conn.close()
+    if user:
+        sanuser = {"username":user["username"],"id":user["id"]}
+        tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
+        return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend})
+    else:
+        return jsonify({'message': 'Неверный логин или пароль.'}), 401
 
-    @app.route('/api/register', methods=['POST'])
-    def register():
-        data = request.json
-        username = data.get('username')
-        password = data.get('password')
-        
-        conn = db.get_db_connection()
+@app.route('/api/favorites', methods=['GET'])
+@auth_required
+def get_favorites():
+    conn = get_db_connection()
+    favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (request.current_user["id"],)).fetchall()
+    conn.close()
+    favorite_files = [row['media_file'] for row in favorites]
+    return jsonify(favorite_files)
+
+@app.route('/api/favorites', methods=['POST', 'DELETE'])
+@auth_required
+def favorites():
+    data = request.json
+    user_id = data.get('userId')
+    media_file = data.get('mediaFile')
+    conn = get_db_connection()
+    if request.method == 'POST':
         try:
-            conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            conn.execute("INSERT OR IGNORE INTO favorites (user_id, media_file) VALUES (?, ?)", (user_id, media_file))
             conn.commit()
-            return jsonify({'message': 'Регистрация прошла успешно!'}), 201
-        except sqlite3.IntegrityError:
-            return jsonify({'message': 'Пользователь с таким именем уже существует.'}), 400
+            return jsonify({'message': 'Добавлено в избранное.'})
+        finally:
+            conn.close()
+    elif request.method == 'DELETE':
+        try:
+            conn.execute("DELETE FROM favorites WHERE user_id = ? AND media_file = ?", (user_id, media_file))
+            conn.commit()
+            return jsonify({'message': 'Удалено из избранного.'})
         finally:
             conn.close()
 
-    @app.route('/api/login', methods=['POST'])
-    def login():
-        data = request.json
-        username = data.get('username')
-        password = data.get('password')
+@app.route('/api/tracks')
+def get_tracks():
+    conn = get_db_connection()
+    category_id = request.args.get('categoryId')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 30, type=int)
+    offset = (page - 1) * per_page
 
-        conn = db.get_db_connection()
-        user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
-        conn.close()
-        if user:
-            sanuser = {"username":user["username"],"id":user["id"]}
-            tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
-            return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend})
-        else:
-            return jsonify({'message': 'Неверный логин или пароль.'}), 401
+    query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
+    params = []
 
-    @app.route('/api/favorites', methods=['GET'])
-    @auth_required
-    def get_favorites():
-        conn = db.get_db_connection()
-        favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (request.current_user["id"],)).fetchall()
-        conn.close()
-        favorite_files = [row['media_file'] for row in favorites]
-        return jsonify(favorite_files)
+    if category_id and category_id != 'all':
+        query += " WHERE t.category_id = ?"
+        params.append(category_id)
 
-    @app.route('/api/favorites', methods=['POST', 'DELETE'])
-    @auth_required
-    def favorites():
-        data = request.json
-        user_id = data.get('userId')
-        media_file = data.get('mediaFile')
-        conn = db.get_db_connection()
-        if request.method == 'POST':
-            try:
-                conn.execute("INSERT OR IGNORE INTO favorites (user_id, media_file) VALUES (?, ?)", (user_id, media_file))
-                conn.commit()
-                return jsonify({'message': 'Добавлено в избранное.'})
-            finally:
-                conn.close()
-        elif request.method == 'DELETE':
-            try:
-                conn.execute("DELETE FROM favorites WHERE user_id = ? AND media_file = ?", (user_id, media_file))
-                conn.commit()
-                return jsonify({'message': 'Удалено из избранного.'})
-            finally:
-                conn.close()
+    query += f" LIMIT {per_page} OFFSET {offset}"
+    
+    tracks = conn.execute(query, params).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in tracks])
 
-    @app.route('/api/tracks')
-    def get_tracks():
-        conn = db.get_db_connection()
-        category_id = request.args.get('categoryId')
+@app.route('/api/tracks/best')
+def get_best_tracks():
+    conn = get_db_connection()
+    tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 9").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in tracks])
 
-        query = "SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id"
-        params = []
 
-        if category_id:
-            query += " WHERE t.category_id = ?"
-            params.append(category_id)
+@auth_required
+@role_required(['admin','creator'])
+@app.route('/api/rename', methods=['POST'])
+def rename_track():
+    data = request.json
+    track_id = data.get('trackId')
+    new_title = data.get('newTitle')
+
+    conn = get_db_connection()
+    track_info = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
+    conn.close()
+    if not track_info:
+        return jsonify({'message': 'Трек не найден.'}), 404
+
+    old_file_name = track_info['file_name']
+    old_cover_name = track_info['cover_name']
+    track_type = track_info['type']
+    
+    if not new_title or not new_title.strip():
+        return jsonify({'message': 'Название не может быть пустым'}), 400
+    
+    sanitized_new_title = secure_filename(new_title.strip())
+
+    try:
+        main_dir = MUSIC_DIR if track_type == 'audio' else VIDEO_DIR
         
-        tracks = conn.execute(query, params).fetchall()
-        conn.close()
-        return jsonify([dict(row) for row in tracks])
+        new_file_path = os.path.join(main_dir, sanitized_new_title + os.path.splitext(old_file_name)[1])
+        os.rename(os.path.join(main_dir, old_file_name), new_file_path)
 
-    @app.route('/api/tracks/best')
-    def get_best_tracks():
-        conn = db.get_db_connection()
-        tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY t.plays DESC LIMIT 30").fetchall()
-        conn.close()
-        return jsonify([dict(row) for row in tracks])
-
-
-    @auth_required
-    @role_required(['admin','creator'])
-    @app.route('/api/rename', methods=['POST'])
-    def rename_track():
-        data = request.json
-        track_id = data.get('trackId')
-        new_title = data.get('newTitle')
-
-        conn = db.get_db_connection()
-        track_info = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
-        conn.close()
-        if not track_info:
-            return jsonify({'message': 'Трек не найден.'}), 404
-
-        old_file_name = track_info['file_name']
-        old_cover_name = track_info['cover_name']
-        track_type = track_info['type']
+        new_cover_path = os.path.join(FON_DIR, sanitized_new_title + os.path.splitext(old_cover_name)[1])
+        os.rename(os.path.join(FON_DIR, old_cover_name), new_cover_path)
         
-        if not new_title or not new_title.strip():
-            return jsonify({'message': 'Название не может быть пустым'}), 400
+        conn = get_db_connection()
+        conn.execute("UPDATE tracks SET title = ?, file_name = ?, cover_name = ? WHERE id = ?",
+                     (new_title, os.path.basename(new_file_path), os.path.basename(new_cover_path), track_id))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'message': 'Переименовано успешно'})
+    except FileNotFoundError:
+        return jsonify({'message': 'Файл не найден.'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при переименовании.'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/tracks/<int:track_id>', methods=['DELETE'])
+@auth_required
+@role_required(['admin'])
+def delete_track(track_id):
+    conn = get_db_connection()
+    track = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
+    if not track:
+        conn.close()
+        return jsonify({'message': 'Трек не найден.'}), 404
+    
+    try:
+        media_dir = MUSIC_DIR if track['type'] == 'audio' else VIDEO_DIR
+        os.unlink(os.path.join(media_dir, track['file_name']))
+        os.unlink(os.path.join(FON_DIR, track['cover_name']))
         
-        sanitized_new_title = secure_filename(new_title.strip())
+        conn.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
+        conn.commit()
+        return jsonify({'message': 'Трек удален.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
+    finally:
+        conn.close()
 
-        try:
-            main_dir = dirs["MUSIC_DIR"] if track_type == 'audio' else dirs["VIDEO_DIR"]
-            
-            new_file_path = os.path.join(main_dir, sanitized_new_title + os.path.splitext(old_file_name)[1])
-            os.rename(os.path.join(main_dir, old_file_name), new_file_path)
+@auth_required
+@role_required(['user'])
+@app.route('/api/apply-for-creator', methods=['POST'])
+def apply_for_creator():
+    data = request.json
+    user_id = data.get('userId')
+    full_name = data.get('fullName')
+    phone_number = data.get('phoneNumber')
+    email = data.get('email')
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO creator_applications (user_id, full_name, phone_number, email) VALUES (?, ?, ?, ?)",
+                     (user_id, full_name, phone_number, email))
+        conn.commit()
+        return jsonify({'message': 'Заявка успешно отправлена. Ожидайте ответа.'}), 201
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при подаче заявки.'}), 500
+    finally:
+        conn.close()
 
-            new_cover_path = os.path.join(dirs["FON_DIR"], sanitized_new_title + os.path.splitext(old_cover_name)[1])
-            os.rename(os.path.join(dirs["FON_DIR"], old_cover_name), new_cover_path)
-            
-            conn = db.get_db_connection()
-            conn.execute("UPDATE tracks SET title = ?, file_name = ?, cover_name = ? WHERE id = ?",
-                        (new_title, os.path.basename(new_file_path), os.path.basename(new_cover_path), track_id))
-            conn.commit()
-            conn.close()
+@app.route('/api/admin/applications')
+@auth_required
+@role_required(['admin'])
+def admin_applications():
+    conn = get_db_connection()
+    applications = conn.execute("SELECT a.id, a.full_name, a.phone_number, a.email, a.status, u.username, a.user_id FROM creator_applications a JOIN users u ON a.user_id = u.id WHERE a.status = 'pending'").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in applications])
 
-            return jsonify({'message': 'Переименовано успешно'})
-        except FileNotFoundError:
-            return jsonify({'message': 'Файл не найден.'}), 404
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Ошибка при переименовании.'}), 500
-        finally:
-            conn.close()
+@app.route('/api/admin/approve-application', methods=['POST'])
+@auth_required
+@role_required(['admin'])
+def approve_application():
+    data = request.json
+    user_id = data.get('userId')
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET role = 'creator' WHERE id = ?", (user_id,))
+        conn.execute("DELETE FROM creator_applications WHERE user_id = ?", (user_id,))
+        conn.commit()
+        return jsonify({'message': 'Заявка одобрена, пользователь стал креатором.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при одобрении заявки.'}), 500
+    finally:
+        conn.close()
 
-    @app.route('/api/tracks/<int:track_id>', methods=['DELETE'])
-    @auth_required
-    @role_required(['admin'])
-    def delete_track(track_id):
-        conn = db.get_db_connection()
-        track = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
-        if not track:
-            conn.close()
-            return jsonify({'message': 'Трек не найден.'}), 404
-        
-        try:
-            media_dir = dirs["MUSIC_DIR"] if track['type'] == 'audio' else dirs["VIDEO_DIR"]
-            os.unlink(os.path.join(media_dir, track['file_name']))
-            os.unlink(os.path.join(dirs["FON_DIR"], track['cover_name']))
-            
-            conn.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
-            conn.commit()
-            return jsonify({'message': 'Трек удален.'})
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
-        finally:
-            conn.close()
+@app.route('/api/admin/reject-application', methods=['POST'])
+@auth_required
+@role_required(['admin'])
+def reject_application():
+    data = request.json
+    app_id = data.get('appId')
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM creator_applications WHERE id = ?", (app_id,))
+        conn.commit()
+        return jsonify({'message': 'Заявка отклонена.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при отклонении заявки.'}), 500
+    finally:
+        conn.close()
 
-    @auth_required
-    @role_required(['user'])
-    @app.route('/api/apply-for-creator', methods=['POST'])
-    def apply_for_creator():
-        data = request.json
-        user_id = data.get('userId')
-        full_name = data.get('fullName')
-        phone_number = data.get('phoneNumber')
-        email = data.get('email')
-        conn = db.get_db_connection()
-        try:
-            conn.execute("INSERT INTO creator_applications (user_id, full_name, phone_number, email) VALUES (?, ?, ?, ?)",
-                        (user_id, full_name, phone_number, email))
-            conn.commit()
-            return jsonify({'message': 'Заявка успешно отправлена. Ожидайте ответа.'}), 201
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Ошибка при подаче заявки.'}), 500
-        finally:
-            conn.close()
+@app.route('/api/admin/users')
+@auth_required
+@role_required(['admin'])
+def admin_users():
+    conn = get_db_connection()
+    users = conn.execute("SELECT id, username, role FROM users").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in users])
 
+@app.route('/api/admin/update-role', methods=['POST'])
+@auth_required
+@role_required(['admin'])
+def update_role():
+    data = request.json
+    user_id = data.get('userId')
+    role = data.get('role')
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
+        conn.commit()
+        return jsonify({'message': 'Роль обновлена успешно.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при обновлении роли.'}), 500
+    finally:
+        conn.close()
 
+@app.route('/api/admin/change-password', methods=['POST'])
+@auth_required
+@role_required(['admin'])
+def change_password():
+    data = request.json
+    user_id = data.get('userId')
+    new_password = data.get('newPassword')
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET password = ? WHERE id = ?", (new_password, user_id))
+        conn.commit()
+        return jsonify({'message': 'Пароль успешно изменен.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при смене пароля.'}), 500
+    finally:
+        conn.close()
 
-    @app.route('/api/moderation/upload', methods=['POST'])
-    @auth_required
-    @role_required(['creator','admin'])
-    def moderation_upload():
-        if 'coverFile' not in request.files or ('audioFile' not in request.files and 'videoFile' not in request.files):
-            return jsonify({'message': 'Не все файлы предоставлены.'}), 400
+@app.route('/api/moderation/upload', methods=['POST'])
+@auth_required
+@role_required(['creator','admin'])
+def moderation_upload():
+    if 'coverFile' not in request.files or ('audioFile' not in request.files and 'videoFile' not in request.files):
+        return jsonify({'message': 'Не все файлы предоставлены.'}), 400
 
-        cover_file = request.files['coverFile']
-        media_file = request.files.get('audioFile') or request.files.get('videoFile')
-        title = request.form.get('title')
-        upload_type = request.form.get('uploadType')
-        user_id = request.form.get('userId')
-        genre = request.form.get('genre') or None
-        artist = request.form.get('artist') or None
-        category_id = request.form.get('categoryId') or None
+    cover_file = request.files['coverFile']
+    media_file = request.files.get('audioFile') or request.files.get('videoFile')
+    title = request.form.get('title')
+    upload_type = request.form.get('uploadType')
+    user_id = request.form.get('userId')
+    artist = request.form.get('artist') or None
+    category_id = request.form.get('categoryId') or None
 
-        if not all([cover_file, media_file, title, upload_type, user_id]):
-            return jsonify({'message': 'Недостаточно данных.'}), 400
+    if not all([cover_file, media_file, title, upload_type, user_id]):
+        return jsonify({'message': 'Недостаточно данных.'}), 400
+    
+    # Проверка, разрешено ли пользователю загружать в эту категорию, если она выбрана
+    if category_id:
+        conn = get_db_connection()
+        user_allowed = conn.execute("SELECT 1 FROM category_users WHERE category_id = ? AND user_id = ?", (category_id, user_id)).fetchone()
+        conn.close()
+        if not user_allowed and request.current_user['role'] != 'admin':
+            return jsonify({'message': 'Недостаточно прав для загрузки в эту категорию.'}), 403
 
+    unique_id = str(int(time.time() * 1000))
+    media_filename = f"{unique_id}{os.path.splitext(media_file.filename)[1]}"
+    cover_filename = f"{unique_id}_cover{os.path.splitext(cover_file.filename)[1]}"
+
+    media_file.save(os.path.join(TEMP_UPLOAD_DIR, media_filename))
+    cover_file.save(os.path.join(TEMP_UPLOAD_DIR, cover_filename))
+
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO track_moderation (user_id, file_name, cover_name, title, type, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                     (user_id, media_filename, cover_filename, title, upload_type, artist, category_id))
+        conn.commit()
+        return jsonify({'message': 'Трек отправлен на модерацию. Ожидайте одобрения.'}), 201
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при отправке трека на модерацию.'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/moderation-tracks')
+@auth_required
+@role_required(['admin'])
+def admin_moderation_tracks():
+    conn = get_db_connection()
+    tracks = conn.execute("SELECT m.id, m.file_name, m.cover_name, m.title, m.type, u.username, m.user_id, m.artist, m.category_id FROM track_moderation m JOIN users u ON m.user_id = u.id WHERE m.status = 'pending'").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in tracks])
+
+@app.route('/api/admin/approve-track', methods=['POST'])
+@auth_required
+@role_required(['admin'])
+def approve_track():
+    data = request.json
+    track_id = data.get('trackId')
+    file_name = data.get('fileName')
+    cover_name = data.get('coverName')
+    title = data.get('title')
+    type = data.get('type')
+    creator_id = data.get('creatorId')
+    artist = data.get('artist')
+    category_id = data.get('categoryId')
+
+    sanitized_title = secure_filename(title.strip())
+    media_dir = MUSIC_DIR if type == 'audio' else VIDEO_DIR
+
+    conn = None
+    try:
         unique_id = str(int(time.time() * 1000))
-        media_filename = f"{unique_id}{os.path.splitext(media_file.filename)[1]}"
-        cover_filename = f"{unique_id}_cover{os.path.splitext(cover_file.filename)[1]}"
+        file_ext = os.path.splitext(file_name)[1]
+        new_file_name = f"{unique_id}{file_ext}"
+        cover_ext = os.path.splitext(cover_name)[1]
+        new_cover_name = f"{unique_id}{cover_ext}"
 
-        media_file.save(os.path.join(dirs["TEMP_UPLOAD_DIR"], media_filename))
-        cover_file.save(os.path.join(dirs["TEMP_UPLOAD_DIR"], cover_filename))
+        shutil.move(os.path.join(TEMP_UPLOAD_DIR, file_name), os.path.join(media_dir, new_file_name))
+        shutil.move(os.path.join(TEMP_UPLOAD_DIR, cover_name), os.path.join(FON_DIR, new_cover_name))
 
-        conn = db.get_db_connection()
-        try:
-            conn.execute("INSERT INTO track_moderation (user_id, file_name, cover_name, title, type, genre, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (user_id, media_filename, cover_filename, title, upload_type, genre, artist, category_id))
-            conn.commit()
-            return jsonify({'message': 'Трек отправлен на модерацию. Ожидайте одобрения.'}), 201
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Ошибка при отправке трека на модерацию.'}), 500
-        finally:
+        conn = get_db_connection()
+        conn.execute("INSERT INTO tracks (title, file_name, cover_name, type, creator_id, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                     (title, new_file_name, new_cover_name, type, creator_id, artist, category_id))
+        conn.execute("DELETE FROM track_moderation WHERE id = ?", (track_id,))
+        conn.commit()
+        return jsonify({'message': 'Трек одобрен и добавлен в медиатеку.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при перемещении файлов.'}), 500
+    finally:
+        if conn:
             conn.close()
 
-
-    @app.route('/api/creator/my-tracks/<int:user_id>')
-    @auth_required
-    @role_required(['creator','admin'])
-    def get_creator_tracks(user_id):
-        conn = db.get_db_connection()
-        tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE creator_id = ?", (user_id,)).fetchall()
+@app.route('/api/admin/reject-track/<int:track_id>', methods=['DELETE'])
+@auth_required
+@role_required(['admin'])
+def reject_track(track_id):
+    conn = get_db_connection()
+    track = conn.execute("SELECT file_name, cover_name FROM track_moderation WHERE id = ?", (track_id,)).fetchone()
+    if not track:
         conn.close()
-        return jsonify([dict(row) for row in tracks])
-
-    @app.route('/api/creator/my-tracks/<int:track_id>', methods=['DELETE'])
-    @auth_required
-    @role_required(['creator','admin'])
-    def delete_creator_track(track_id):
-        data = request.json
-        user_id = data.get('userId')
-        user_role = data.get('userRole')
-        conn = db.get_db_connection()
-        track = conn.execute("SELECT file_name, cover_name, type, creator_id FROM tracks WHERE id = ?", (track_id,)).fetchone()
-        if not track:
-            conn.close()
-            return jsonify({'message': 'Трек не найден.'}), 404
+        return jsonify({'message': 'Трек не найден.'}), 404
+    
+    try:
+        os.unlink(os.path.join(TEMP_UPLOAD_DIR, track['file_name']))
+        os.unlink(os.path.join(TEMP_UPLOAD_DIR, track['cover_name']))
         
-        if track['creator_id'] != user_id and user_role != 'admin':
-            conn.close()
-            return jsonify({'message': 'Недостаточно прав.'}), 403
-
-        try:
-            media_dir = dirs["MUSIC_DIR"] if track['type'] == 'audio' else dirs["VIDEO_DIR"]
-            os.unlink(os.path.join(media_dir, track['file_name']))
-            os.unlink(os.path.join(dirs["FON_DIR"], track['cover_name']))
-            
-            conn.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
-            conn.commit()
-            return jsonify({'message': 'Трек удален.'})
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
-        finally:
-            conn.close()
-
-    @app.route('/api/creator/stats/<int:user_id>')
-    @auth_required
-    @role_required(['creator','admin'])
-    def creator_stats(user_id):
-        conn = db.get_db_connection()
-        total_plays = conn.execute("SELECT SUM(t.plays) FROM tracks t WHERE t.creator_id = ?", (user_id,)).fetchone()[0] or 0
-
-        two_weeks_ago = int(time.time()) - 14 * 86400
-        daily_plays = conn.execute("SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count FROM plays WHERE track_id IN (SELECT id FROM tracks WHERE creator_id = ?) AND timestamp >= ? GROUP BY date ORDER BY date", (user_id, two_weeks_ago)).fetchall()
-        
-        track_stats = conn.execute("SELECT id, title, plays FROM tracks WHERE creator_id = ? ORDER BY plays DESC LIMIT 5", (user_id,)).fetchall()
-
+        conn.execute("DELETE FROM track_moderation WHERE id = ?", (track_id,))
+        conn.commit()
+        return jsonify({'message': 'Трек отклонен и удален.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
+    finally:
         conn.close()
+
+@app.route('/api/admin/stats')
+@auth_required
+@role_required(['admin'])
+def admin_stats():
+    conn = get_db_connection()
+    user_count = conn.execute("SELECT COUNT(*) as userCount FROM users").fetchone()['userCount']
+    track_count = conn.execute("SELECT COUNT(*) as trackCount FROM tracks").fetchone()['trackCount']
+    conn.close()
+    return jsonify({'userCount': user_count, 'trackCount': track_count})
+
+@app.route('/api/admin/delete-user/<int:user_id>', methods=['DELETE'])
+@auth_required
+@role_required(['admin'])
+def delete_user(user_id):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        return jsonify({'message': 'Пользователь удален.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при удалении пользователя.'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/creator/my-tracks/<int:user_id>')
+@auth_required
+@role_required(['creator','admin'])
+def get_creator_tracks(user_id):
+    conn = get_db_connection()
+    tracks = conn.execute("SELECT id, title, file_name as file, cover_name as cover, type, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE creator_id = ?", (user_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in tracks])
+
+@app.route('/api/creator/my-tracks/<int:track_id>', methods=['DELETE'])
+@auth_required
+@role_required(['creator','admin'])
+def delete_creator_track(track_id):
+    data = request.json
+    user_id = data.get('userId')
+    user_role = data.get('userRole')
+    conn = get_db_connection()
+    track = conn.execute("SELECT file_name, cover_name, type, creator_id FROM tracks WHERE id = ?", (track_id,)).fetchone()
+    if not track:
+        conn.close()
+        return jsonify({'message': 'Трек не найден.'}), 404
+    
+    if track['creator_id'] != user_id and user_role != 'admin':
+        conn.close()
+        return jsonify({'message': 'Недостаточно прав.'}), 403
+
+    try:
+        media_dir = MUSIC_DIR if track['type'] == 'audio' else VIDEO_DIR
+        os.unlink(os.path.join(media_dir, track['file_name']))
+        os.unlink(os.path.join(FON_DIR, track['cover_name']))
         
-        return jsonify({
-            'totalPlays': total_plays,
-            'dailyPlays': [dict(row) for row in daily_plays],
-            'trackStats': [dict(row) for row in track_stats]
-        })
+        conn.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
+        conn.commit()
+        return jsonify({'message': 'Трек удален.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/creator/stats/<int:user_id>')
+@auth_required
+@role_required(['creator','admin'])
+def creator_stats(user_id):
+    conn = get_db_connection()
+    total_plays = conn.execute("SELECT SUM(t.plays) FROM tracks t WHERE t.creator_id = ?", (user_id,)).fetchone()[0] or 0
+
+    two_weeks_ago = int(time.time()) - 14 * 86400
+    daily_plays = conn.execute("SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count FROM plays WHERE track_id IN (SELECT id FROM tracks WHERE creator_id = ?) AND timestamp >= ? GROUP BY date ORDER BY date", (user_id, two_weeks_ago)).fetchall()
+    
+    track_stats = conn.execute("SELECT id, title, plays FROM tracks WHERE creator_id = ? ORDER BY plays DESC LIMIT 5", (user_id,)).fetchall()
+
+    conn.close()
+    
+    return jsonify({
+        'totalPlays': total_plays,
+        'dailyPlays': [dict(row) for row in daily_plays],
+        'trackStats': [dict(row) for row in track_stats]
+    })
 
 
-    @app.route('/api/genres')
-    def get_genres():
-        return jsonify(GENRES)
+@app.route('/api/categories')
+def get_categories():
+    conn = get_db_connection()
+    categories = conn.execute("SELECT * FROM categories").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in categories])
 
-    @app.route('/api/categories')
-    def get_categories():
-        conn = db.get_db_connection()
+
+@app.route('/api/creator/my-categories/<int:user_id>')
+@auth_required
+@role_required(['creator','admin'])
+def get_creator_categories(user_id):
+    conn = get_db_connection()
+    categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ?", (user_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in categories])
+
+@app.route('/api/admin/categories', methods=['GET', 'POST'])
+@auth_required
+@role_required(['admin'])
+def manage_categories():
+    if request.method == 'GET':
+        conn = get_db_connection()
         categories = conn.execute("SELECT * FROM categories").fetchall()
         conn.close()
         return jsonify([dict(row) for row in categories])
-
-
-    @app.route('/api/creator/my-categories/<int:user_id>')
-    @auth_required
-    @role_required(['creator','admin'])
-    def get_creator_categories(user_id):
-        conn = db.get_db_connection()
-        categories = conn.execute("SELECT c.id, c.name FROM categories c JOIN category_users cu ON c.id = cu.category_id WHERE cu.user_id = ?", (user_id,)).fetchall()
-        conn.close()
-        return jsonify([dict(row) for row in categories])
-
-
-
-    @app.route('/api/update-playback', methods=['POST'])
-    @auth_required
-    def update_playback():
+    elif request.method == 'POST':
         data = request.json
-        user_id = data.get('userId')
-        track_id = data.get('trackId')
-        current_time = data.get('currentTime')
-        duration = data.get('duration')
-        timestamp = int(time.time())
-        
-        conn = db.get_db_connection()
+        name = data.get('name')
+        allowed_users = data.get('allowedUsers')
+        conn = get_db_connection()
         try:
-            conn.execute("INSERT INTO plays (user_id, track_id, timestamp, listened_duration) VALUES (?, ?, ?, ?)", (user_id, track_id, timestamp, current_time))
-            conn.execute("UPDATE tracks SET plays = plays + 1, duration = ? WHERE id = ?", (duration, track_id,))
-            
+            conn.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+            category_id = conn.execute("SELECT id FROM categories WHERE name = ?", (name,)).fetchone()['id']
+            for user_id in allowed_users:
+                conn.execute("INSERT INTO category_users (category_id, user_id) VALUES (?, ?)", (category_id, user_id))
             conn.commit()
-            return jsonify({'message': 'Данные о воспроизведении обновлены.'})
+            return jsonify({'message': 'Категория успешно создана.'})
+        except sqlite3.IntegrityError:
+            return jsonify({'message': 'Категория с таким именем уже существует.'}), 400
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при обновлении данных о воспроизведении.'}), 500
+            return jsonify({'message': 'Ошибка при создании категории.'}), 500
         finally:
             conn.close()
 
-    @app.route('/api/xrecomen/<int:user_id>')
-    @auth_required
-    def get_xrecomen(user_id):
-        conn = db.get_db_connection()
-        
-        # Получаем список избранных треков пользователя
-        user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
-        favorite_media_files = [row['media_file'] for row in user_favorites]
-        
-        # Формируем список "Вам нравятся" на основе избранного
-        you_like_tracks = []
-        if favorite_media_files:
-            placeholder = ','.join('?' for _ in favorite_media_files)
-            you_like_tracks = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
-            you_like_tracks = [dict(row) for row in you_like_tracks]
-
-        xrecomen_track = None
-        you_may_like_tracks = []
-        
-        # Формируем список "Вам могут понравиться" из случайных треков
-        you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
-        you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6").fetchall()
-        you_may_like_tracks = [dict(row) for row in you_may_like_tracks]
-        
-        if you_may_like_tracks:
-            xrecomen_track = random.choice(you_may_like_tracks)
-            you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
-
-        # Формирование "Любимых подборок"
-        favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
-        favorite_collections = [dict(row) for row in favorite_collections]
-        
-        conn.close()
-        
-        return jsonify({
-            'xrecomenTrack': xrecomen_track,
-            'youLike': you_like_tracks,
-            'youMayLike': you_may_like_tracks,
-            'favoriteCollections': favorite_collections
-        })
-
-    @app.route('/api/determine-genre', methods=['POST'])
-    @auth_required
-    @role_required(['creator','admin'])
-    def determine_genre():
-        if 'file' not in request.files:
-            return jsonify({'message': 'Нет файла'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'message': 'Не выбран файл'}), 400
-
-        if not model:
-            return jsonify({'message': 'Модель ИИ недоступна.'}), 503
-
+@app.route('/api/admin/categories/<int:category_id>', methods=['PUT', 'DELETE'])
+@auth_required
+@role_required(['admin'])
+def manage_category(category_id):
+    conn = get_db_connection()
+    if request.method == 'PUT':
+        data = request.json
+        name = data.get('name')
+        allowed_users = data.get('allowedUsers')
         try:
-            temp_path = os.path.join(dirs["TEMP_UPLOAD_DIR"], secure_filename(file.filename))
-            file.save(temp_path)
-            
-            features = extract_features(temp_path)
-            predicted_genre_index = model.predict(features)[0]
-            predicted_genre = GENRES[predicted_genre_index]
-            
-            os.remove(temp_path)
-            
-            return jsonify({'genre': predicted_genre})
+            conn.execute("UPDATE categories SET name = ? WHERE id = ?", (name, category_id))
+            conn.execute("DELETE FROM category_users WHERE category_id = ?", (category_id,))
+            for user_id in allowed_users:
+                conn.execute("INSERT INTO category_users (category_id, user_id) VALUES (?, ?)", (category_id, user_id))
+            conn.commit()
+            return jsonify({'message': 'Категория успешно обновлена.'})
         except Exception as e:
-            print(f"Error during genre determination: {e}")
-            return jsonify({'message': 'Ошибка при определении жанра.'}), 500
+            print(e)
+            return jsonify({'message': 'Ошибка при обновлении категории.'}), 500
+        finally:
+            conn.close()
+    elif request.method == 'DELETE':
+        try:
+            conn.execute("DELETE FROM categories WHERE id = ?", (category_id,))
+            conn.commit()
+            return jsonify({'message': 'Категория успешно удалена.'})
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Ошибка при удалении категории.'}), 500
+        finally:
+            conn.close()
+
+
+@app.route('/api/admin/categories/users', methods=['GET'])
+@auth_required
+@role_required(['creator','admin'])
+def get_users_for_categories():
+    query = request.args.get('q', '')
+    conn = get_db_connection()
+    users = conn.execute("SELECT id, username, role FROM users WHERE username LIKE ? LIMIT 10", ('%' + query + '%',)).fetchall()
+    conn.close()
+    return jsonify([dict(user) for user in users])
+
+@app.route('/api/admin/categories/users-in-category/<int:category_id>', methods=['GET'])
+@auth_required
+@role_required(['creator','admin'])
+def get_users_in_category(category_id):
+    conn = get_db_connection()
+    users = conn.execute("SELECT u.id, u.username FROM users u JOIN category_users cu ON u.id = cu.user_id WHERE cu.category_id = ?", (category_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(user) for user in users])
+
+@app.route('/api/update-playback', methods=['POST'])
+@auth_required
+def update_playback():
+    data = request.json
+    user_id = data.get('userId')
+    track_id = data.get('trackId')
+    current_time = data.get('currentTime')
+    duration = data.get('duration')
+    timestamp = int(time.time())
+    
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO plays (user_id, track_id, timestamp, listened_duration) VALUES (?, ?, ?, ?)", (user_id, track_id, timestamp, current_time))
+        conn.execute("UPDATE tracks SET plays = plays + 1, duration = ? WHERE id = ?", (duration, track_id,))
+        
+        conn.commit()
+        return jsonify({'message': 'Данные о воспроизведении обновлены.'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Ошибка при обновлении данных о воспроизведении.'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/xrecomen/<int:user_id>')
+@auth_required
+def get_xrecomen(user_id):
+    conn = get_db_connection()
+    
+    user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
+    favorite_media_files = [row['media_file'] for row in user_favorites]
+    
+    you_like_tracks = []
+    if favorite_media_files:
+        placeholder = ','.join('?' for _ in favorite_media_files)
+        you_like_tracks = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
+        you_like_tracks = [dict(row) for row in you_like_tracks]
+
+    xrecomen_track = None
+    you_may_like_tracks = []
+    
+    you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
+    you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6").fetchall()
+    you_may_like_tracks = [dict(row) for row in you_may_like_tracks]
+    
+    if you_may_like_tracks:
+        xrecomen_track = random.choice(you_may_like_tracks)
+        you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
+
+    favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
+    favorite_collections = [dict(row) for row in favorite_collections]
+    
+    conn.close()
+    
+    return jsonify({
+        'xrecomenTrack': xrecomen_track,
+        'youLike': you_like_tracks,
+        'youMayLike': you_may_like_tracks,
+        'favoriteCollections': favorite_collections
+    })
+
+@app.route('/api/history/<int:user_id>')
+@auth_required
+def get_history(user_id):
+    return jsonify([])
+
+@app.route('/api/genres')
+def get_genres():
+    return jsonify(GENRES)
+
+@app.route('/api/determine-genre', methods=['POST'])
+@auth_required
+@role_required(['creator','admin'])
+def determine_genre():
+    if 'file' not in request.files:
+        return jsonify({'message': 'Нет файла'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'Не выбран файл'}), 400
+
+    if not model:
+        return jsonify({'message': 'Модель ИИ недоступна.'}), 503
+
+    try:
+        temp_path = os.path.join(TEMP_UPLOAD_DIR, secure_filename(file.filename))
+        file.save(temp_path)
+        
+        features = extract_features(temp_path)
+        predicted_genre_index = model.predict(features)[0]
+        predicted_genre = GENRES[predicted_genre_index]
+        
+        os.remove(temp_path)
+        
+        return jsonify({'genre': predicted_genre})
+    except Exception as e:
+        print(f"Error during genre determination: {e}")
+        return jsonify({'message': 'Ошибка при определении жанра.'}), 500
+
+if __name__ == '__main__':
+    app.run(port=3000, debug=True)
