@@ -78,4 +78,7 @@ app.config['UPLOAD_FOLDER'] = {
 webserver(app,db,dirs)
 
 if __name__ == '__main__':
-    app.run()
+    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    # host='0.0.0.0' - делает сервер видимым в сети
+    # port=5000 - стандартный порт для Flask
+    app.run(host='0.0.0.0', port=5000, debug=True)
