@@ -496,59 +496,38 @@ body {
     line-height: 1.2;
 }
 
-/* Обновлённые стили для плеера */
-.player {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 320px; /* Уменьшаем ширину */
-    height: 120px; /* Уменьшаем высоту */
-    background: rgba(var(--player-bg-rgb), var(--ui-opacity));
-    backdrop-filter: blur(var(--blur-value));
-    -webkit-backdrop-filter: blur(var(--blur-value));
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    left: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px; /* Уменьшаем отступ */
-    padding: 15px; /* Уменьшаем padding */
-    z-index: 3;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.player-header {
+/* Обновлённые стили плеера */
+.player .player-header {
     display: flex;
     width: 100%;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
+    gap: 15px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.track-info {
+.player .track-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-grow: 1;
-    min-width: 0;
+    gap: 10px; /* Уменьшаем отступ */
+    margin-bottom: auto;
+    align-self: flex-start;
+    padding-top: 0px;
 }
 
-.track-info img {
+.player .track-info div {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.player .track-info img {
     width: 40px; /* Уменьшаем размер обложки */
     height: 40px;
     border-radius: 6px;
     flex-shrink: 0; /* Предотвращаем сжатие */
 }
 
-.track-info div {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.track-info .title {
+.player .track-info .title {
     font-weight: 600;
     font-size: 0.9em;
     white-space: nowrap;
@@ -556,7 +535,7 @@ body {
     text-overflow: ellipsis;
 }
 
-.track-info .artist {
+.player .track-info .artist {
     font-size: 0.7em;
     color: var(--text-secondary);
     white-space: nowrap;
@@ -564,7 +543,7 @@ body {
     text-overflow: ellipsis;
 }
 
-.control-buttons-and-progress {
+.player .control-buttons-and-progress {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -572,7 +551,7 @@ body {
     width: 100%;
 }
 
-.control-buttons {
+.player .control-buttons {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -580,7 +559,7 @@ body {
     width: 100%;
 }
 
-.control-btn, .play-button {
+.player .control-btn, .player .play-button {
     background: transparent;
     border: none;
     cursor: pointer;
@@ -591,19 +570,19 @@ body {
     transition: transform 0.2s ease-in-out;
 }
 
-.control-buttons svg {
+.player .control-buttons svg {
     width: 20px; /* Уменьшаем размер иконок */
     height: 20px;
     fill: var(--text-secondary); /* Делаем иконки светло-серыми по умолчанию */
     transition: fill 0.2s, transform 0.2s;
 }
 
-.control-buttons .control-btn:hover svg {
+.player .control-buttons .control-btn:hover svg {
     fill: var(--text-primary);
     transform: scale(1.1);
 }
 
-.play-button {
+.player .play-button {
     background-color: var(--card-bg);
     border-radius: 50%;
     width: 40px;
@@ -611,19 +590,19 @@ body {
     border: 1px solid var(--border-color);
 }
 
-.play-button svg {
+.player .play-button svg {
     fill: var(--text-primary);
     width: 24px;
     height: 24px;
 }
 
-.play-button:hover {
+.player .play-button:hover {
     transform: scale(1.1);
     background-color: var(--card-hover-bg);
     border-color: var(--primary-color);
 }
 
-.progress-bar {
+.player .progress-bar {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -631,14 +610,14 @@ body {
     margin-top: -5px; /* Уменьшаем отступ */
 }
 
-.progress-bar span {
+.player .progress-bar span {
     font-size: 0.7em;
     color: var(--text-secondary);
     width: 30px;
     text-align: center;
 }
 
-.progress-bar-container {
+.player .progress-bar-container {
     flex-grow: 1;
     height: 10px; /* Уменьшаем высоту */
     display: flex;
@@ -647,23 +626,23 @@ body {
     position: relative;
 }
 
-.progress-track, .progress-filled {
+.player .progress-track, .player .progress-filled {
     position: absolute;
     height: 4px; /* Уменьшаем высоту полосы */
     width: 100%;
     border-radius: 2px;
 }
 
-.progress-track {
+.player .progress-track {
     background-color: #4d4d4d;
 }
 
-.progress-filled {
+.player .progress-filled {
     background-color: var(--primary-color); /* Используем основной цвет */
     width: 0;
 }
 
-.progress-thumb {
+.player .progress-thumb {
     position: absolute;
     width: 12px; /* Уменьшаем размер ползунка */
     height: 12px;
@@ -675,27 +654,26 @@ body {
     transition: transform 0.2s;
 }
 
-.progress-bar-container:hover .progress-thumb {
+.player .progress-bar-container:hover .progress-thumb {
     transform: translateX(-50%) scale(1);
 }
 
-.volume-controls {
+.player .volume-controls {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     gap: 10px;
     width: 100%;
     margin-top: 5px;
 }
 
-.volume-controls svg {
+.player .volume-controls svg {
     fill: var(--text-secondary);
     width: 18px; /* Уменьшаем размер иконки */
     height: 18px;
     cursor: pointer;
 }
 
-.volume-controls .slider {
+.player .volume-controls .slider {
     -webkit-appearance: none;
     width: 80px; /* Уменьшаем ширину */
     height: 4px;
@@ -704,7 +682,7 @@ body {
     border-radius: 2px;
 }
 
-.volume-controls .slider::-webkit-slider-thumb {
+.player .volume-controls .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 12px;
@@ -715,37 +693,35 @@ body {
 }
 
 /* Стили для кнопки "Избранное" в плеере */
-#favoritePlayerBtn svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    transition: stroke 0.2s, fill 0.2s, transform 0.2s;
+.player #favoritePlayerBtn {
+    background-color: transparent;
+    border: none;
+    font-size: 1.2em; /* Размер иконки */
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary); /* Иконка белая по умолчанию */
+    transition: color 0.2s, transform 0.2s;
 }
 
-#favoritePlayerBtn:hover svg {
-    stroke: var(--primary-color);
-    transform: scale(1.1);
+.player #favoritePlayerBtn:hover {
+    color: var(--primary-color);
+    transform: scale(1.2);
 }
 
-#favoritePlayerBtn.favorited svg {
-    fill: red;
-    stroke: red;
+.player #favoritePlayerBtn.favorited {
+    color: red; /* Иконка становится красной, когда трек в избранном */
+    animation: heart-beat 0.5s ease-in-out;
 }
 
 /* Стили для кнопки "Повтор" */
-.repeat-btn svg {
+.player .repeat-btn svg {
     fill: var(--text-secondary);
-    transition: fill 0.2s, transform 0.2s;
 }
 
-.repeat-btn.active svg {
+.player .repeat-btn.active svg {
     fill: var(--primary-color);
 }
 
-
-/* Остальные стили без изменений */
 .track-info.fading {
     opacity: 0;
 }
@@ -792,6 +768,54 @@ body.creator-mode {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
+.player .player-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.player .track-info {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+}
+.player .track-info div {
+    text-align: left;
+}
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+}
+.player .player-header .track-info {
+    flex-grow: 1;
+}
+
+.player .control-buttons-and-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+.player .control-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+.player .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
 
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
     color: var(--creator-text-primary);
@@ -814,11 +838,11 @@ body.creator-mode {
     fill: var(--creator-primary-color);
 }
 
-.creator-mode .play-button {
+.creator-mode .player-controls .play-button {
     background-color: var(--creator-primary-color);
 }
 
-.creator-mode .play-button:hover {
+.creator-mode .player-controls .play-button:hover {
     background-color: var(--creator-primary-hover);
 }
 
@@ -876,14 +900,15 @@ body.creator-mode {
     border-color: var(--creator-primary-color);
 }
 
-.creator-mode .favorite-btn svg {
-    fill: none;
-    stroke: var(--creator-text-secondary);
+.creator-mode .favorite-btn {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--creator-text-secondary);
+    border-color: var(--creator-border-color);
 }
 
-.creator-mode .favorite-btn.favorited svg {
-    fill: var(--creator-primary-color);
-    stroke: var(--creator-primary-color);
+.creator-mode .favorite-btn.favorited {
+    color: var(--creator-primary-color);
+    border-color: var(--creator-primary-color);
 }
 
 .creator-mode .modal-content {
@@ -992,6 +1017,431 @@ body.creator-mode {
 
 .creator-moderation-card {
     background-color: var(--creator-card-bg);
+}
+
+.video-icon {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+.video-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.video-modal-content {
+    position: relative;
+    width: 80%;
+    max-width: 1000px;
+    background-color: black;
+}
+
+#videoPlayerModal {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#closeVideoBtn {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    font-size: 2.5em;
+    color: white;
+    cursor: pointer;
+}
+
+.upload-status-bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--card-bg);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.player .track-info {
+    margin-bottom: auto;
+    align-self: flex-start;
+    padding-top: 10px;
+}
+
+.player .track-info div {
+    text-align: left;
+}
+
+/* Исправлена обложка плеера для правильного размера */
+.player .track-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player .volume-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.player .volume-controls input {
+    width: 120px;
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+}
+
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+
+/* Исправленные стили для кнопки избранного */
+.favorite-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(4px);
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    padding-bottom: 2px;
+    transition: all 0.2s;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.card:hover .favorite-btn {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.favorite-btn.favorited {
+    color: red;
+}
+
+.favorite-btn:hover {
+    color: red;
+    transform: scale(1.1);
+}
+
+/* Анимация для лайка */
+@keyframes heart-beat {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Новые стили для главной страницы */
+.now-playing-section {
+    position: fixed;
+    top: 15px;
+    left: 265px;
+    width: auto;
+    z-index: 5;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    padding: 8px 15px;
+    transform: translateX(-150%);
+    transition: transform 0.5s ease-out;
+}
+
+.now-playing-section.visible {
+    transform: translateX(0);
+}
+
+.now-playing-text {
+    font-size: 1em;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.xrecomen-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    width: 100%;
+    margin-bottom: 50px;
+    margin-top: 50px;
+}
+
+#xrecomenBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    color: white;
+    text-shadow: none;
+    transition: color 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#xrecomenBtn:hover {
+    color: var(--text-primary);
+}
+
+.xrecomen-title {
+    font-size: 4em;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.xrecomen-subtitle {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 10px;
+}
+
+.equalizer {
+    display: none;
+}
+
+.scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    display: flex;
+    gap: 20px;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+}
+
+.scroll-container .card {
+    min-width: 140px;
+    max-width: 140px;
+    display: inline-block;
+}
+
+.collection-card {
+    min-width: 180px;
+    height: 180px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.collection-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+}
+
+.category-card, .genre-card {
+    min-width: 180px;
+    height: 180px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.category-card:hover, .genre-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.category-card h3, .genre-card h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: color 0.2s;
+}
+
+.category-card p, .genre-card p {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.categories-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.moderation-modal {
+    display: none;
+    position: fixed;
+    z-index: 1002;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+.moderation-content {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 700px;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+}
+
+.moderation-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.moderation-player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.moderation-player-controls button {
+    padding: 10px 20px;
+}
+
+.analytics-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.analytics-block {
+    background-color: var(--card-bg);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-block.full-width {
+    grid-column: 1 / -1;
+}
+
+.analytics-block h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.stat-value {
+    color: var(--text-primary);
+}
+
+.analytics-block canvas {
+    background-color: var(--dark-bg);
+    padding: 10px;
+    border-radius: 8px;
+    width: 100% !important;
+    height: 300px !important;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.analytics-table th, .analytics-table td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.analytics-table th {
+    color: var(--text-secondary);
+}
+
+.analytics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.analytics-table tr:hover {
+    background-color: var(--card-hover-bg);
+}
+
+.card--video .card-title {
+    color: var(--accent-color);
 }
 
 .video-icon {
