@@ -303,13 +303,24 @@ body {
 }
 
 /* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
-/* Стиль для grid-контейнера в разделе "Лучшее", чтобы отобразить 9 карточек в сетке 3x3 */
+/* Стиль для grid-контейнера в разделе "Лучшее", чтобы отобразить 10 карточек в одну строку */
 #allGridContainer {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    grid-template-rows: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 20px;
     padding-bottom: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#allGridContainer::-webkit-scrollbar {
+    display: none;
+}
+
+#allGridContainer .card {
+    flex: 0 0 auto;
+    width: 180px;
 }
 /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
