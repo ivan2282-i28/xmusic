@@ -1,4 +1,6 @@
 import sqlite3
+# Import functions for hashing from werkzeug
+from werkzeug.security import generate_password_hash
 
 class database():
     def __init__(self,db_path):
@@ -14,8 +16,8 @@ class database():
         conn = self.get_db_connection()
         c = conn.cursor()
 
-        # Удаление старых таблиц, если они существуют
-        c.execute("DROP TABLE IF EXISTS genres")
+        # Removing old tables if they exist (leave for development)
+        # c.execute("DROP TABLE IF EXISTS genres")
         
         c.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -92,11 +94,12 @@ class database():
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
             )
         ''')
-        # Добавление столбца 'duration' для уже существующей таблицы
+        
         c.execute("PRAGMA table_info(tracks)")
         columns = [column[1] for column in c.fetchall()]
         if 'duration' not in columns:
             c.execute("ALTER TABLE tracks ADD COLUMN duration REAL")
+
         c.execute('''
             CREATE TABLE IF NOT EXISTS plays (
                 user_id INTEGER NOT NULL,
@@ -117,10 +120,23 @@ class database():
             )
         ''')
 
-        # Добавление админа, если его нет
+        # === PASSWORD MIGRATION BLOCK ===
+        # Check old passwords and hash them
+        users_to_migrate = c.execute("SELECT id, password FROM users").fetchall()
+        for user in users_to_migrate:
+            # Werkzeug hashes typically start with 'pbkdf2:sha256'
+            if not user['password'].startswith('pbkdf2'):
+                hashed_password = generate_password_hash(user['password'])
+                c.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_password, user['id']))
+                print(f"Migrated password for user ID: {user['id']}")
+
+        # Add admin if not present (with an already hashed password)
         c.execute("SELECT * FROM users WHERE username = 'root'")
         if c.fetchone() is None:
-            c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ('root', 'defaultpassword', 'admin'))
+            # Hash the default password
+            hashed_default_password = generate_password_hash('defaultpassword')
+            c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
+                      ('root', hashed_default_password, 'admin'))
 
         conn.commit()
         conn.close()

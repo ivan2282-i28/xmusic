@@ -28,6 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSearchQuery = '';
     let searchTimeout;
 
+    // --- НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ВИЗУАЛИЗАТОРА (ЭКВАЛАЙЗЕРА) ---
+    let audioContext;
+    let analyser;
+    let sourceNode;
+    let dataArray;
+    let animationFrameId;
+    let visualizerInitialized = false;
+
 
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
@@ -225,6 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Новые элементы для плеера
     const playerStyleButtons = document.querySelectorAll('.player-style-selector .style-btn');
+
+    // --- НОВЫЕ ЭЛЕМЕНТЫ DOM ДЛЯ ВИЗУАЛИЗАТОРА (ЭКВАЛАЙЗЕРА) ---
+    const equalizer = document.getElementById('equalizer');
+    const equalizerBars = document.querySelectorAll('.equalizer-bar');
 
 
     let chartInstance = null;
@@ -720,6 +732,9 @@ document.addEventListener('DOMContentLoaded', () => {
         activeMediaElement.currentTime = 0;
         currentTrackIndex = index;
         const item = allMedia[index];
+
+        // Инициализируем визуализатор при первом воспроизведении
+        initVisualizer();
 
         if (nowPlayingText) {
             nowPlayingText.textContent = `Сейчас играет: ${item.title} от ${item.artist || item.creator_name}`;
@@ -1260,6 +1275,52 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(func, delay);
     };
+
+    // --- НОВЫЕ ФУНКЦИИ ДЛЯ ВИЗУАЛИЗАТОРА ---
+
+    const initVisualizer = () => {
+        if (visualizerInitialized) return;
+        
+        // Создаем аудио контекст
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Создаем анализатор
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256; // Количество "столбиков" данных
+        
+        // Подключаем наш HTML audio элемент к Web Audio API
+        sourceNode = audioContext.createMediaElementSource(audioPlayer);
+        
+        // Строим цепочку: источник -> анализатор -> выход (колонки)
+        sourceNode.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        // Создаем массив для хранения данных о частотах
+        const bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+        
+        visualizerInitialized = true;
+    };
+
+    const renderVisualizer = () => {
+        // Запускаем цикл анимации
+        animationFrameId = requestAnimationFrame(renderVisualizer);
+        
+        // Получаем данные о частотах в реальном времени
+        analyser.getByteFrequencyData(dataArray);
+        
+        const barCount = equalizerBars.length;
+        for (let i = 0; i < barCount; i++) {
+            // Берем значение из массива данных (0-255)
+            // Мы берем значения с некоторым шагом, чтобы распределить их по 5 столбикам
+            const barHeight = dataArray[i * 4]; 
+            const heightPercentage = (barHeight / 255) * 100;
+            
+            // Устанавливаем высоту столбика, добавляя минимальную высоту
+            equalizerBars[i].style.height = `${Math.max(5, heightPercentage)}%`;
+        }
+    };
+
 
     const initEventListeners = () => {
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
@@ -2373,10 +2434,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         const onPlay = () => {
+            // Возобновляем AudioContext, если он был приостановлен браузером
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
             if (playIcon) playIcon.style.display = 'none';
             if (pauseIcon) pauseIcon.style.display = 'block';
             if (copyPlayIcon) copyPlayIcon.style.display = 'none';
             if (copyPauseIcon) copyPauseIcon.style.display = 'block';
+            
+            // Показываем эквалайзер и запускаем анимацию
+            if (equalizer) equalizer.style.display = 'flex';
+            renderVisualizer();
         };
 
         const onPause = () => {
@@ -2384,6 +2454,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pauseIcon) pauseIcon.style.display = 'none';
             if (copyPlayIcon) copyPlayIcon.style.display = 'block';
             if (copyPauseIcon) copyPauseIcon.style.display = 'none';
+
+            // Скрываем эквалайзер и останавливаем анимацию для экономии ресурсов
+            if (equalizer) equalizer.style.display = 'none';
+            cancelAnimationFrame(animationFrameId);
         };
 
         const onEnded = () => {

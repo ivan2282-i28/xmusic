@@ -4,17 +4,17 @@ import shutil
 import time
 import random
 from werkzeug.utils import secure_filename
+# Import functions for hash checking
+from werkzeug.security import check_password_hash, generate_password_hash
 import jwt
 from functools import wraps
-import joblib  # Использовать joblib вместо pickle для совместимости
+import joblib
 import librosa
 import numpy as np
 
 from .api.admin import admin_api
 
 def webserver(app,db,dirs):
-
-     
 
     def auth_required(f):
         @wraps(f)
@@ -117,13 +117,19 @@ def webserver(app,db,dirs):
         username = data.get('username')
         password = data.get('password')
         
+        if not username or not password:
+            return jsonify({'message': 'Username and password are required.'}), 400
+            
+        # Hash the password before saving
+        hashed_password = generate_password_hash(password)
+
         conn = db.get_db_connection()
         try:
-            conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
             conn.commit()
-            return jsonify({'message': 'Регистрация прошла успешно!'}), 201
+            return jsonify({'message': 'Registration successful!'}), 201
         except db.sqlite3.IntegrityError:
-            return jsonify({'message': 'Пользователь с таким именем уже существует.'}), 400
+            return jsonify({'message': 'A user with that name already exists.'}), 400
         finally:
             conn.close()
 
@@ -134,14 +140,23 @@ def webserver(app,db,dirs):
         password = data.get('password')
 
         conn = db.get_db_connection()
-        user = conn.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+        # First, find the user by name
+        user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ?", (username,)).fetchone()
         conn.close()
-        if user:
-            sanuser = {"username":user["username"],"id":user["id"]}
-            tokend = jwt.encode(sanuser,app.config["SECRET_KEY"],"HS256")
-            return jsonify({'message': 'Вход выполнен!', 'user': dict(user), 'token':tokend})
+
+        # If the user is found and the password hash matches the entered password
+        if user and check_password_hash(user['password'], password):
+            # Remove the password from the response
+            user_data = {
+                "id": user["id"],
+                "username": user["username"],
+                "role": user["role"]
+            }
+            token_data = {"username": user["username"], "id": user["id"]}
+            token = jwt.encode(token_data, app.config["SECRET_KEY"], "HS256")
+            return jsonify({'message': 'Login successful!', 'user': user_data, 'token': token})
         else:
-            return jsonify({'message': 'Неверный логин или пароль.'}), 401
+            return jsonify({'message': 'Invalid login or password.'}), 401
 
     @app.route('/api/favorites', methods=['GET'])
     @auth_required
@@ -163,14 +178,14 @@ def webserver(app,db,dirs):
             try:
                 conn.execute("INSERT OR IGNORE INTO favorites (user_id, media_file) VALUES (?, ?)", (user_id, media_file))
                 conn.commit()
-                return jsonify({'message': 'Добавлено в избранное.'})
+                return jsonify({'message': 'Added to favorites.'})
             finally:
                 conn.close()
         elif request.method == 'DELETE':
             try:
                 conn.execute("DELETE FROM favorites WHERE user_id = ? AND media_file = ?", (user_id, media_file))
                 conn.commit()
-                return jsonify({'message': 'Удалено из избранного.'})
+                return jsonify({'message': 'Removed from favorites.'})
             finally:
                 conn.close()
 
@@ -216,14 +231,14 @@ def webserver(app,db,dirs):
         track_info = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
         conn.close()
         if not track_info:
-            return jsonify({'message': 'Трек не найден.'}), 404
+            return jsonify({'message': 'Track not found.'}), 404
 
         old_file_name = track_info['file_name']
         old_cover_name = track_info['cover_name']
         track_type = track_info['type']
         
         if not new_title or not new_title.strip():
-            return jsonify({'message': 'Название не может быть пустым'}), 400
+            return jsonify({'message': 'Title cannot be empty.'}), 400
         
         sanitized_new_title = secure_filename(new_title.strip())
 
@@ -242,12 +257,12 @@ def webserver(app,db,dirs):
             conn.commit()
             conn.close()
 
-            return jsonify({'message': 'Переименовано успешно'})
+            return jsonify({'message': 'Renamed successfully.'})
         except FileNotFoundError:
-            return jsonify({'message': 'Файл не найден.'}), 404
+            return jsonify({'message': 'File not found.'}), 404
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при переименовании.'}), 500
+            return jsonify({'message': 'Error during renaming.'}), 500
         finally:
             conn.close()
 
@@ -259,7 +274,7 @@ def webserver(app,db,dirs):
         track = conn.execute("SELECT file_name, cover_name, type FROM tracks WHERE id = ?", (track_id,)).fetchone()
         if not track:
             conn.close()
-            return jsonify({'message': 'Трек не найден.'}), 404
+            return jsonify({'message': 'Track not found.'}), 404
         
         try:
             media_dir = dirs["MUSIC_DIR"] if track['type'] == 'audio' else dirs["VIDEO_DIR"]
@@ -268,10 +283,10 @@ def webserver(app,db,dirs):
             
             conn.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
             conn.commit()
-            return jsonify({'message': 'Трек удален.'})
+            return jsonify({'message': 'Track deleted.'})
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
+            return jsonify({'message': 'Error deleting files.'}), 500
         finally:
             conn.close()
 
@@ -289,10 +304,10 @@ def webserver(app,db,dirs):
             conn.execute("INSERT INTO creator_applications (user_id, full_name, phone_number, email) VALUES (?, ?, ?, ?)",
                         (user_id, full_name, phone_number, email))
             conn.commit()
-            return jsonify({'message': 'Заявка успешно отправлена. Ожидайте ответа.'}), 201
+            return jsonify({'message': 'Application submitted successfully. Await a response.'}), 201
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при подаче заявки.'}), 500
+            return jsonify({'message': 'Error submitting application.'}), 500
         finally:
             conn.close()
 
@@ -302,7 +317,7 @@ def webserver(app,db,dirs):
     @role_required(['creator','admin'])
     def moderation_upload():
         if 'coverFile' not in request.files or ('audioFile' not in request.files and 'videoFile' not in request.files):
-            return jsonify({'message': 'Не все файлы предоставлены.'}), 400
+            return jsonify({'message': 'Not all files provided.'}), 400
 
         cover_file = request.files['coverFile']
         media_file = request.files.get('audioFile') or request.files.get('videoFile')
@@ -314,7 +329,7 @@ def webserver(app,db,dirs):
         category_id = request.form.get('categoryId') or None
 
         if not all([cover_file, media_file, title, upload_type, user_id]):
-            return jsonify({'message': 'Недостаточно данных.'}), 400
+            return jsonify({'message': 'Insufficient data.'}), 400
 
         unique_id = str(int(time.time() * 1000))
         media_filename = f"{unique_id}{os.path.splitext(media_file.filename)[1]}"
@@ -328,10 +343,10 @@ def webserver(app,db,dirs):
             conn.execute("INSERT INTO track_moderation (user_id, file_name, cover_name, title, type, genre, artist, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                         (user_id, media_filename, cover_filename, title, upload_type, genre, artist, category_id))
             conn.commit()
-            return jsonify({'message': 'Трек отправлен на модерацию. Ожидайте одобрения.'}), 201
+            return jsonify({'message': 'Track sent for moderation. Await approval.'}), 201
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при отправке трека на модерацию.'}), 500
+            return jsonify({'message': 'Error sending track for moderation.'}), 500
         finally:
             conn.close()
 
@@ -361,11 +376,11 @@ def webserver(app,db,dirs):
         track = conn.execute("SELECT file_name, cover_name, type, creator_id FROM tracks WHERE id = ?", (track_id,)).fetchone()
         if not track:
             conn.close()
-            return jsonify({'message': 'Трек не найден.'}), 404
+            return jsonify({'message': 'Track not found.'}), 404
         
         if track['creator_id'] != user_id and user_role != 'admin':
             conn.close()
-            return jsonify({'message': 'Недостаточно прав.'}), 403
+            return jsonify({'message': 'Insufficient permissions.'}), 403
 
         try:
             media_dir = dirs["MUSIC_DIR"] if track['type'] == 'audio' else dirs["VIDEO_DIR"]
@@ -374,10 +389,10 @@ def webserver(app,db,dirs):
             
             conn.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
             conn.commit()
-            return jsonify({'message': 'Трек удален.'})
+            return jsonify({'message': 'Track deleted.'})
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при удалении файлов.'}), 500
+            return jsonify({'message': 'Error deleting files.'}), 500
         finally:
             conn.close()
 
@@ -440,10 +455,10 @@ def webserver(app,db,dirs):
             conn.execute("UPDATE tracks SET plays = plays + 1, duration = ? WHERE id = ?", (duration, track_id,))
             
             conn.commit()
-            return jsonify({'message': 'Данные о воспроизведении обновлены.'})
+            return jsonify({'message': 'Playback data updated.'})
         except Exception as e:
             print(e)
-            return jsonify({'message': 'Ошибка при обновлении данных о воспроизведении.'}), 500
+            return jsonify({'message': 'Error updating playback data.'}), 500
         finally:
             conn.close()
 
@@ -452,30 +467,51 @@ def webserver(app,db,dirs):
     def get_xrecomen(user_id):
         conn = db.get_db_connection()
         
-        # Получаем список избранных треков пользователя
+        # --- IMPROVED LOGIC ---
+        
+        # 1. Get tracks the user has liked
         user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
         favorite_media_files = [row['media_file'] for row in user_favorites]
         
-        # Формируем список "Вам нравятся" на основе избранного
         you_like_tracks = []
+        favorite_track_ids = []
         if favorite_media_files:
             placeholder = ','.join('?' for _ in favorite_media_files)
-            you_like_tracks = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
-            you_like_tracks = [dict(row) for row in you_like_tracks]
+            # Immediately get both display data and IDs for exclusion
+            you_like_tracks_data = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
+            you_like_tracks = [dict(row) for row in you_like_tracks_data]
+            favorite_track_ids = [row['id'] for row in you_like_tracks_data]
 
+        # 2. Get tracks the user has listened to frequently (e.g., > 5 times)
+        frequently_played = conn.execute("SELECT track_id FROM plays WHERE user_id = ? GROUP BY track_id HAVING COUNT(track_id) > 5", (user_id,)).fetchall()
+        frequent_track_ids = [row['track_id'] for row in frequently_played]
+
+        # 3. Collect all track IDs to exclude from recommendations
+        exclude_ids = list(set(favorite_track_ids + frequent_track_ids))
+        
         xrecomen_track = None
-        you_may_like_tracks = []
         
-        # Формируем список "Вам могут понравиться" из случайных треков
-        you_may_like_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
-        you_may_like_tracks = conn.execute(you_may_like_query + " ORDER BY RANDOM() LIMIT 6").fetchall()
-        you_may_like_tracks = [dict(row) for row in you_may_like_tracks]
+        # 4. Form a query to get random tracks, EXCLUDING unnecessary ones
+        base_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
+        params = []
         
+        if exclude_ids:
+            placeholders = ','.join('?' for _ in exclude_ids)
+            where_clause = f" WHERE id NOT IN ({placeholders})"
+            params.extend(exclude_ids)
+        else:
+            where_clause = ""
+            
+        final_query = base_query + where_clause + " ORDER BY RANDOM() LIMIT 6"
+        
+        you_may_like_tracks_data = conn.execute(final_query, params).fetchall()
+        you_may_like_tracks = [dict(row) for row in you_may_like_tracks_data]
+
         if you_may_like_tracks:
             xrecomen_track = random.choice(you_may_like_tracks)
             you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
 
-        # Формирование "Любимых подборок"
+        # Forming "Favorite Selections" (remains unchanged)
         favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
         favorite_collections = [dict(row) for row in favorite_collections]
         
@@ -493,14 +529,14 @@ def webserver(app,db,dirs):
     @role_required(['creator','admin'])
     def determine_genre():
         if 'file' not in request.files:
-            return jsonify({'message': 'Нет файла'}), 400
+            return jsonify({'message': 'No file'}), 400
         
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'message': 'Не выбран файл'}), 400
+            return jsonify({'message': 'No file selected'}), 400
 
         if not model:
-            return jsonify({'message': 'Модель ИИ недоступна.'}), 503
+            return jsonify({'message': 'AI model is not available.'}), 503
 
         try:
             temp_path = os.path.join(dirs["TEMP_UPLOAD_DIR"], secure_filename(file.filename))
@@ -515,4 +551,4 @@ def webserver(app,db,dirs):
             return jsonify({'genre': predicted_genre})
         except Exception as e:
             print(f"Error during genre determination: {e}")
-            return jsonify({'message': 'Ошибка при определении жанра.'}), 500
+            return jsonify({'message': 'Error determining genre.'}), 500
