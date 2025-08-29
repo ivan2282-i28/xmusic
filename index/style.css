@@ -1791,13 +1791,14 @@ input:checked + .slider:before {
     flex-direction: column;
     width: 100%;
     height: 100%;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 12px 0; /* Добавляем вертикальные отступы */
 }
 
 /* Тело плеера */
 .copy-player-body {
     width: 100%;
-    padding: 0 24px; /* Увеличенный отступ */
+    padding: 0 24px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
@@ -1805,12 +1806,12 @@ input:checked + .slider:before {
 
 /* Прогресс-бар для стиля Copy */
 .copy-progress-bar-container {
-    width: calc(100% - 48px); /* Ширина равна отступам тела плеера */
+    width: calc(100% - 48px);
     height: 3px;
     cursor: pointer;
     background-color: #535353;
     border-radius: 2px;
-    margin: 8px 24px 0 24px;
+    margin: 0 24px; /* Убираем верхний отступ */
 }
 .copy-progress-filled {
     height: 100%;
