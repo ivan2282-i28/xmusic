@@ -359,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             container.innerHTML = '';
             
-            // Добавляем категорию "Все треки" в начало списка
             const allTracksCategory = { id: 'all', name: 'Все треки' };
             const allCategories = [allTracksCategory, ...categories];
             
@@ -854,6 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (viewToShow) viewToShow.classList.add('active-view');
 
         if (backToCategoriesBtn) {
+            // Исправленная логика: кнопка "Назад" всегда ведёт на главную
             backToCategoriesBtn.style.display = viewIdToShow === 'specificCategoryView' ? 'block' : 'none';
         }
 
@@ -1125,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (backToCategoriesBtn) backToCategoriesBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            switchView('categoriesView');
+            switchView('homeView'); // Исправлено: теперь ведёт на главную
             if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
         });
 
