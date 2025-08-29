@@ -1918,8 +1918,7 @@ input:checked + .slider:before {
 
 .player--copy .player-header,
 .player--copy #favoritePlayerBtn,
-.player--copy .repeat-btn,
-.player--copy .progress-bar-container ~ span {
+.player--copy .repeat-btn {
     display: none;
 }
 
@@ -1959,6 +1958,9 @@ input:checked + .slider:before {
 }
 
 .player--copy .control-buttons-and-progress {
+    position: relative;
+    padding-top: 5px;
+    display: flex;
     flex-direction: row;
     align-items: center;
     gap: 15px;
@@ -2006,29 +2008,38 @@ input:checked + .slider:before {
 }
 
 .player--copy .progress-bar {
-    order: 3;
-    flex-grow: 1;
-    gap: 5px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 5px;
+    padding: 0;
+    display: flex;
+    align-items: flex-start;
 }
-
 .player--copy .progress-bar span {
     display: none;
 }
 
 .player--copy .progress-bar-container {
-    height: 8px;
+    height: 100%;
     cursor: pointer;
+    background-color: transparent;
 }
 
 .player--copy .progress-track,
 .player--copy .progress-filled {
-    height: 4px;
+    position: relative;
+    height: 100%;
 }
 .player--copy .progress-track {
     background-color: #4F4F4F;
+    height: 5px;
 }
 .player--copy .progress-filled {
     background-color: #F98F29;
+    height: 5px;
 }
 
 .player--copy .progress-thumb {
@@ -2037,17 +2048,27 @@ input:checked + .slider:before {
     background-color: #F98F29;
     border-radius: 50%;
 }
+.player--copy .progress-bar-container:hover .progress-thumb {
+    transform: translateX(-50%) scale(1.5);
+}
 
 .player--copy .volume-controls {
     order: 4;
-    width: 120px;
+    width: auto;
     margin-top: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: 10px;
     margin-left: auto;
     flex-shrink: 0;
+}
+
+.player--copy .volume-controls .time-display {
+    display: flex;
+    gap: 5px;
+    font-size: 12px;
+    color: #a0a0a0;
 }
 
 .player--copy .volume-controls svg {
@@ -2062,6 +2083,7 @@ input:checked + .slider:before {
     height: 4px;
     background: #4F4F4F;
     border-radius: 2px;
+    flex-shrink: 0;
 }
 
 .player--copy .volume-controls input::-webkit-slider-thumb {
@@ -3171,8 +3193,7 @@ input:checked + .slider:before {
 
 .player--copy .player-header,
 .player--copy #favoritePlayerBtn,
-.player--copy .repeat-btn,
-.player--copy .progress-bar-container ~ span {
+.player--copy .repeat-btn {
     display: none;
 }
 
@@ -3212,6 +3233,9 @@ input:checked + .slider:before {
 }
 
 .player--copy .control-buttons-and-progress {
+    position: relative;
+    padding-top: 5px;
+    display: flex;
     flex-direction: row;
     align-items: center;
     gap: 15px;
@@ -3259,29 +3283,38 @@ input:checked + .slider:before {
 }
 
 .player--copy .progress-bar {
-    order: 3;
-    flex-grow: 1;
-    gap: 5px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 5px;
+    padding: 0;
+    display: flex;
+    align-items: flex-start;
 }
-
 .player--copy .progress-bar span {
     display: none;
 }
 
 .player--copy .progress-bar-container {
-    height: 8px;
+    height: 100%;
     cursor: pointer;
+    background-color: transparent;
 }
 
 .player--copy .progress-track,
 .player--copy .progress-filled {
-    height: 4px;
+    position: relative;
+    height: 100%;
 }
 .player--copy .progress-track {
     background-color: #4F4F4F;
+    height: 5px;
 }
 .player--copy .progress-filled {
     background-color: #F98F29;
+    height: 5px;
 }
 
 .player--copy .progress-thumb {
@@ -3290,17 +3323,27 @@ input:checked + .slider:before {
     background-color: #F98F29;
     border-radius: 50%;
 }
+.player--copy .progress-bar-container:hover .progress-thumb {
+    transform: translateX(-50%) scale(1.5);
+}
 
 .player--copy .volume-controls {
     order: 4;
-    width: 120px;
+    width: auto;
     margin-top: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: 10px;
     margin-left: auto;
     flex-shrink: 0;
+}
+
+.player--copy .volume-controls .time-display {
+    display: flex;
+    gap: 5px;
+    font-size: 12px;
+    color: #a0a0a0;
 }
 
 .player--copy .volume-controls svg {
@@ -3315,6 +3358,7 @@ input:checked + .slider:before {
     height: 4px;
     background: #4F4F4F;
     border-radius: 2px;
+    flex-shrink: 0;
 }
 
 .player--copy .volume-controls input::-webkit-slider-thumb {
