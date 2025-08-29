@@ -124,7 +124,6 @@ body {
     padding: 20px;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative; /* Добавлено для правильного позиционирования дочерних элементов */
 }
 
 .logo {
@@ -572,7 +571,6 @@ body {
     padding: 20px;
     z-index: 3;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
 }
 
 .player .player-header {
@@ -752,14 +750,13 @@ body {
 }
 
 .player .volume-controls input {
-    width: 120px;
+    width: 150px;
     height: 6px;
     background: #4d4d4d;
     outline: none;
     border-radius: 3px;
     -webkit-appearance: none;
     appearance: none;
-    cursor: pointer; /* Добавлено, чтобы курсор менялся при наведении на ползунок */
 }
 
 /* Исправленные стили для ползунка громкости */
@@ -771,7 +768,6 @@ body {
   background: var(--text-primary);
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -5px; /* Корректировка вертикального положения */
 }
 .player .volume-controls input[type=range]::-moz-range-thumb {
   -moz-appearance: none;
@@ -782,7 +778,6 @@ body {
   border-radius: 50%;
   cursor: pointer;
 }
-
 
 /* Стили для кнопки "Избранное" в плеере */
 .player #favoritePlayerBtn {
