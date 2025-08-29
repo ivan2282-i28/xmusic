@@ -14,15 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     const tracksPerPage = 30;
     let isLoading = false;
-    const BLUR_KEY = "blur_enabled";
-
-    // Новые элементы для жанров
-    const determineGenreBtn = document.getElementById('determineGenreBtn');
-    const selectGenreBtn = document.getElementById('selectGenreBtn');
-    const selectedGenreName = document.getElementById('selectedGenreName');
-    const selectedGenreId = document.getElementById('selectedGenreId'); // hidden input to store genre name
-    const genreSelectionModal = document.getElementById('genreSelectionModal');
-    const genreList = document.getElementById('genreList');
 
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
@@ -34,9 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mainContent = document.querySelector('.main-content');
     const allGridContainer = document.getElementById('allGridContainer');
-    const popularCategoriesGrid = document.getElementById('popularCategoriesGrid');
     const allCategoriesGrid = document.getElementById('allCategoriesGrid');
-    const customCategoriesGrid = document.getElementById('customCategoriesGrid');
     const specificCategoryView = document.getElementById('specificCategoryView');
     const specificCategoryTitle = document.getElementById('specificCategoryTitle');
     const specificCategoryGrid = document.getElementById('specificCategoryGrid');
@@ -160,8 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const xrecomenSubtitle = document.querySelector('.xrecomen-subtitle');
     const youLikeSection = document.getElementById('youLikeSection');
     const youLikeGrid = document.getElementById('youLikeGrid');
-    const youMayLikeSection = document.getElementById('youMayLikeSection');
-    const youMayLikeGrid = document.getElementById('youMayLikeGrid');
     const favoriteCollectionsSection = document.getElementById('favoriteCollectionsSection');
     const favoriteCollectionsGrid = document.getElementById('favoriteCollectionsGrid');
     const nowPlayingText = document.getElementById('nowPlayingText');
@@ -418,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const allTracksCategory = { id: 'all', name: 'Все треки' };
             const allCategories = [allTracksCategory, ...categoriesData];
             
-            const categoriesToDisplay = allCategories.slice(5);
+            const categoriesToDisplay = allCategories; // Changed to display all categories
 
             if (allCategoriesGrid) {
                 allCategoriesGrid.innerHTML = '';
@@ -1664,11 +1651,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (playerStyleButtons) {
-            // Удаляем обработчики событий для выбора стиля плеера, так как теперь есть только один стиль
             playerStyleButtons.forEach(btn => {
-                btn.classList.add('active');
+                btn.addEventListener('click', () => {
+                    playerStyleButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const style = btn.dataset.style;
+                    localStorage.setItem(PLAYER_STYLE_KEY, style);
+                    applyPlayerStyle(style);
+                });
             });
         }
+
+        const applyPlayerStyle = (style) => {
+            if (style === 'default') {
+                player.classList.remove('player--copy');
+                player.classList.add('player--default');
+            } else if (style === 'copy') {
+                player.classList.remove('player--default');
+                player.classList.add('player--copy');
+            }
+        };
+
+        const loadPlayerStyle = () => {
+            const savedStyle = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
+            applyPlayerStyle(savedStyle);
+            playerStyleButtons.forEach(btn => {
+                if (btn.dataset.style === savedStyle) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        };
+
+        loadPlayerStyle();
 
         if (searchInput) searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();

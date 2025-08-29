@@ -923,24 +923,23 @@ body.creator-mode {
     appearance: none;
 }
 
-/* Исправленные стили для ползунка громкости */
-.player .volume-controls input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  cursor: pointer;
+.player .volume-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
 }
-.player .volume-controls input[type=range]::-moz-range-thumb {
-  -moz-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  cursor: pointer;
+.player .volume-controls input::-moz-range-thumb {
+    -moz-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
 }
 
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
@@ -1250,6 +1249,15 @@ body.creator-mode {
 
 .player .volume-controls input::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+.player .volume-controls input::-moz-range-thumb {
+    -moz-appearance: none;
     appearance: none;
     width: 16px;
     height: 16px;
