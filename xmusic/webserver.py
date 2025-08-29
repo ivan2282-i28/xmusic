@@ -4,7 +4,6 @@ import shutil
 import time
 import random
 from werkzeug.utils import secure_filename
-# Import functions for hash checking
 from werkzeug.security import check_password_hash, generate_password_hash
 import jwt
 from functools import wraps
@@ -120,7 +119,6 @@ def webserver(app,db,dirs):
         if not username or not password:
             return jsonify({'message': 'Username and password are required.'}), 400
             
-        # Hash the password before saving
         hashed_password = generate_password_hash(password)
 
         conn = db.get_db_connection()
@@ -140,13 +138,10 @@ def webserver(app,db,dirs):
         password = data.get('password')
 
         conn = db.get_db_connection()
-        # First, find the user by name
         user = conn.execute("SELECT id, username, role, password FROM users WHERE username = ?", (username,)).fetchone()
         conn.close()
 
-        # If the user is found and the password hash matches the entered password
         if user and check_password_hash(user['password'], password):
-            # Remove the password from the response
             user_data = {
                 "id": user["id"],
                 "username": user["username"],
@@ -219,9 +214,9 @@ def webserver(app,db,dirs):
         return jsonify([dict(row) for row in tracks])
 
 
+    @app.route('/api/rename', methods=['POST'])
     @auth_required
     @role_required(['admin','creator'])
-    @app.route('/api/rename', methods=['POST'])
     def rename_track():
         data = request.json
         track_id = data.get('trackId')
@@ -258,13 +253,9 @@ def webserver(app,db,dirs):
             conn.close()
 
             return jsonify({'message': 'Renamed successfully.'})
-        except FileNotFoundError:
-            return jsonify({'message': 'File not found.'}), 404
         except Exception as e:
             print(e)
             return jsonify({'message': 'Error during renaming.'}), 500
-        finally:
-            conn.close()
 
     @app.route('/api/tracks/<int:track_id>', methods=['DELETE'])
     @auth_required
@@ -290,9 +281,9 @@ def webserver(app,db,dirs):
         finally:
             conn.close()
 
+    @app.route('/api/apply-for-creator', methods=['POST'])
     @auth_required
     @role_required(['user'])
-    @app.route('/api/apply-for-creator', methods=['POST'])
     def apply_for_creator():
         data = request.json
         user_id = data.get('userId')
@@ -416,114 +407,6 @@ def webserver(app,db,dirs):
             'trackStats': [dict(row) for row in track_stats]
         })
 
-    # =================================================================
-    # == НОВЫЕ АДМИНСКИЕ МАРШРУТЫ ДЛЯ ПАРОЛЕЙ И ЛОГОВ ==
-    # =================================================================
-
-    @app.route('/api/admin/change-root-password', methods=['POST'])
-    @auth_required
-    @role_required(['admin'])
-    def change_root_password():
-        # ВНИМАНИЕ: Хранение "пароля защиты" прямо в коде — это небезопасно.
-        # В реальном приложении его следует вынести в переменные окружения (.env).
-        PROTECTION_PASSWORD = '79002891465'
-
-        data = request.json
-        new_password = data.get('newPassword')
-        protection_password = data.get('protectionPassword')
-
-        if not new_password or not protection_password:
-            return jsonify({'message': 'Требуется новый пароль и пароль защиты.'}), 400
-        if protection_password != PROTECTION_PASSWORD:
-            return jsonify({'message': 'Неверный пароль защиты.'}), 403
-
-        hashed_new_password = generate_password_hash(new_password)
-        conn = db.get_db_connection()
-        try:
-            root_user = conn.execute("SELECT id FROM users WHERE username = 'root'").fetchone()
-            if not root_user:
-                return jsonify({'message': "Пользователь 'root' не найден."}), 404
-
-            # Обновляем пароль
-            conn.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_new_password, root_user['id']))
-            
-            # Записываем лог
-            conn.execute(
-                """INSERT INTO password_change_logs (admin_user_id, admin_username, target_user_id, target_username, ip_address) 
-                   VALUES (?, ?, ?, ?, ?)""",
-                (request.current_user['id'], request.current_user['username'], root_user['id'], 'root', request.remote_addr)
-            )
-            conn.commit()
-            return jsonify({'message': "Пароль для 'root' успешно изменен."})
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Произошла ошибка при смене пароля.'}), 500
-        finally:
-            if conn: conn.close()
-
-    @app.route('/api/admin/change-password', methods=['POST'])
-    @auth_required
-    @role_required(['admin'])
-    def change_user_password():
-        data = request.json
-        user_id = data.get('userId')
-        new_password = data.get('newPassword')
-        conn = db.get_db_connection()
-        try:
-            user_to_check = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
-            if not user_to_check:
-                return jsonify({'message': 'Пользователь не найден.'}), 404
-            if user_to_check['username'] == 'root':
-                return jsonify({'message': 'Используйте специальную процедуру для смены пароля root.'}), 403
-
-            hashed_new_password = generate_password_hash(new_password)
-            # Обновляем пароль
-            conn.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_new_password, user_id))
-
-            # Записываем лог
-            conn.execute(
-                """INSERT INTO password_change_logs (admin_user_id, admin_username, target_user_id, target_username, ip_address) 
-                   VALUES (?, ?, ?, ?, ?)""",
-                (request.current_user['id'], request.current_user['username'], user_id, user_to_check['username'], request.remote_addr)
-            )
-            conn.commit()
-            return jsonify({'message': 'Пароль успешно изменен.'})
-        except Exception as e:
-            print(e)
-            return jsonify({'message': 'Произошла ошибка.'}), 500
-        finally:
-            if conn: conn.close()
-
-    @app.route('/api/admin/password-logs', methods=['POST'])
-    @auth_required
-    @role_required(['admin'])
-    def get_password_logs():
-        # ВНИМАНИЕ: Хранение пароля доступа к логам в коде — это небезопасно.
-        LOGS_ACCESS_PASSWORD = '79002891465'
-        
-        data = request.json
-        password = data.get('password')
-
-        if not password or password != LOGS_ACCESS_PASSWORD:
-            return jsonify({'message': 'Access denied.'}), 403
-
-        conn = db.get_db_connection()
-        logs = conn.execute(
-            """
-            SELECT admin_username, target_username, ip_address, timestamp 
-            FROM password_change_logs 
-            ORDER BY timestamp DESC
-            LIMIT 100
-            """
-        ).fetchall()
-        conn.close()
-        return jsonify([dict(row) for row in logs])
-    
-    # =================================================================
-    # == КОНЕЦ НОВЫХ АДМИНСКИХ МАРШРУТОВ ==
-    # =================================================================
-
-
     @app.route('/api/genres')
     def get_genres():
         return jsonify(GENRES)
@@ -574,9 +457,6 @@ def webserver(app,db,dirs):
     def get_xrecomen(user_id):
         conn = db.get_db_connection()
         
-        # --- IMPROVED LOGIC ---
-        
-        # 1. Get tracks the user has liked
         user_favorites = conn.execute("SELECT media_file FROM favorites WHERE user_id = ?", (user_id,)).fetchall()
         favorite_media_files = [row['media_file'] for row in user_favorites]
         
@@ -584,21 +464,17 @@ def webserver(app,db,dirs):
         favorite_track_ids = []
         if favorite_media_files:
             placeholder = ','.join('?' for _ in favorite_media_files)
-            # Immediately get both display data and IDs for exclusion
             you_like_tracks_data = conn.execute(f"SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks WHERE file_name IN ({placeholder}) ORDER BY RANDOM() LIMIT 5", favorite_media_files).fetchall()
             you_like_tracks = [dict(row) for row in you_like_tracks_data]
             favorite_track_ids = [row['id'] for row in you_like_tracks_data]
 
-        # 2. Get tracks the user has listened to frequently (e.g., > 5 times)
         frequently_played = conn.execute("SELECT track_id FROM plays WHERE user_id = ? GROUP BY track_id HAVING COUNT(track_id) > 5", (user_id,)).fetchall()
         frequent_track_ids = [row['track_id'] for row in frequently_played]
 
-        # 3. Collect all track IDs to exclude from recommendations
         exclude_ids = list(set(favorite_track_ids + frequent_track_ids))
         
         xrecomen_track = None
         
-        # 4. Form a query to get random tracks, EXCLUDING unnecessary ones
         base_query = "SELECT id, title, file_name as file, cover_name as cover, type, artist, creator_id, (SELECT username FROM users WHERE id = tracks.creator_id) as creator_name FROM tracks"
         params = []
         
@@ -618,7 +494,6 @@ def webserver(app,db,dirs):
             xrecomen_track = random.choice(you_may_like_tracks)
             you_may_like_tracks = [t for t in you_may_like_tracks if t['id'] != xrecomen_track['id']]
 
-        # Forming "Favorite Selections" (remains unchanged)
         favorite_collections = conn.execute("SELECT c.id, c.name, COUNT(t.id) as track_count FROM categories c JOIN tracks t ON c.id = t.category_id JOIN plays p ON t.id = p.track_id WHERE p.user_id = ? GROUP BY c.id ORDER BY track_count DESC LIMIT 6", (user_id,)).fetchall()
         favorite_collections = [dict(row) for row in favorite_collections]
         
