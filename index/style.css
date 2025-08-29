@@ -906,6 +906,43 @@ body.creator-mode {
     margin-top: 10px;
 }
 
+.player .volume-controls svg {
+    fill: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.player .volume-controls input {
+    width: 150px;
+    height: 6px;
+    background: #4d4d4d;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Исправленные стили для ползунка громкости */
+.player .volume-controls input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.player .volume-controls input[type=range]::-moz-range-thumb {
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
 .creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
     color: var(--creator-text-primary);
 }
@@ -1184,25 +1221,14 @@ body.creator-mode {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Исправленные стили для ползунка громкости */
-.player--default .volume-controls {
+/* Новые стили для ползунка громкости */
+.player .volume-controls {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     width: 100%;
     margin-top: 10px;
-}
-
-.player--copy .volume-controls {
-    order: 4;
-    width: 120px;
-    margin-top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-left: 10px;
 }
 
 .player .volume-controls svg {
@@ -1213,7 +1239,7 @@ body.creator-mode {
 }
 
 .player .volume-controls input {
-    width: 120px;
+    width: 150px;
     height: 6px;
     background: #4d4d4d;
     outline: none;
