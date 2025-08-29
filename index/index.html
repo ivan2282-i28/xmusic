@@ -49,15 +49,7 @@
                         <input type="text" id="searchInput" placeholder="Поиск...">
                     </div>
                     <button class="login-btn" id="loginBtn"><span>Войти</span></button>
-                    <div id="userProfile" style="display: none;">
-                        <div class="profile-avatar">
-                            <span id="profileLetter"></span>
-                        </div>
-                        <div class="profile-info">
-                            <span id="welcomeMessage"></span>
-                            <span id="userRole"></span>
-                        </div>
-                    </div>
+                    <span id="welcomeMessage" style="display: none; margin-left: 20px;"></span>
                 </div>
             </header>
 
@@ -364,6 +356,10 @@
             <h2>Создать категорию</h2>
             <form id="categoryForm">
                 <input type="hidden" id="categoryId" name="categoryId">
+                <div class="form-group">
+                    <label for="categoryName">Название категории</label>
+                    <input type="text" id="categoryName" required>
+                </div>
                 <div class="form-group user-input-wrapper">
                     <label for="userSearchInput">Пользователи, которые могут публиковать</label>
                     <div class="user-input-container">
