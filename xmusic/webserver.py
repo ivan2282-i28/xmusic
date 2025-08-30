@@ -10,10 +10,11 @@ from functools import wraps
 import joblib
 import librosa
 import numpy as np
+from datetime import datetime
 
 from .api.admin import admin_api
 
-def webserver(app,db,dirs):
+def webserver(app, db, dirs):
 
     def auth_required(f):
         @wraps(f)
@@ -44,7 +45,6 @@ def webserver(app,db,dirs):
             return f(*args, **kwargs)
         return decorated
 
-
     def role_required(roless: list):
         def decorator(f):
             @wraps(f)
@@ -55,7 +55,7 @@ def webserver(app,db,dirs):
             return decorated_function
         return decorator
 
-    admin_api(app,db,auth_required,role_required,dirs)   
+    admin_api(app, db, auth_required, role_required, dirs)   
 
     @app.route('/')
     def serve_index():
@@ -209,7 +209,8 @@ def webserver(app,db,dirs):
     @app.route('/api/tracks/best')
     def get_best_tracks():
         conn = db.get_db_connection()
-        tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY t.plays DESC LIMIT 10").fetchall()
+        # Изменено: теперь треки выбираются случайно
+        tracks = conn.execute("SELECT t.id, t.title, t.file_name as file, t.cover_name as cover, t.type, t.plays, t.genre, u.username as creator_name, t.artist, t.category_id FROM tracks t LEFT JOIN users u ON t.creator_id = u.id ORDER BY RANDOM() LIMIT 10").fetchall()
         conn.close()
         return jsonify([dict(row) for row in tracks])
 
@@ -409,6 +410,7 @@ def webserver(app,db,dirs):
 
     @app.route('/api/genres')
     def get_genres():
+        # This endpoint is no longer used, but let's keep it for compatibility
         return jsonify(GENRES)
 
     @app.route('/api/categories')

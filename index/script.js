@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioPlayer = new Audio();
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
+    let currentPlaylist = []; // NEW: Array for the current playback playlist
 
     // --- Paging variables for categories ---
     let currentPage = 1;
@@ -290,21 +291,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchInitialData = async () => {
         try {
-            // Load only the best tracks for the main page to avoid loading everything at once
-            const response = await fetchWithAuth(`${api}/api/tracks/best`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const bestTracks = await response.json();
+            const bestTracksRes = await fetchWithAuth(`${api}/api/tracks/best`);
+            const bestTracks = await bestTracksRes.json();
             
             // Clear allMedia before adding new data
             allMedia = [...bestTracks]; 
             renderBestTracks(bestTracks);
-
+            
+            const allTracksRes = await fetchWithAuth(`${api}/api/tracks?page=1&per_page=${tracksPerPage}`);
+            const allTracks = await allTracksRes.json();
+            
+            allMedia = [...allMedia, ...allTracks.filter(t => !allMedia.some(item => item.id === t.id))];
+            
             if (currentUser) {
                 fetchFavorites();
             }
             fetchXrecomen();
+            
         } catch (error) {
             console.error('Error:', error);
+        }
+    };
+
+    const fetchMoreTracks = async () => {
+        if (isLoading) return;
+        isLoading = true;
+        
+        const url = `${api}/api/tracks?page=${currentPage}&per_page=${tracksPerPage}`;
+        try {
+            const res = await fetchWithAuth(url);
+            const newTracks = await res.json();
+            if (newTracks.length > 0) {
+                // Add new tracks to allMedia, avoiding duplicates
+                const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
+                allMedia.push(...newTracksToAdd);
+                renderMediaInContainer(allGridContainer, newTracksToAdd);
+                currentPage++;
+            }
+        } catch (error) {
+            console.error('Error fetching more tracks:', error);
+        } finally {
+            isLoading = false;
         }
     };
 
@@ -370,22 +397,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (youLikeGrid) {
                 if (data.youLike && data.youLike.length > 0) {
+                    // Update allMedia array with new tracks, avoiding duplicates
+                    const newTracks = data.youLike.filter(t => !allMedia.some(item => item.id === t.id));
+                    allMedia.push(...newTracks);
                     renderMediaInContainer(youLikeGrid, data.youLike);
                 } else {
                     youLikeGrid.innerHTML = '<p>Add tracks to favorites to view.</p>';
                 }
             }
 
-            const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
-            if (bestTracksResponse.ok) {
-                const bestTracks = await bestTracksResponse.json();
-                renderBestTracks(bestTracks);
+            if (favoriteCollectionsGrid) {
+                if (data.favoriteCollections && data.favoriteCollections.length > 0) {
+                     renderAllCategoriesOnMain(favoriteCollectionsGrid, 5);
+                } else {
+                    favoriteCollectionsGrid.innerHTML = '<p>No favorite collections found.</p>';
+                }
             }
 
-            // Render all categories (up to 5) on the main page
-            if (favoriteCollectionsGrid) {
-                renderAllCategoriesOnMain(favoriteCollectionsGrid, 5);
-            }
         } catch (error) {
             console.error('Error fetching recommendations:', error);
             if (xrecomenSection) xrecomenSection.style.display = 'none';
@@ -404,10 +432,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderAllCategoriesOnMain = async (container, limit) => {
-        if (!currentUser) {
-            container.innerHTML = '<p>Log in to your account to view.</p>';
-            return;
-        }
         try {
             const categoriesRes = await fetchWithAuth(`${api}/api/categories`);
             if (!categoriesRes.ok) throw new Error('Error fetching categories.');
@@ -447,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const allTracksCategory = { id: 'all', name: 'All Tracks' };
             const allCategories = [allTracksCategory, ...categoriesData];
             
-            const categoriesToDisplay = allCategories; // Changed to display all categories
+            const categoriesToDisplay = allCategories; 
 
             if (allCategoriesGrid) {
                 allCategoriesGrid.innerHTML = '';
@@ -476,6 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isLoading = true;
         currentCategoryId = categoryId;
         currentPage = 1;
+        allMedia = []; // Clear allMedia for the new category playlist
 
         if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
         mainContent.removeEventListener('scroll', handleScroll);
@@ -502,9 +527,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
             allMedia.push(...newTracksToAdd);
 
-            if (newTracks.length > 0) {
+            if (newTracksToAdd.length > 0) {
                 if (specificCategoryGrid) {
-                    renderMediaInContainer(specificCategoryGrid, newTracks);
+                    renderMediaInContainer(specificCategoryGrid, newTracksToAdd);
                 }
                 currentPage++;
             } else {
@@ -545,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  // Add new tracks to allMedia, avoiding duplicates
                 const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
                 allMedia.push(...newTracksToAdd);
-                renderMediaInContainer(searchResultsGrid, newTracks);
+                renderMediaInContainer(searchResultsGrid, newTracksToAdd);
                 searchCurrentPage++;
             } else {
                 if (searchCurrentPage === 1) { // If it's the first page and there are no results
@@ -566,10 +591,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const { scrollTop, scrollHeight, clientHeight } = mainContent;
         const isNearBottom = scrollTop + clientHeight >= scrollHeight - 500;
 
+        const isHomeViewActive = homeView.classList.contains('active-view');
         const isCategoryViewActive = specificCategoryView.classList.contains('active-view');
         const isSearchViewActive = searchView.classList.contains('active-view');
         
-        if (isCategoryViewActive && isNearBottom && !isLoading) {
+        if (isHomeViewActive && isNearBottom && !isLoading) {
+            fetchMoreTracks();
+        } else if (isCategoryViewActive && isNearBottom && !isLoading) {
             loadMoreTracks();
         } else if (isSearchViewActive && isNearBottom && !searchIsLoading) {
             loadMoreSearchResults();
@@ -701,13 +729,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
             card.dataset.index = trackIndex;
             card.dataset.id = item.id;
+            card.dataset.categoryId = item.category_id; // NEW: Added category ID to card for playlist creation
 
             let cardActionsHtml = '';
             if (currentUser && currentUser.role === 'admin') {
                 cardActionsHtml = `
                     <div class="card-actions">
-                        <button class="rename-btn" data-track-id="${item.id}" title="Rename"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="delete-btn" data-track-id="${item.id}" title="Delete"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                        <button class="rename-btn" data-track-id="${item.id}" title="Rename"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path fill-rule="evenodd" d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
+                        <button class="delete-btn" data-track-id="${item.id}" title="Delete"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                     </div>
                 `;
             }
@@ -726,14 +755,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const playMedia = async (index) => {
-        if (index < 0 || index >= allMedia.length) return;
-        currentTrack = allMedia[index];
+        if (index < 0 || index >= currentPlaylist.length) return;
+        currentTrack = currentPlaylist[index];
 
         hideVideo();
         activeMediaElement.pause();
         activeMediaElement.currentTime = 0;
         currentTrackIndex = index;
-        const item = allMedia[index];
+        const item = currentPlaylist[index];
 
         // Initialize the visualizer on first playback
         initVisualizer();
@@ -1055,6 +1084,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
             fetchXrecomen();
+             // Add scroll handler for home page
+            mainContent.addEventListener('scroll', handleScroll);
         } else if (viewIdToShow === 'searchView') {
             const query = args[0] || '';
             if (viewTitle) viewTitle.textContent = `Search: "${query}"`;
@@ -2034,7 +2065,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (xrecomenBtn) xrecomenBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const index = parseInt(e.currentTarget.dataset.index, 10);
-            if (index >= 0) playMedia(index);
+            const track = allMedia[index];
+            currentPlaylist = allMedia; // Set the entire allMedia array as the playlist
+            currentTrackIndex = allMedia.findIndex(t => t.id === track.id);
+            if (currentTrackIndex !== -1) {
+                playMedia(currentTrackIndex);
+            }
         });
 
         document.body.addEventListener('click', async (e) => {
@@ -2336,9 +2372,35 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Error deleting category.');
                     }
                 }
-            } else if (card && card.dataset.index) {
-                const index = parseInt(card.dataset.index, 10);
-                if (index >= 0) playMedia(index);
+            } else if (card) {
+                 const clickedTrackId = parseInt(card.dataset.id, 10);
+                 const clickedTrackCategoryId = card.dataset.categoryId === 'null' ? null : parseInt(card.dataset.categoryId, 10);
+                 
+                 let playlistToPlay = [];
+                 
+                 // If a specific category is active or search results are being viewed
+                 if (specificCategoryView.classList.contains('active-view')) {
+                     playlistToPlay = allMedia.filter(track => track.category_id === clickedTrackCategoryId);
+                 } else if (searchView.classList.contains('active-view')) {
+                     playlistToPlay = allMedia;
+                 } else { // Home View
+                     if (clickedTrackCategoryId) {
+                         playlistToPlay = allMedia.filter(track => track.category_id === clickedTrackCategoryId);
+                     } else {
+                         // If no category, create a playlist from all tracks on the home page
+                         playlistToPlay = allMedia;
+                     }
+                 }
+                 
+                 // Find the index of the clicked track in the new playlist
+                 const newTrackIndex = playlistToPlay.findIndex(t => t.id === clickedTrackId);
+                 
+                 if (newTrackIndex !== -1) {
+                    currentPlaylist = playlistToPlay;
+                    playMedia(newTrackIndex);
+                 } else {
+                     console.error("Clicked track not found in the new playlist.");
+                 }
             } else if (categoryCard || collectionCard) {
                 const targetCard = categoryCard || collectionCard;
                 const categoryId = targetCard.dataset.categoryId;
@@ -2414,7 +2476,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const togglePlayPause = () => {
             if (activeMediaElement.paused) {
-                if (currentTrackIndex === -1 && allMedia.length > 0) playMedia(0);
+                if (currentTrackIndex === -1 && currentPlaylist.length > 0) playMedia(0);
                 else activeMediaElement.play();
             } else {
                 activeMediaElement.pause();
@@ -2436,11 +2498,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Please log in to add to favorites.');
                 return;
             }
-            if (currentTrackIndex === -1 || !allMedia[currentTrackIndex]) {
+            if (currentTrackIndex === -1 || !currentPlaylist[currentTrackIndex]) {
                 alert('Select a track first.');
                 return;
             }
-            const trackToToggle = allMedia[currentTrackIndex];
+            const trackToToggle = currentPlaylist[currentTrackIndex];
             const isFavorite = userFavorites.includes(trackToToggle.file);
 
             try {
@@ -2500,7 +2562,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const onEnded = () => {
             if (!repeatMode) {
-                const nextIndex = (currentTrackIndex + 1) % allMedia.length;
+                const nextIndex = (currentTrackIndex + 1) % currentPlaylist.length;
                 playMedia(nextIndex);
             }
         };
@@ -2526,10 +2588,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const playNext = () => {
-            if (allMedia.length > 0) playMedia((currentTrackIndex + 1) % allMedia.length);
+            if (currentPlaylist.length > 0) playMedia((currentTrackIndex + 1) % currentPlaylist.length);
         };
         const playPrev = () => {
-            if (allMedia.length > 0) playMedia((currentTrackIndex - 1 + allMedia.length) % allMedia.length);
+            if (currentPlaylist.length > 0) playMedia((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length);
         };
 
         if (nextBtn) nextBtn.addEventListener('click', playNext);
