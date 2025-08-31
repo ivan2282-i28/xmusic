@@ -1,4 +1,5 @@
 import sqlite3
+import os
 # Import functions for hashing from werkzeug
 from werkzeug.security import generate_password_hash
 
@@ -21,7 +22,8 @@ class database():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                role TEXT DEFAULT 'user'
+                role TEXT DEFAULT 'user',
+                refresh_token TEXT
             )
         ''')
         c.execute('''
@@ -91,11 +93,14 @@ class database():
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
             )
         ''')
-        
+
         c.execute("PRAGMA table_info(tracks)")
         columns = [column[1] for column in c.fetchall()]
         if 'duration' not in columns:
-            c.execute("ALTER TABLE tracks ADD COLUMN duration REAL")
+            try:
+                c.execute("ALTER TABLE tracks ADD COLUMN duration REAL")
+            except Exception:
+                pass
 
         c.execute('''
             CREATE TABLE IF NOT EXISTS plays (
@@ -139,20 +144,21 @@ class database():
                 c.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_password, user['id']))
                 print(f"Migrated password for user ID: {user['id']}")
 
-        # === БЛОК УПРАВЛЕНИЯ ПАРОЛЕМ АДМИНИСТРАТОРА 'root' ===
-        admin_password = 'Gamemode1'
-        hashed_admin_password = generate_password_hash(admin_password)
-        
-        c.execute("SELECT id FROM users WHERE username = 'root'")
-        admin_user = c.fetchone()
-        
-        if admin_user:
-            c.execute("UPDATE users SET password = ?, role = 'admin' WHERE username = 'root'", (hashed_admin_password,))
-            print("Пароль для пользователя 'root' был безопасно обновлен.")
+        # ROOT creation/update only from env (secure)
+        root_password_env = os.getenv('ROOT_PASSWORD')
+        if root_password_env:
+            hashed_admin_password = generate_password_hash(root_password_env)
+            c.execute("SELECT id FROM users WHERE username = 'root'")
+            admin_user = c.fetchone()
+            if admin_user:
+                c.execute("UPDATE users SET password = ?, role = 'admin' WHERE username = 'root'", (hashed_admin_password,))
+                print("Пароль для пользователя 'root' был обновлен из переменной окружения.")
+            else:
+                c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                          ('root', hashed_admin_password, 'admin'))
+                print("Пользователь 'root' создан с паролем из переменной окружения.")
         else:
-            c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
-                      ('root', hashed_admin_password, 'admin'))
-            print("Пользователь 'root' создан с безопасным паролем.")
+            print("ROOT_PASSWORD not set — skipping automatic root creation/update.")
 
         conn.commit()
         conn.close()
