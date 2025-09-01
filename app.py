@@ -7,6 +7,8 @@ import joblib
 import librosa
 import numpy as np
 from .webserver import webserver
+import logging
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
@@ -15,17 +17,16 @@ CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 # Настройка директорий
-
 BASE_DIR = os.path.abspath(os.path.curdir)
 
 dirs = {
-    "BASE_DIR" : os.path.abspath(os.path.curdir),
-    "MUSIC_DIR" : os.path.join(BASE_DIR, 'music'),
-    "FON_DIR" : os.path.join(BASE_DIR, 'fon'),
-    "VIDEO_DIR" : os.path.join(BASE_DIR, 'video'),
-    "TEMP_UPLOAD_DIR" : os.path.join(BASE_DIR, 'temp_uploads'),
-    "INDEX_DIR" : os.path.join(BASE_DIR, 'index'),
-    "MODEL_PATH" : os.path.join(BASE_DIR, 'music_genre_model.pkl'),
+    "BASE_DIR": os.path.abspath(os.path.curdir),
+    "MUSIC_DIR": os.path.join(BASE_DIR, 'music'),
+    "FON_DIR": os.path.join(BASE_DIR, 'fon'),
+    "VIDEO_DIR": os.path.join(BASE_DIR, 'video'),
+    "TEMP_UPLOAD_DIR": os.path.join(BASE_DIR, 'temp_uploads'),
+    "INDEX_DIR": os.path.join(BASE_DIR, 'index'),
+    "MODEL_PATH": os.path.join(BASE_DIR, 'music_genre_model.pkl'),
 }
 
 # Создание директорий, если они не существуют
@@ -37,7 +38,7 @@ for directory in dirs.items():
 # Загрузка модели ИИ
 try:
     with open(dirs["MODEL_PATH"], 'rb') as model_file:
-        model = joblib.load(model_file)  # Заменено pickle на joblib
+        model = joblib.load(model_file)
 except FileNotFoundError:
     model = None
     print(f"Model file not found at {dirs['MODEL_PATH']}. AI genre detection will not be available.")
@@ -45,10 +46,8 @@ except Exception as e:
     model = None
     print(f"Failed to load the model: {e}. AI genre detection will not be available.")
 
-
 # Определение списка жанров
 GENRES = ['блюз', 'джас', 'диско', 'инди', 'кантри', 'метал', 'поп', 'регги', 'рок', 'рэп', 'соул', 'техно', 'трэп', 'фонк', 'хаус', 'Хип-хоп', 'электронная', 'эмбиент']
-
 
 def extract_features(file_path):
     y, sr = librosa.load(file_path, mono=True, duration=30)
@@ -63,7 +62,6 @@ def extract_features(file_path):
     ))
     return features.reshape(1, -1)
 
-
 # Настройка базы данных
 db = database(os.path.join(BASE_DIR, 'database.db'))
 
@@ -75,7 +73,32 @@ app.config['UPLOAD_FOLDER'] = {
     'temp_uploads': dirs["TEMP_UPLOAD_DIR"]
 }
 
-webserver(app,db,dirs)
+# --- НАЧАЛО: НАСТРОЙКА ЛОГИРОВАНИЯ ---
+log_file = os.path.join(dirs["BASE_DIR"], 'access.log')
+file_handler = RotatingFileHandler(log_file, maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '[%(asctime)s] %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+
+@app.before_request
+def log_request_info():
+    app.logger.info(f"User Request: {request.remote_addr} - {request.method} {request.path}")
+    if request.is_json:
+        try:
+            # Для предотвращения ошибок при логировании больших файлов (например, загрузка треков)
+            # можно ограничить размер выводимых данных
+            json_data = request.get_json(silent=True)
+            app.logger.info(f"JSON data: {json_data}")
+        except Exception as e:
+            app.logger.error(f"Error logging JSON data: {e}")
+    elif request.form:
+        app.logger.info(f"Form data: {request.form.to_dict()}")
+# --- КОНЕЦ: НАСТРОЙКА ЛОГИРОВАНИЯ ---
+
+webserver(app, db, dirs)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000, debug=True)
