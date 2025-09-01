@@ -1,307 +1,155 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>XMusic — обновлённый интерфейс</title>
-
-    <!-- External styles / scripts preserved so your existing style.css and script.js still work -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XMusic</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Small inline critical CSS (lightweight tweaks so index looks reasonable even before style.css loads) -->
-    <style>
-        :root{--accent:#9147FF}
-        html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial}
-        /* keep minimal: actual styling in style.css */
-    </style>
 </head>
 <body>
-    <!--
-        Обновлённый index.html — цель:
-        - Сохранить все id и классы, которые уже используются в script.js,
-          чтобы существующая логика не ломалась.
-        - Добавить дополнительные блоки/структуру и семантику, чтобы дизайн
-          можно было улучшить в style.css (новые секции, больше карточек, коллекций).
-        - Встроенные aria-атрибуты и улучшения доступности.
-    -->
-
-    <!-- VIDEO BACKGROUND (можно включать/отключать в настройках) -->
-    <div class="video-background-container" id="videoBackgroundContainer" aria-hidden="true">
-        <video id="backgroundVideo" loop muted playsinline></video>
-        <!-- Decorative overlay for visual depth -->
-        <div class="bg-overlay" aria-hidden="true"></div>
+    <div class="video-background-container" id="videoBackgroundContainer">
+        <video id="backgroundVideo" loop></video>
     </div>
 
-    <!-- APP LAYOUT: Sidebar + Main -->
-    <div class="app-container" role="application" aria-label="XMusic application">
-
-        <!-- SIDEBAR -->
-        <aside class="sidebar" role="navigation" aria-label="Main sidebar">
-            <div class="sidebar-top">
-                <div class="brand">
-                    <div class="logo" id="xmusicLogo" title="XMusic">XMusic</div>
-                    <div class="logo-small" id="xcreatorLogo" title="XCreator" style="display:none;">XCreator</div>
-                </div>
-
-                <!-- User quick controls (mobile / small screens appear differently via CSS) -->
-                <div class="sidebar-controls">
-                    <nav class="main-nav" id="xmusicNav" aria-label="Primary">
-                        <a href="#" id="navHome" class="nav-link active" role="button" aria-pressed="true">
-                            <span class="nav-icon" aria-hidden="true">🏠</span>
-                            <span class="nav-text">Главная</span>
-                        </a>
-                        <a href="#" id="navCategories" class="nav-link" role="button">
-                            <span class="nav-icon" aria-hidden="true">📂</span>
-                            <span class="nav-text">Категории</span>
-                        </a>
-                        <a href="#" id="navFavorites" class="nav-link" style="display:none" role="button">
-                            <span class="nav-icon" aria-hidden="true">💖</span>
-                            <span class="nav-text">Избранное</span>
-                        </a>
-                        <button class="nav-link" id="creatorStudioBtn" style="display:none" aria-haspopup="true">
-                            <span class="nav-icon" aria-hidden="true">🎛️</span>
-                            <span class="nav-text">Creator Studio</span>
-                        </button>
-                        <button class="nav-link" id="settingsBtn" aria-haspopup="true">
-                            <span class="nav-icon" aria-hidden="true">⚙️</span>
-                            <span class="nav-text">Настройки</span>
-                        </button>
-                    </nav>
-
-                    <!-- Creator navigation (hidden by default) -->
-                    <nav class="main-nav" id="xcreatorNav" style="display:none" aria-label="Creator navigation">
-                        <a class="go-back-btn" id="backToXMusicBtn" role="button" aria-label="Back to XMusic">← Назад в XMusic</a>
-                        <a class="creator-nav-btn" id="creatorHomeBtn" style="display:none">Главная</a>
-                        <a class="creator-nav-btn" id="myTracksBtn" style="display:none">Мои треки</a>
-                        <a class="creator-nav-btn" id="analyticsBtn" style="display:none">Аналитика</a>
-                        <!-- Admin specific -->
-                        <a class="creator-nav-btn admin-section" id="adminApplicationsBtn" style="display:none">Заявки в Creator</a>
-                        <a class="creator-nav-btn admin-section" id="adminUsersBtn" style="display:none">Аккаунты</a>
-                        <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display:none">На модерации</a>
-                        <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display:none">Статистика</a>
-                        <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display:none">Категории</a>
-                        <a class="creator-nav-btn admin-section" id="adminLogsBtn" style="display:none">Логи</a>
-                    </nav>
-                </div>
-            </div>
-
-            <!-- Footer area: profile / login button -->
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo" id="xmusicLogo">XMusic</div>
+            <div class="logo" id="xcreatorLogo" style="display: none;">XCreator</div>
+            <nav class="main-nav" id="xmusicNav">
+                <a href="#" id="navHome" class="nav-link active"><span>Главная</span></a>
+                <a href="#" id="navCategories" class="nav-link"><span>Категории</span></a>
+                <a href="#" id="navFavorites" class="nav-link" style="display: none;"><span>Избранное</span></a>
+                <a class="nav-link" id="creatorStudioBtn" style="display: none;"><span>Creator Studio</span></a>
+                <a class="nav-link" id="settingsBtn"><span>Настройки</span></a>
+            </nav>
+            <nav class="main-nav" id="xcreatorNav" style="display: none;">
+                <a class="go-back-btn" id="backToXMusicBtn"><span>&#8592; Назад в XMusic</span></a>
+                <a class="creator-nav-btn active" id="creatorHomeBtn" style="display: none;"><span>Главная</span></a>
+                <a class="creator-nav-btn" id="myTracksBtn" style="display: none;"><span>Мои треки</span></a>
+                <a class="creator-nav-btn" id="analyticsBtn" style="display: none;"><span>Аналитика</span></a>
+                <a class="creator-nav-btn admin-section" id="adminApplicationsBtn" style="display: none;"><span>Заявки в Creator</span></a>
+                <a class="creator-nav-btn admin-section" id="adminUsersBtn" style="display: none;"><span>Аккаунты</span></a>
+                <a class="creator-nav-btn admin-section" id="adminModerationBtn" style="display: none;"><span>Треки на модерации</span></a>
+                <a class="creator-nav-btn admin-section" id="adminStatsBtn" style="display: none;"><span>Статистика</span></a>
+                <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
+                <a class="creator-nav-btn admin-section" id="adminLogsBtn" style="display: none;"><span>Логи</span></a>
+            </nav>
             <div class="sidebar-footer">
-                <div class="user-profile" id="userProfile" style="display:none" aria-hidden="false">
-                    <div class="user-info-container" role="region" aria-label="User information">
-                        <div class="user-avatar" id="userAvatar" aria-hidden="false"></div>
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <div class="user-info-container">
+                        <div class="user-avatar" id="userAvatar"></div>
                         <div class="user-text">
                             <span id="welcomeMessage" class="welcome-message"></span>
                             <span id="userRole" class="user-role"></span>
                         </div>
                     </div>
-                    <div class="user-actions">
-                        <button class="logout-btn" id="logoutBtn" style="display:none">Выйти</button>
-                    </div>
+                    <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
                 </div>
-
-                <div class="auth-actions" id="authActions">
-                    <button class="login-btn" id="loginBtn">Войти</button>
-                </div>
+                <button class="login-btn" id="loginBtn"><span>Войти</span></button>
             </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
-        <main class="main-content" role="main" aria-live="polite">
-
-            <!-- Header / top controls -->
-            <header class="main-header" role="banner">
-                <div class="header-left">
-                    <h1 id="viewTitle">Главная</h1>
-                    <div class="header-subtitle">Добро пожаловать в XMusic — слушай, создавай, делись</div>
-                </div>
-
+        <main class="main-content">
+            <header class="main-header">
+                <h1 id="viewTitle">Главная</h1>
                 <div class="header-controls">
-                    <div class="search-bar-wrapper" role="search" aria-label="Search tracks and artists">
-                        <input type="text" id="searchInput" placeholder="Поиск трека или исполнителя..." aria-label="Поиск">
-                    </div>
-
-                    <div class="header-buttons">
-                        <button id="openUploadBtn" class="icon-btn" title="Загрузить" aria-label="Upload">⬆️</button>
-                        <button id="openSettingsBtn" class="icon-btn" title="Настройки" aria-label="Settings">⚙️</button>
+                    <div class="search-bar-wrapper">
+                        <input type="text" id="searchInput" placeholder="Поиск трека или исполнителя...">
                     </div>
                 </div>
             </header>
 
-            <!-- VIEWS: HOME, SEARCH, CATEGORIES, SPECIFIC CATEGORY, FAVORITES, CREATOR -->
-            <section id="homeView" class="view active-view" aria-labelledby="viewTitle">
-
-                <!-- XRECOMEN / Now Playing hero -->
-                <section class="section xrecomen-section" id="xrecomenSection" aria-label="Recommendation">
-                    <div class="xrecomen-left">
-                        <div class="xrecomen-card" role="button" id="xrecomenBtn" aria-pressed="false">
-                            <div class="xrecomen-meta">
-                                <span class="xrecomen-title">Xrecomen</span>
-                                <span class="xrecomen-subtitle">Возможно, вам понравится</span>
-                            </div>
-                            <div class="xrecomen-cover">
-                                <img id="xrecomenCoverPreview" src="/fon/default.png" alt="Xrecomen cover" onerror="this.src='/fon/default.png'">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="xrecomen-right">
-                        <p id="nowPlayingText" class="now-playing-text" aria-live="polite"></p>
-
-                        <div class="equalizer" id="equalizer" aria-hidden="true">
-                            <!-- 20 bars -->
-                            <div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div>
-                            <div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div>
-                            <div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div>
-                            <div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div>
-                        </div>
-
-                        <div class="xrecomen-actions">
-                            <button id="xrecomenPlay" class="btn-primary">Воспроизвести</button>
-                            <button id="xrecomenShuffle" class="btn-ghost">Перемешать</button>
-                        </div>
+            <div id="homeView" class="view active-view">
+                <section class="section xrecomen-section" id="xrecomenSection">
+                    <p id="nowPlayingText" class="now-playing-text"></p>
+                    <button id="xrecomenBtn">
+                        <span class="xrecomen-title">Xrecomen</span>
+                        <span class="xrecomen-subtitle">Возможно, вам понравится</span>
+                    </button>
+                    <div class="equalizer" id="equalizer">
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div>
                     </div>
                 </section>
-
-                <!-- "Вам нравятся" horizontal scroll -->
                 <section class="section" id="youLikeSection">
                     <h2 class="section-title">Вам нравятся</h2>
-                    <div class="scroll-container" id="youLikeGrid" tabindex="0" aria-label="Tracks you might like">
-                        <!-- Cards dynamically inserted by script.js -->
-                    </div>
+                    <div class="scroll-container" id="youLikeGrid"></div>
                 </section>
-
-                <!-- "Лучшее" carousel / horizontal -->
                 <section class="section">
                     <h2 class="section-title">Лучшее</h2>
-                    <div class="scroll-container" id="allGridContainer" aria-label="Top tracks">
-                        <!-- Cards dynamically inserted by script.js -->
-                    </div>
+                    <div class="scroll-container" id="allGridContainer"></div>
                 </section>
-
-                <!-- "Коллекции" -->
-                <section class="section" id="collectionsSection">
-                    <h2 class="section-title">Подборки</h2>
-                    <div class="collections-grid" id="favoriteCollectionsGrid" aria-label="Favorite collections">
-                        <!-- Example placeholder collection cards (script will replace) -->
-                        <div class="collection-card" data-category-id="relax">
-                            <h3>Chill Vibes</h3>
-                            <p class="small">Лёгкая подборка для релакса</p>
-                        </div>
-                        <div class="collection-card" data-category-id="party">
-                            <h3>Party Hits</h3>
-                            <p class="small">Треки для поднятия настроения</p>
-                        </div>
-                        <div class="collection-card" data-category-id="focus">
-                            <h3>Focus Beats</h3>
-                            <p class="small">Для работы и концентрации</p>
-                        </div>
-                    </div>
+                <section class="section" id="favoriteCollectionsSection">
+                    <h2 class="section-title">Ваши любимые подборки</h2>
+                    <div class="scroll-container" id="favoriteCollectionsGrid"></div>
                 </section>
-
-                <!-- Additional discovery area with genre chips and mood picker -->
-                <section class="section discovery-section" aria-label="Discovery">
-                    <div class="discovery-left">
-                        <h3 class="subheading">Настроение</h3>
-                        <div class="mood-chips" role="list">
-                            <button class="mood-chip" data-mood="happy" role="listitem">Весело</button>
-                            <button class="mood-chip" data-mood="calm" role="listitem">Спокойно</button>
-                            <button class="mood-chip" data-mood="energetic" role="listitem">Энергично</button>
-                            <button class="mood-chip" data-mood="romantic" role="listitem">Романтика</button>
-                            <button class="mood-chip" data-mood="workout" role="listitem">Тренировка</button>
-                        </div>
-                    </div>
-
-                    <div class="discovery-right">
-                        <h3 class="subheading">Жанры</h3>
-                        <div class="genre-grid" id="genreGrid">
-                            <!-- genres will be fetched by script.js (/api/genres) and rendered here -->
-                            <div class="genre-card" data-genre="поп">Поп</div>
-                            <div class="genre-card" data-genre="рок">Рок</div>
-                            <div class="genre-card" data-genre="электронная">Электронная</div>
-                            <div class="genre-card" data-genre="джаз">Джаз</div>
-                            <div class="genre-card" data-genre="хип-хоп">Хип-хоп</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Long list preview (first page) - useful for lazy loading -->
-                <section class="section" id="previewListSection" aria-label="Preview list">
-                    <h2 class="section-title">Последние добавленные</h2>
-                    <div class="grid-list" id="previewList">
-                        <!-- script.js will append simplified preview cards for quick browsing -->
-                    </div>
-                </section>
-            </section>
-
-            <!-- SEARCH VIEW -->
-            <section id="searchView" class="view" aria-hidden="true">
+            </div>
+            
+            <div id="searchView" class="view">
                 <h2 class="section-title" id="searchResultsTitle">Результаты поиска</h2>
-                <div class="grid-container" id="searchResultsGrid" aria-live="polite"></div>
-                <div class="search-empty" id="searchEmpty" style="display:none">Ничего не найдено</div>
-            </section>
+                <div class="grid-container" id="searchResultsGrid"></div>
+            </div>
 
-            <!-- CATEGORIES -->
-            <section id="categoriesView" class="view" aria-hidden="true">
+            <div id="categoriesView" class="view">
                 <section class="section">
                     <h2 class="section-title">Категории</h2>
-                    <div class="grid-container" id="allCategoriesGrid" aria-label="All categories">
+                    <div class="grid-container" id="allCategoriesGrid">
                         <div class="category-card" data-category-id="all">
                             <h3>Все треки</h3>
-                            <p class="small">Вся медиатека</p>
                         </div>
                     </div>
                 </section>
-
-                <section class="section" style="display:none">
+                <section class="section" style="display: none">
                     <h2 class="section-title">Кастомные категории</h2>
                     <div class="grid-container" id="customCategoriesGrid"></div>
                 </section>
-            </section>
-
-            <!-- SPECIFIC CATEGORY VIEW -->
-            <section id="specificCategoryView" class="view" aria-hidden="true">
-                <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn" aria-label="Back">← К категориям</button>
+            </div>
+            
+            <div id="specificCategoryView" class="view">
+                <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn"><span>&#8592; К категориям</span></button>
                 <h2 class="section-title" id="specificCategoryTitle">Название категории</h2>
-                <div class="grid-container" id="specificCategoryGrid" aria-live="polite"></div>
-            </section>
+                <div class="grid-container" id="specificCategoryGrid"></div>
+            </div>
 
-            <!-- FAVORITES -->
-            <section id="favoritesView" class="view" aria-hidden="true">
-                <h2 class="section-title">Избранное</h2>
-                <div class="grid-container" id="favoritesGridContainer" aria-live="polite"></div>
-            </section>
+            <div id="favoritesView" class="view">
+                <div class="grid-container" id="favoritesGridContainer"></div>
+            </div>
 
-            <!-- CREATOR HUB -->
-            <section id="creatorView" class="view" aria-hidden="true">
-                <div id="creatorHomeSection" class="creator-main-section" role="region" aria-label="Creator home">
+            <div id="creatorView" class="view">
+                <div id="creatorHomeSection" class="creator-main-section">
                     <div class="creator-main-screen">
                         <h2>Добро пожаловать в XCreator Studio</h2>
-                        <p>Публикуй свои треки, следи за статистикой и взаимодействуй с аудиторией.</p>
-                        <p>Чтобы публиковать треки — подай заявку на Creator.</p>
+                        <p>Здесь вы можете опубликовать свои творения и наблюдать за ними.</p>
+                        <p>Чтобы публиковать треки, подайте заявку.</p>
                         <button class="apply-btn" id="applyBtn">Подать заявку</button>
                     </div>
                 </div>
-
-                <div id="myTracksSection" class="creator-main-section" style="display:none">
-                    <div class="my-tracks-header">
-                        <button class="submit-btn" id="uploadTrackBtn">Загрузить трек</button>
-                        <div class="my-tracks-filters">
-                            <select id="myTracksFilter">
-                                <option value="">Все</option>
-                                <option value="audio">Аудио</option>
-                                <option value="video">Видео</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="myTracksGrid" class="grid-container"></div>
+                <div id="myTracksSection" class="creator-main-section" style="display: none;">
+                    <button class="submit-btn" id="uploadTrackBtn">Загрузить трек</button>
                 </div>
-
-                <div id="analyticsSection" class="creator-main-section" style="display:none">
+                <div id="analyticsSection" class="creator-main-section" style="display: none;">
                     <h2>Ваша статистика</h2>
                     <div class="analytics-container">
                         <div class="analytics-block">
@@ -310,86 +158,99 @@
                         </div>
                         <div class="analytics-block">
                             <h3>Прослушивания за последние 7 дней</h3>
-                            <div class="chart-container"><canvas id="analyticsChart"></canvas></div>
+                            <div class="chart-container">
+                                <canvas id="analyticsChart"></canvas>
+                            </div>
                         </div>
                         <div class="analytics-block">
-                            <h3>Топ-5</h3>
+                            <h3>Топ-5 популярных треков</h3>
                             <table class="analytics-table">
-                                <thead><tr><th>Трек</th><th>Прослушивания</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th>Трек</th>
+                                        <th>Прослушивания</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="analyticsTrackTableBody"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-
-                <!-- Admin sections -->
-                <div id="adminApplicationsSection" class="creator-main-section" style="display:none">
+                <div id="adminApplicationsSection" class="creator-main-section" style="display: none;">
                     <h2 class="section-title">Заявки в Creator</h2>
                     <div id="applicationsList"></div>
                 </div>
-
-                <div id="adminUsersSection" class="creator-main-section" style="display:none">
+                <div id="adminUsersSection" class="creator-main-section" style="display: none;">
                     <h2 class="section-title">Аккаунты</h2>
                     <div id="usersList"></div>
                 </div>
-
-                <div id="adminModerationSection" class="creator-main-section" style="display:none">
+                <div id="adminModerationSection" class="creator-main-section" style="display: none;">
                     <h2 class="section-title">Треки на модерации</h2>
                     <div id="moderationTracksList" class="grid-container"></div>
                 </div>
-
-                <div id="adminStatsSection" class="creator-main-section" style="display:none">
-                    <div class="stats-grid" id="statsContent"></div>
+                <div id="adminStatsSection" class="creator-main-section" style="display: none;">
+                    <div class="stats-grid" id="statsContent">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Всего пользователей</span>
+                                <span class="stat-card-icon">👤</span>
+                            </div>
+                            <p class="stat-card-value" id="adminTotalUsers">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Треков в медиатеке</span>
+                                <span class="stat-card-icon">🎵</span>
+                            </div>
+                            <p class="stat-card-value" id="adminTotalTracks">0</p>
+                        </div>
+                    </div>
                 </div>
-
-                <div id="adminCategoriesSection" class="creator-main-section" style="display:none">
+                <div id="adminCategoriesSection" class="creator-main-section" style="display: none;">
                     <div class="admin-section-header">
                         <h2 class="section-title">Управление категориями</h2>
-                        <button class="submit-btn create-category-btn" id="createCategoryBtn">Создать категорию</button>
+                        <button class="submit-btn create-category-btn" id="createCategoryBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                            <span>Создать категорию</span>
+                        </button>
                     </div>
-                    <div class="categories-management-list" id="adminCategoriesList"></div>
+                    <div class="categories-management-list" id="adminCategoriesList">
+                        </div>
                 </div>
-
-                <div id="adminLogsSection" class="creator-main-section" style="display:none">
+                <div id="adminLogsSection" class="creator-main-section" style="display: none;">
                     <h2 class="section-title">Логи смены паролей</h2>
                     <div class="logs-container">
                         <table class="analytics-table">
-                            <thead><tr><th>Когда</th><th>Кто (Админ)</th><th>Кому</th><th>IP</th></tr></thead>
-                            <tbody id="passwordLogsTableBody"></tbody>
+                            <thead>
+                                <tr>
+                                    <th>Когда</th>
+                                    <th>Кто (Админ)</th>
+                                    <th>Кому (Цель)</th>
+                                    <th>IP Адрес</th>
+                                </tr>
+                            </thead>
+                            <tbody id="passwordLogsTableBody">
+                                </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
-
-            <!-- Additional informational footer area (in content) -->
-            <footer class="app-footer" aria-label="Application footer">
-                <div class="footer-inner">
-                    <div class="footer-left">
-                        <small>© XMusic — все права защищены.</small>
-                    </div>
-                    <div class="footer-right">
-                        <a href="#" class="footer-link">Помощь</a>
-                        <a href="#" class="footer-link">Политика конфиденциальности</a>
-                        <a href="#" class="footer-link">Контакты</a>
-                    </div>
-                </div>
-            </footer>
+            </div>
         </main>
     </div>
 
-    <!-- PLAYER (kept original ids and structure so script.js continues to work) -->
-    <div class="player" id="player" role="region" aria-label="Player">
+    <div class="player">
+        
         <div class="player-style-default">
             <div class="player-header">
                 <div class="track-info">
-                    <img src="default.svg" alt="Track Art" id="playerCover" onerror="this.src='/fon/default.png'">
+                    <img src="default.svg" alt="Track Art" id="playerCover">
                     <div>
                         <span class="title" id="playerTitle">Выберите медиа</span>
                         <span class="artist" id="playerArtist"></span>
                     </div>
                 </div>
             </div>
-
+            
             <div class="control-buttons-and-progress">
                 <div class="control-buttons">
                     <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор">
@@ -400,16 +261,18 @@
                     </button>
                     <button class="play-button" id="playPauseBtn" title="Воспроизвести">
                         <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <svg id="pauseIcon" style="display:none" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                        <svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                     </button>
                     <button id="nextBtn" class="control-btn" title="Вперед">
                         <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
                     </button>
                     <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">
-                        <svg viewBox="0 0 24 24" class="feather-heart"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-heart">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
                     </button>
                 </div>
-
+                
                 <div class="progress-bar">
                     <span id="currentTime">0:00</span>
                     <div class="progress-bar-container">
@@ -419,64 +282,64 @@
                     </div>
                     <span id="duration">0:00</span>
                 </div>
-
+                
                 <div class="volume-controls">
-                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
-                    <input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1" />
+                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1">
                 </div>
             </div>
         </div>
 
-        <div class="player-style-copy" style="display:none">
+        <div class="player-style-copy" style="display: none;">
             <div class="copy-player-body">
                 <div class="copy-track-info">
-                    <img src="default.svg" alt="Track Art" id="copyPlayerCover" onerror="this.src='/fon/default.png'">
+                    <img src="default.svg" alt="Track Art" id="copyPlayerCover">
                     <div class="copy-track-text">
                         <span class="title" id="copyPlayerTitle">Выберите медиа</span>
                         <span class="artist" id="copyPlayerArtist"></span>
                     </div>
                 </div>
                 <div class="copy-main-controls">
-                    <button id="copyPrevBtn" class="control-btn" title="Назад"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                    <button id="copyPrevBtn" class="control-btn" title="Назад">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
                     <button class="play-button" id="copyPlayPauseBtn" title="Воспроизвести">
                         <svg id="copyPlayIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <svg id="copyPauseIcon" style="display:none" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                        <svg id="copyPauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                     </button>
-                    <button id="copyNextBtn" class="control-btn" title="Вперед"><svg viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg></button>
+                    <button id="copyNextBtn" class="control-btn" title="Вперед">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
+                    </button>
                 </div>
-
                 <div class="copy-secondary-controls">
-                    <button id="copyFavoriteBtn" class="control-btn" title="Добавить в избранное">
-                        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                     <button id="copyFavoriteBtn" class="control-btn" title="Добавить в избранное">
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                     <div class="copy-volume-controls">
-                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                         <input type="range" id="copyVolumeBar" min="0" max="1" step="0.01" value="1">
                     </div>
                 </div>
             </div>
-
             <div class="copy-progress-bar-container">
                 <div class="copy-progress-filled"></div>
             </div>
         </div>
     </div>
-
-    <!-- VIDEO MODAL -->
-    <div id="videoModal" class="video-modal" style="display:none" aria-hidden="true" role="dialog" aria-modal="true">
+    
+    <div id="videoModal" class="video-modal" style="display: none;">
         <div class="video-modal-content">
-            <button class="close-btn" id="closeVideoBtn" aria-label="Close video">&times;</button>
-            <video id="videoPlayerModal" controls playsinline></video>
+            <button class="close-btn" id="closeVideoBtn">&times;</button>
+            <video id="videoPlayerModal" controls></video>
         </div>
     </div>
-
-    <!-- MODERATION MODAL -->
-    <div id="moderationModal" class="moderation-modal" style="display:none" role="dialog" aria-modal="true">
+    
+    <div id="moderationModal" class="moderation-modal" style="display: none;">
         <div class="modal-content">
-            <button class="close-btn" id="closeModerationBtn" aria-label="Close moderation">&times;</button>
+            <button class="close-btn" id="closeModerationBtn">&times;</button>
             <h2>Проверка трека</h2>
             <div class="moderation-info">
-                <img id="moderationPlayerCover" src="/fon/default.png" alt="Обложка" onerror="this.src='/fon/default.png'">
+                <img id="moderationPlayerCover" src="default.svg" alt="Обложка">
                 <h3 id="moderationTitle">Название</h3>
                 <p id="moderationArtist">Исполнитель:</p>
             </div>
@@ -489,19 +352,18 @@
         </div>
     </div>
 
-    <!-- UPLOAD MODAL (full original structure preserved) -->
-    <div id="uploadModal" class="modal" style="display:none" role="dialog" aria-modal="true">
+    <div id="uploadModal" class="modal">
         <div class="modal-content upload-modal-container">
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2 class="upload-modal-title">Загрузить медиа</h2>
             <p class="upload-modal-subtitle">Ваш трек будет отправлен на модерацию.</p>
-
-            <form id="uploadForm" enctype="multipart/form-data">
+            
+            <form id="uploadForm">
                 <div class="upload-modal-body">
                     <div class="upload-area">
                         <div class="upload-box cover-upload-box" id="coverDropArea">
                             <div class="upload-box-content">
-                                <img src="" alt="Предпросмотр обложки" class="cover-preview" id="coverPreview" style="display:none">
+                                <img src="" alt="Предпросмотр обложки" class="cover-preview" id="coverPreview" style="display: none;">
                                 <div class="upload-box-placeholder" id="coverPlaceholder">
                                     <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16"><path d="M4.502 9.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm3.25 1.75a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/><path d="M10.804 8.443a.5.5 0 0 0 .083.58l.519.519a.5.5 0 0 0 .58.083l3.204-2.204a.5.5 0 0 0 0-.816l-3.204-2.204a.5.5 0 0 0-.58.083l-.519.519a.5.5 0 0 0-.083.58l1.454 1.054-1.454 1.054zm-9.3-1.63a.5.5 0 0 0-.083.58l.519.519a.5.5 0 0 0 .58.083l3.204-2.204a.5.5 0 0 0 0-.816L1.98 4.414a.5.5 0 0 0-.58.083l-.519.519a.5.5 0 0 0-.083.58l1.454 1.054-1.454 1.054z"/></svg>
                                     <p><b>Перетащите файл обложки</b></p>
@@ -511,7 +373,6 @@
                             </div>
                             <input type="file" id="coverFile" name="coverFile" accept="image/*" required hidden>
                         </div>
-
                         <div class="upload-box media-upload-box" id="mediaDropArea">
                             <div class="upload-box-content">
                                 <div class="upload-box-placeholder" id="mediaPlaceholder">
@@ -525,48 +386,39 @@
                             <input type="file" id="videoFile" name="videoFile" accept="video/*" hidden>
                         </div>
                     </div>
-
                     <div class="upload-form-fields">
                         <div class="upload-type-selector">
                             <label><input type="radio" name="uploadType" value="audio" checked><span>Аудио</span></label>
                             <label><input type="radio" name="uploadType" value="video"><span>Видео</span></label>
                         </div>
-
                         <div class="form-group"><label for="trackTitle">Название</label><input type="text" id="trackTitle" name="title" required></div>
-
                         <div class="form-group">
                             <label for="categorySelect">Категория</label>
                             <select id="categorySelect" name="categoryId"></select>
                         </div>
-
                         <div class="form-group">
                             <label class="checkbox-label"><input type="checkbox" id="isForeignArtist"><span>Сторонний исполнитель</span></label>
-                            <div id="artistFields" style="display:none">
+                            <div id="artistFields" style="display: none;">
                                 <label for="foreignArtistName">Имя исполнителя</label>
                                 <input type="text" id="foreignArtistName" name="artist">
                             </div>
                         </div>
-
                         <div id="uploadManager">
                             <p id="uploadStatusText">Ожидание...</p>
                             <div class="upload-status-bar">
-                                <div class="upload-progress-fill" style="width:0%"></div>
+                                <div class="upload-progress-fill" style="width: 0;"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <button type="submit" class="submit-btn" id="uploadSubmitBtn">Отправить на модерацию</button>
             </form>
         </div>
     </div>
-
-    <!-- SETTINGS MODAL -->
-    <div id="settingsModal" class="modal" style="display:none" role="dialog" aria-modal="true">
+    <div id="settingsModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2>Настройки</h2>
-
             <div class="form-group">
                 <label for="blurToggle">Фоновое размытие</label>
                 <label class="switch">
@@ -574,7 +426,6 @@
                     <span class="slider round"></span>
                 </label>
             </div>
-
             <div class="form-group">
                 <label for="opacitySlider">Непрозрачность интерфейса</label>
                 <div class="slider-wrapper">
@@ -582,7 +433,6 @@
                     <span id="opacityValue">50%</span>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Стиль плеера</label>
                 <div class="player-style-selector">
@@ -590,13 +440,11 @@
                     <button class="style-btn" data-style="copy">Copy</button>
                 </div>
             </div>
-
-            <button class="logout-btn" id="logoutBtnSettings" style="display:none">Выйти</button>
+            <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
         </div>
     </div>
 
-    <!-- LOGIN MODAL -->
-    <div id="loginModal" class="modal" style="display:none" role="dialog" aria-modal="true">
+    <div id="loginModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2>Вход</h2>
@@ -609,8 +457,7 @@
         </div>
     </div>
 
-    <!-- REGISTER MODAL -->
-    <div id="registerModal" class="modal" style="display:none" role="dialog" aria-modal="true">
+    <div id="registerModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2>Регистрация</h2>
@@ -623,8 +470,7 @@
         </div>
     </div>
 
-    <!-- APPLICATION MODAL -->
-    <div id="applicationModal" class="modal" style="display:none" role="dialog" aria-modal="true">
+    <div id="applicationModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
             <h2>Подать заявку в Creator Studio</h2>
@@ -637,8 +483,7 @@
         </div>
     </div>
 
-    <!-- CATEGORY MODAL -->
-    <div id="categoryModal" class="modal" style="display:none" role="dialog" aria-modal="true">
+    <div id="categoryModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" id="closeCategoryModalBtn" title="Закрыть">&times;</button>
             <h2>Создать категорию</h2>
@@ -648,39 +493,19 @@
                     <label for="categoryName">Название категории</label>
                     <input type="text" id="categoryName" required>
                 </div>
-
                 <div class="form-group user-input-wrapper">
                     <label for="userSearchInput">Пользователи, которые могут публиковать</label>
                     <div class="user-input-container">
                         <input type="text" id="userSearchInput" placeholder="Введите имя пользователя..." autocomplete="off">
-                        <span id="userSearchStatus" aria-hidden="true"></span>
+                        <span id="userSearchStatus"></span>
                     </div>
                 </div>
-
                 <div id="selectedUsersContainer"></div>
                 <button type="submit" class="submit-btn">Сохранить</button>
             </form>
         </div>
     </div>
 
-    <!-- PASSWORD LOGS / ADMIN MODALS might be appended dynamically by script -->
-
-    <!-- SCRIPT -->
     <script src="script.js"></script>
-
-    <!-- Inline small helper to focus search on slash key — unobtrusive improvement -->
-    <script>
-        (function(){
-            const searchInput = document.getElementById('searchInput');
-            window.addEventListener('keydown', (e) => {
-                if (e.key === '/' && document.activeElement !== searchInput) {
-                    e.preventDefault();
-                    if(searchInput) searchInput.focus();
-                }
-            });
-        })();
-    </script>
-
-    <!-- Developer note: end of file -->
 </body>
 </html>
