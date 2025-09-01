@@ -25,6 +25,8 @@ dirs = {
     "FON_DIR": os.path.join(BASE_DIR, 'fon'),
     "VIDEO_DIR": os.path.join(BASE_DIR, 'video'),
     "TEMP_UPLOAD_DIR": os.path.join(BASE_DIR, 'temp_uploads'),
+    # +++ НОВАЯ ДИРЕКТОРИЯ +++
+    "YOUTUBE_DOWNLOAD_DIR": os.path.join(BASE_DIR, 'youtube_downloads'),
     "INDEX_DIR": os.path.join(BASE_DIR, 'index'),
     "MODEL_PATH": os.path.join(BASE_DIR, 'music_genre_model.pkl'),
 }

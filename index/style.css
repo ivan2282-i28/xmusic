@@ -2337,3 +2337,91 @@ input:checked + .slider:before {
     background-color: #fef2f2;
     color: #ef4444;
 }
+
+/* +++ НАЧАЛО: НОВЫЕ СТИЛИ ДЛЯ YOUTUBE DOWNLOADER +++ */
+.youtube-downloader-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.youtube-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+#youtubeUrlInput {
+    flex-grow: 1;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-hover-bg);
+    color: var(--text-primary);
+    font-size: 1em;
+}
+#youtubeUrlInput:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+#youtubeFetchBtn {
+    padding: 0 25px;
+}
+
+#youtubeResultContainer {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background-color: var(--card-hover-bg);
+    border-radius: 8px;
+    align-items: flex-start;
+}
+
+#youtubeThumbnail {
+    width: 240px;
+    height: 135px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.youtube-video-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+#youtubeTitle {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.youtube-video-info .form-group {
+    margin: 0;
+}
+.youtube-video-info .form-group label {
+    margin-bottom: 5px;
+}
+#youtubeQualitySelect {
+    width: 100%;
+}
+
+#youtubeDownloadBtn:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#youtubeStatus {
+    margin-top: 10px;
+    color: var(--text-secondary);
+    min-height: 1.2em;
+}
+/* +++ КОНЕЦ: НОВЫЕ СТИЛИ ДЛЯ YOUTUBE DOWNLOADER +++ */

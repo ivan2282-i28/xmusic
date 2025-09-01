@@ -13,4 +13,4 @@ numba
 joblib
 pydub
 gunicorn
-
+yt-dlp

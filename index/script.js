@@ -241,6 +241,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const equalizer = document.getElementById('equalizer');
     const equalizerBars = document.querySelectorAll('.equalizer-bar');
 
+    // +++ НОВЫЕ ЭЛЕМЕНТЫ ДЛЯ YOUTUBE +++
+    const navYoutube = document.getElementById('navYoutube');
+    const youtubeView = document.getElementById('youtubeView');
+    const youtubeUrlInput = document.getElementById('youtubeUrlInput');
+    const youtubeFetchBtn = document.getElementById('youtubeFetchBtn');
+    const youtubeResultContainer = document.getElementById('youtubeResultContainer');
+    const youtubeThumbnail = document.getElementById('youtubeThumbnail');
+    const youtubeTitle = document.getElementById('youtubeTitle');
+    const youtubeQualitySelect = document.getElementById('youtubeQualitySelect');
+    const youtubeDownloadBtn = document.getElementById('youtubeDownloadBtn');
+    const youtubeStatus = document.getElementById('youtubeStatus');
+
 
     let chartInstance = null;
     let playTimer;
@@ -542,11 +554,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentCategoryId = categoryId;
         currentPage = 1;
         allMedia = []; // Clear allMedia for the new category playlist
-
         if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
         mainContent.removeEventListener('scroll', handleScroll);
         mainContent.addEventListener('scroll', handleScroll);
-
         await loadMoreTracks();
         isLoading = false;
     };
@@ -1118,10 +1128,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.classList.remove('creator-mode');
             }
         };
+        // Hide search bar by default, show only when needed
+        if (searchBarWrapper) searchBarWrapper.style.display = 'none';
 
         if (viewIdToShow === 'homeView') {
             if (navHome) navHome.classList.add('active');
-            if (viewTitle) viewTitle.textContent = 'Main';
+            if (viewTitle) viewTitle.textContent = 'Главная';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
             fetchXrecomen();
@@ -1129,20 +1141,20 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContent.addEventListener('scroll', handleScroll);
         } else if (viewIdToShow === 'searchView') {
             const query = args[0] || '';
-            if (viewTitle) viewTitle.textContent = `Search: "${query}"`;
+            if (viewTitle) viewTitle.textContent = `Поиск: "${query}"`;
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
             // Add scroll handler for search results
             mainContent.addEventListener('scroll', handleScroll);
         } else if (viewIdToShow === 'categoriesView') {
             if (navCategories) navCategories.classList.add('active');
-            if (viewTitle) viewTitle.textContent = 'Categories';
+            if (viewTitle) viewTitle.textContent = 'Категории';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
             fetchCategories();
         } else if (viewIdToShow === 'favoritesView') {
             if (navFavorites) navFavorites.classList.add('active');
-            if (viewTitle) viewTitle.textContent = 'Favorites';
+            if (viewTitle) viewTitle.textContent = 'Избранное';
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
             fetchFavorites();
@@ -1164,6 +1176,11 @@ document.addEventListener('DOMContentLoaded', () => {
             defaultPlayerDisplay();
              // Add scroll handler for categories
             mainContent.addEventListener('scroll', handleScroll);
+        } else if (viewIdToShow === 'youtubeView') { // +++ НОВАЯ ЛОГИКА +++
+            if (navYoutube) navYoutube.classList.add('active');
+            if (viewTitle) viewTitle.textContent = 'Youtube';
+            // Search bar is hidden by default, so no need to hide it again
+            defaultPlayerDisplay();
         }
     };
 
@@ -1527,6 +1544,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navCategories) navCategories.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('categoriesView');
+        });
+        // +++ НОВЫЙ ОБРАБОТЧИК ДЛЯ МЕНЮ YOUTUBE +++
+        if (navYoutube) navYoutube.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('youtubeView');
         });
         if (navFavorites) navFavorites.addEventListener('click', (e) => {
             e.preventDefault();
@@ -2113,6 +2135,113 @@ document.addEventListener('DOMContentLoaded', () => {
                 playMedia(currentTrackIndex);
             }
         });
+
+        // +++ НАЧАЛО: НОВЫЕ ОБРАБОТЧИКИ ДЛЯ YOUTUBE +++
+        if (youtubeFetchBtn) {
+            youtubeFetchBtn.addEventListener('click', async () => {
+                const url = youtubeUrlInput.value.trim();
+                if (!url) {
+                    alert('Пожалуйста, вставьте ссылку.');
+                    return;
+                }
+
+                youtubeStatus.textContent = 'Получение информации о видео...';
+                youtubeResultContainer.style.display = 'none';
+                youtubeFetchBtn.disabled = true;
+                youtubeDownloadBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`${api}/api/youtube/info`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url })
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error || 'Не удалось получить информацию о видео.');
+                    }
+
+                    const data = await response.json();
+                    
+                    youtubeTitle.textContent = data.title;
+                    youtubeThumbnail.src = data.thumbnail;
+                    
+                    youtubeQualitySelect.innerHTML = '';
+                    if (data.formats && data.formats.length > 0) {
+                        data.formats.forEach(format => {
+                            const option = document.createElement('option');
+                            option.value = format.id;
+                            option.textContent = format.label;
+                            youtubeQualitySelect.appendChild(option);
+                        });
+                        youtubeDownloadBtn.disabled = false;
+                    } else {
+                         youtubeStatus.textContent = 'Доступных форматов для скачивания не найдено.';
+                    }
+                    
+                    youtubeResultContainer.style.display = 'flex';
+                    youtubeStatus.textContent = '';
+
+                } catch (error) {
+                    youtubeStatus.textContent = `Ошибка: ${error.message}`;
+                } finally {
+                    youtubeFetchBtn.disabled = false;
+                }
+            });
+        }
+
+        if (youtubeDownloadBtn) {
+            youtubeDownloadBtn.addEventListener('click', async () => {
+                const url = youtubeUrlInput.value.trim();
+                const formatId = youtubeQualitySelect.value;
+                const videoTitle = youtubeTitle.textContent;
+
+                if (!url || !formatId) {
+                    alert('Произошла ошибка. Попробуйте найти видео снова.');
+                    return;
+                }
+
+                youtubeStatus.textContent = 'Скачивание на сервер... Это может занять некоторое время.';
+                youtubeDownloadBtn.disabled = true;
+                youtubeFetchBtn.disabled = true;
+
+                try {
+                     const response = await fetch(`${api}/api/youtube/download`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url, format_id: formatId })
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error || 'Не удалось скачать видео.');
+                    }
+
+                    const data = await response.json();
+                    youtubeStatus.textContent = 'Начинаю загрузку файла...';
+
+                    // Создаем временную ссылку и кликаем по ней для скачивания
+                    const link = document.createElement('a');
+                    link.href = data.download_path;
+                    
+                    // Пытаемся извлечь расширение из пути
+                    const extension = data.download_path.split('.').pop();
+                    link.download = `${videoTitle}.${extension}`; 
+
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                } catch (error) {
+                    youtubeStatus.textContent = `Ошибка: ${error.message}`;
+                } finally {
+                    youtubeDownloadBtn.disabled = false;
+                    youtubeFetchBtn.disabled = false;
+                }
+            });
+        }
+        // +++ КОНЕЦ: НОВЫЕ ОБРАБОТЧИКИ ДЛЯ YOUTUBE +++
 
         document.body.addEventListener('click', async (e) => {
             const card = e.target.closest('.card');

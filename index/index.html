@@ -22,6 +22,7 @@
             <nav class="main-nav" id="xmusicNav">
                 <a href="#" id="navHome" class="nav-link active"><span>Главная</span></a>
                 <a href="#" id="navCategories" class="nav-link"><span>Категории</span></a>
+                <a href="#" id="navYoutube" class="nav-link"><span>Youtube</span></a>
                 <a href="#" id="navFavorites" class="nav-link" style="display: none;"><span>Избранное</span></a>
                 <a class="nav-link" id="creatorStudioBtn" style="display: none;"><span>Creator Studio</span></a>
                 <a class="nav-link" id="settingsBtn"><span>Настройки</span></a>
@@ -147,7 +148,29 @@
                     <div class="grid-container" id="customCategoriesGrid"></div>
                 </section>
             </div>
-            
+
+            <div id="youtubeView" class="view">
+                <h2 class="section-title">Загрузка с YouTube</h2>
+                <div class="youtube-downloader-container">
+                    <div class="youtube-input-group">
+                        <input type="text" id="youtubeUrlInput" placeholder="Вставьте ссылку на YouTube видео...">
+                        <button id="youtubeFetchBtn" class="submit-btn">Найти</button>
+                    </div>
+
+                    <div id="youtubeResultContainer" style="display: none;">
+                        <img id="youtubeThumbnail" src="" alt="Video Thumbnail">
+                        <div class="youtube-video-info">
+                            <h3 id="youtubeTitle"></h3>
+                            <div class="form-group">
+                                <label for="youtubeQualitySelect">Выберите качество:</label>
+                                <select id="youtubeQualitySelect"></select>
+                            </div>
+                            <button id="youtubeDownloadBtn" class="submit-btn" disabled>Скачать</button>
+                            <p id="youtubeStatus"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="specificCategoryView" class="view">
                 <button class="go-back-btn back-to-categories-btn" id="backToCategoriesBtn"><span>&#8592; К категориям</span></button>
                 <h2 class="section-title" id="specificCategoryTitle">Название категории</h2>

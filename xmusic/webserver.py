@@ -15,6 +15,9 @@ import numpy as np
 from datetime import datetime, timedelta
 import secrets
 
+# +++ НОВЫЙ ИМПОРТ для работы с YouTube +++
+import yt_dlp
+
 # admin_api should be implemented in server/api/admin.py
 # make sure it's present in your project
 from .api.admin import admin_api
@@ -101,6 +104,121 @@ def webserver(app, db, dirs, model=None):
     @app.route('/temp_uploads/<path:filename>')
     def serve_temp_uploads(filename):
         return send_from_directory(dirs["TEMP_UPLOAD_DIR"], filename)
+    
+    # +++ НОВЫЙ МАРШРУТ для отдачи скачанных с YouTube файлов +++
+    @app.route('/youtube_downloads/<path:filename>')
+    def serve_youtube_downloads(filename):
+        return send_from_directory(dirs["YOUTUBE_DOWNLOAD_DIR"], filename, as_attachment=True)
+
+
+    # --------------------
+    # +++ НОВЫЕ МАРШРУТЫ ДЛЯ YOUTUBE +++
+    # --------------------
+    @app.route('/api/youtube/info', methods=['POST'])
+    def youtube_info():
+        data = request.get_json()
+        url = data.get('url')
+
+        if not url:
+            return jsonify({'error': 'URL is required'}), 400
+
+        ydl_opts = {'quiet': True, 'no_warnings': True, 'skip_download': True}
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                
+                formats = []
+                for f in info.get('formats', []):
+                    # Пропускаем форматы без звука или видео, а также манифесты
+                    if (f.get('vcodec') != 'none' and f.get('acodec') != 'none') or (f.get('vcodec') == 'none' and f.get('acodec') != 'none'):
+                         # Пропускаем "storyboard"
+                        if 'storyboard' in f.get('format_note', '').lower():
+                            continue
+                        
+                        filesize_mb = round(f.get('filesize', 0) / (1024*1024), 2) if f.get('filesize') else "N/A"
+                        
+                        label = f.get('format_note', '')
+                        if not label:
+                             if f.get('vcodec') != 'none':
+                                 label = f"{f.get('height', '')}p"
+                             else:
+                                 label = "Audio"
+
+                        formats.append({
+                            'id': f['format_id'],
+                            'ext': f['ext'],
+                            'label': f"{label} ({f['ext']}) - {filesize_mb} MB"
+                        })
+
+                # Убираем дубликаты по label
+                unique_formats = []
+                seen_labels = set()
+                for f in reversed(formats): # Идем в обратном порядке, чтобы предпочесть лучшие качества
+                    if f['label'] not in seen_labels:
+                        unique_formats.insert(0, f)
+                        seen_labels.add(f['label'])
+
+
+                video_info = {
+                    'title': info.get('title', 'No title'),
+                    'thumbnail': info.get('thumbnail', ''),
+                    'formats': unique_formats
+                }
+                return jsonify(video_info)
+                
+        except yt_dlp.utils.DownloadError as e:
+            app.logger.error(f"yt-dlp download error: {e}")
+            return jsonify({'error': 'Could not fetch video info. The URL might be invalid or the video is private.'}), 400
+        except Exception as e:
+            app.logger.error(f"An unexpected error occurred: {e}")
+            return jsonify({'error': 'An unexpected error occurred on the server.'}), 500
+
+
+    @app.route('/api/youtube/download', methods=['POST'])
+    def youtube_download():
+        data = request.get_json()
+        url = data.get('url')
+        format_id = data.get('format_id')
+
+        if not url or not format_id:
+            return jsonify({'error': 'URL and format ID are required'}), 400
+
+        # Очистка имени файла для безопасности
+        try:
+            with yt_dlp.YoutubeDL({'skip_download': True, 'quiet': True}) as ydl:
+                 info = ydl.extract_info(url, download=False)
+                 base_filename = secure_filename(info.get('title', 'video'))
+        except Exception:
+             base_filename = "downloaded_video"
+
+        # Создаем уникальное имя файла, чтобы избежать конфликтов
+        final_filename = f"{base_filename}_{secrets.token_hex(4)}"
+
+        ydl_opts = {
+            'format': format_id,
+            'outtmpl': os.path.join(dirs["YOUTUBE_DOWNLOAD_DIR"], f'{final_filename}.%(ext)s'),
+            'quiet': True,
+            'no_warnings': True,
+        }
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                meta = ydl.extract_info(url, download=True)
+                # yt-dlp уже скачал файл, теперь нужно найти его имя
+                downloaded_file = ydl.prepare_filename(meta)
+                # Извлекаем только имя файла из полного пути
+                final_filename_with_ext = os.path.basename(downloaded_file)
+
+            return jsonify({'download_path': f'/youtube_downloads/{final_filename_with_ext}'})
+            
+        except yt_dlp.utils.DownloadError as e:
+            app.logger.error(f"yt-dlp download error: {e}")
+            return jsonify({'error': 'Failed to download the video.'}), 500
+        except Exception as e:
+            app.logger.error(f"An unexpected error occurred during download: {e}")
+            return jsonify({'error': 'An unexpected error occurred on the server.'}), 500
+
 
     # --------------------
     # Auth: register / login / refresh / logout
@@ -298,6 +416,51 @@ def webserver(app, db, dirs, model=None):
             return jsonify({'message': 'Error deleting files.'}), 500
         finally:
             conn.close()
+
+    # === ИСПРАВЛЕНИЕ: ДОБАВЛЕНЫ НЕДОСТАЮЩИЕ МАРШРУТЫ ДЛЯ КАТЕГОРИЙ ===
+    # --------------------
+    # Categories listing
+    # --------------------
+    @app.route('/api/categories', methods=['GET'])
+    def get_categories():
+        conn = db.get_db_connection()
+        try:
+            categories = conn.execute("SELECT id, name FROM categories ORDER BY name").fetchall()
+            return jsonify([dict(row) for row in categories])
+        except Exception as e:
+            app.logger.error(f"Could not fetch categories: {e}")
+            return jsonify({'message': 'Could not fetch categories'}), 500
+        finally:
+            conn.close()
+
+    @app.route('/api/creator/my-categories/<int:user_id>')
+    @auth_required
+    @role_required(['creator','admin'])
+    def get_creator_categories(user_id):
+        conn = db.get_db_connection()
+        try:
+            # Администраторы видят все категории, создатели - только свои
+            user_role = request.current_user["role"]
+            if user_role == 'admin':
+                query = "SELECT id, name FROM categories ORDER BY name"
+                params = ()
+            else:
+                query = """
+                    SELECT c.id, c.name FROM categories c
+                    JOIN category_users cu ON c.id = cu.category_id
+                    WHERE cu.user_id = ?
+                    ORDER BY c.name
+                """
+                params = (user_id,)
+            
+            categories = conn.execute(query, params).fetchall()
+            return jsonify([dict(row) for row in categories])
+        except Exception as e:
+            app.logger.error(f"Could not fetch creator categories: {e}")
+            return jsonify({'message': 'Could not fetch creator categories'}), 500
+        finally:
+            conn.close()
+    # === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
     # --------------------
     # Creator endpoints
