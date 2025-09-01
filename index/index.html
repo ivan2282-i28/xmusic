@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -19,6 +19,7 @@
         <aside class="sidebar">
             <div class="logo" id="xmusicLogo">XMusic</div>
             <div class="logo" id="xcreatorLogo" style="display: none;">XCreator</div>
+            
             <nav class="main-nav" id="xmusicNav">
                 <a href="#" id="navHome" class="nav-link active"><span>Главная</span></a>
                 <a href="#" id="navCategories" class="nav-link"><span>Категории</span></a>
@@ -26,6 +27,7 @@
                 <a class="nav-link" id="creatorStudioBtn" style="display: none;"><span>Creator Studio</span></a>
                 <a class="nav-link" id="settingsBtn"><span>Настройки</span></a>
             </nav>
+
             <nav class="main-nav" id="xcreatorNav" style="display: none;">
                 <a class="go-back-btn" id="backToXMusicBtn"><span>&#8592; Назад в XMusic</span></a>
                 <a class="creator-nav-btn active" id="creatorHomeBtn" style="display: none;"><span>Главная</span></a>
@@ -38,6 +40,7 @@
                 <a class="creator-nav-btn admin-section" id="adminCategoriesBtn" style="display: none;"><span>Категории</span></a>
                 <a class="creator-nav-btn admin-section" id="adminLogsBtn" style="display: none;"><span>Логи</span></a>
             </nav>
+
             <div class="sidebar-footer">
                 <div class="user-profile" id="userProfile" style="display: none;">
                     <div class="user-info-container">
@@ -52,7 +55,6 @@
                 <button class="login-btn" id="loginBtn"><span>Войти</span></button>
             </div>
         </aside>
-
         <main class="main-content">
             <header class="main-header">
                 <h1 id="viewTitle">Главная</h1>
@@ -71,26 +73,7 @@
                         <span class="xrecomen-subtitle">Возможно, вам понравится</span>
                     </button>
                     <div class="equalizer" id="equalizer">
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
-                        <div class="equalizer-bar"></div>
+                        <div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div><div class="equalizer-bar"></div>
                     </div>
                 </section>
                 <section class="section" id="youLikeSection">
@@ -115,15 +98,7 @@
             <div id="categoriesView" class="view">
                 <section class="section">
                     <h2 class="section-title">Категории</h2>
-                    <div class="grid-container" id="allCategoriesGrid">
-                        <div class="category-card" data-category-id="all">
-                            <h3>Все треки</h3>
-                        </div>
-                    </div>
-                </section>
-                <section class="section" style="display: none">
-                    <h2 class="section-title">Кастомные категории</h2>
-                    <div class="grid-container" id="customCategoriesGrid"></div>
+                    <div class="grid-container" id="allCategoriesGrid"></div>
                 </section>
             </div>
             
@@ -146,9 +121,7 @@
                         <button class="apply-btn" id="applyBtn">Подать заявку</button>
                     </div>
                 </div>
-                <div id="myTracksSection" class="creator-main-section" style="display: none;">
-                    <button class="submit-btn" id="uploadTrackBtn">Загрузить трек</button>
-                </div>
+                <div id="myTracksSection" class="creator-main-section" style="display: none;"></div>
                 <div id="analyticsSection" class="creator-main-section" style="display: none;">
                     <h2>Ваша статистика</h2>
                     <div class="analytics-container">
@@ -214,8 +187,7 @@
                             <span>Создать категорию</span>
                         </button>
                     </div>
-                    <div class="categories-management-list" id="adminCategoriesList">
-                        </div>
+                    <div class="categories-management-list" id="adminCategoriesList"></div>
                 </div>
                 <div id="adminLogsSection" class="creator-main-section" style="display: none;">
                     <h2 class="section-title">Логи смены паролей</h2>
@@ -229,21 +201,20 @@
                                     <th>IP Адрес</th>
                                 </tr>
                             </thead>
-                            <tbody id="passwordLogsTableBody">
-                                </tbody>
+                            <tbody id="passwordLogsTableBody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </main>
-    </div>
+        </div>
 
     <div class="player">
         
         <div class="player-style-default">
             <div class="player-header">
                 <div class="track-info">
-                    <img src="default.svg" alt="Track Art" id="playerCover">
+                    <img src="/fon/default.png" alt="Track Art" id="playerCover">
                     <div>
                         <span class="title" id="playerTitle">Выберите медиа</span>
                         <span class="artist" id="playerArtist"></span>
@@ -253,19 +224,13 @@
             
             <div class="control-buttons-and-progress">
                 <div class="control-buttons">
-                    <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-                    </button>
-                    <button id="prevBtn" class="control-btn" title="Назад">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                    </button>
+                    <button id="repeatBtn" class="control-btn repeat-btn" title="Повтор"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+                    <button id="prevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
                     <button class="play-button" id="playPauseBtn" title="Воспроизвести">
                         <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         <svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                     </button>
-                    <button id="nextBtn" class="control-btn" title="Вперед">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
-                    </button>
+                    <button id="nextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg></button>
                     <button id="favoritePlayerBtn" class="control-btn" title="Добавить в избранное">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-heart">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -293,28 +258,22 @@
         <div class="player-style-copy" style="display: none;">
             <div class="copy-player-body">
                 <div class="copy-track-info">
-                    <img src="default.svg" alt="Track Art" id="copyPlayerCover">
+                    <img src="/fon/default.png" alt="Track Art" id="copyPlayerCover">
                     <div class="copy-track-text">
                         <span class="title" id="copyPlayerTitle">Выберите медиа</span>
                         <span class="artist" id="copyPlayerArtist"></span>
                     </div>
                 </div>
                 <div class="copy-main-controls">
-                    <button id="copyPrevBtn" class="control-btn" title="Назад">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                    </button>
+                    <button id="copyPrevBtn" class="control-btn" title="Назад"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
                     <button class="play-button" id="copyPlayPauseBtn" title="Воспроизвести">
                         <svg id="copyPlayIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         <svg id="copyPauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                     </button>
-                    <button id="copyNextBtn" class="control-btn" title="Вперед">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
-                    </button>
+                    <button id="copyNextBtn" class="control-btn" title="Вперед"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg></button>
                 </div>
                 <div class="copy-secondary-controls">
-                     <button id="copyFavoriteBtn" class="control-btn" title="Добавить в избранное">
-                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                    </button>
+                     <button id="copyFavoriteBtn" class="control-btn" title="Добавить в избранное"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
                     <div class="copy-volume-controls">
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                         <input type="range" id="copyVolumeBar" min="0" max="1" step="0.01" value="1">
@@ -326,32 +285,6 @@
             </div>
         </div>
     </div>
-    
-    <div id="videoModal" class="video-modal" style="display: none;">
-        <div class="video-modal-content">
-            <button class="close-btn" id="closeVideoBtn">&times;</button>
-            <video id="videoPlayerModal" controls></video>
-        </div>
-    </div>
-    
-    <div id="moderationModal" class="moderation-modal" style="display: none;">
-        <div class="modal-content">
-            <button class="close-btn" id="closeModerationBtn">&times;</button>
-            <h2>Проверка трека</h2>
-            <div class="moderation-info">
-                <img id="moderationPlayerCover" src="default.svg" alt="Обложка">
-                <h3 id="moderationTitle">Название</h3>
-                <p id="moderationArtist">Исполнитель:</p>
-            </div>
-            <audio id="moderationPlayer" controls></audio>
-            <video id="moderationVideoPlayer" controls></video>
-            <div class="moderation-actions">
-                <button class="approve-track-btn" id="moderationApproveBtn">Одобрить</button>
-                <button class="reject-track-btn" id="moderationRejectBtn">Отклонить</button>
-            </div>
-        </div>
-    </div>
-
     <div id="uploadModal" class="modal">
         <div class="modal-content upload-modal-container">
             <button class="close-btn" title="Закрыть">&times;</button>
@@ -440,10 +373,8 @@
                     <button class="style-btn" data-style="copy">Copy</button>
                 </div>
             </div>
-            <button class="logout-btn" id="logoutBtn" style="display: none;"><span>Выйти</span></button>
         </div>
     </div>
-
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
@@ -456,7 +387,6 @@
             </form>
         </div>
     </div>
-
     <div id="registerModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
@@ -469,7 +399,6 @@
             </form>
         </div>
     </div>
-
     <div id="applicationModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" title="Закрыть">&times;</button>
@@ -482,7 +411,6 @@
             </form>
         </div>
     </div>
-
     <div id="categoryModal" class="modal">
         <div class="modal-content">
             <button class="close-btn" id="closeCategoryModalBtn" title="Закрыть">&times;</button>
@@ -505,7 +433,6 @@
             </form>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
