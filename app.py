@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify, send_from_directory
-from .db import database
+from xmusic.db import database
 import os
 from flask_cors import CORS
 from dotenv import load_dotenv
 import joblib
 import librosa
 import numpy as np
-from .webserver import webserver
+from xmusic.webserver import webserver
 import logging
-from logging.handlers import RotatingFileHandler
+# ... остальной код
 
 load_dotenv()
 
