@@ -261,6 +261,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // === НОВАЯ ФУНКЦИЯ: ЛОГИКА ТАЙМЕРА ===
+    const initSummerCountdown = () => {
+        const countdownContainer = document.getElementById('summerCountdown');
+        const daysEl = document.getElementById('countdownDays');
+        const hoursEl = document.getElementById('countdownHours');
+        const minutesEl = document.getElementById('countdownMinutes');
+        const secondsEl = document.getElementById('countdownSeconds');
+
+        // Устанавливаем целевую дату: 1 июня 2026, 00:00:00 по Московскому времени (UTC+3)
+        const targetDate = new Date('2026-06-01T00:00:00+03:00').getTime();
+
+        const padZero = (num) => (num < 10 ? `0${num}` : num);
+
+        const updateCountdown = () => {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                countdownContainer.innerHTML = '<span class="countdown-label">Лето наступило!</span>';
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            daysEl.textContent = days;
+            hoursEl.textContent = padZero(hours);
+            minutesEl.textContent = padZero(minutes);
+            secondsEl.textContent = padZero(seconds);
+        };
+
+        // Запускаем обновление каждую секунду
+        const countdownInterval = setInterval(updateCountdown, 1000);
+        // Вызываем функцию сразу, чтобы не было задержки в 1 секунду при загрузке
+        updateCountdown();
+    };
+
+
     async function fetchWithAuth(url, options = {}) {
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
         options.headers = options.headers || {};
@@ -2704,12 +2745,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Запуск инициализирующих функций ---
     loadOpacitySetting();
     loadBlurSetting();
     loadVolumeSetting();
     initEventListeners();
     fetchInitialData();
     fetchCategories();
+    initSummerCountdown(); // <--- ЗАПУСК ТАЙМЕРА
 
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {

@@ -315,6 +315,14 @@ body {
     transition: color 1.5s ease-in-out;
 }
 
+/* === ИЗМЕНЕНИЕ: Контейнер для поиска и таймера === */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+
 .search-bar-wrapper {
     width: 100%;
     max-width: 350px;
@@ -322,9 +330,9 @@ body {
 
 #searchInput {
     width: 100%;
-    height: 40px;
+    height: 48px; /* Увеличим высоту для солидности */
     padding: 10px 20px;
-    border-radius: 20px;
+    border-radius: 24px; /* Полностью скругленные края */
     border: 1px solid var(--border-color);
     background-color: var(--card-bg);
     color: var(--text-primary);
@@ -989,11 +997,120 @@ body {
     background: var(--primary-color);
 }
 
-/* ######################################################## */
-/* ### КОНЕЦ УЛУЧШЕНИЙ ПЛЕЕРОВ ### */
-/* ######################################################## */
+/* === НОВОЕ: Стили для плашки с таймером === */
+#summerCountdown {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 8px 16px;
+    border-radius: 24px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
 
-/* Стили Creator Mode и остальная часть файла остаются без изменений */
+.countdown-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-right: 16px;
+    font-size: 0.9em;
+}
+
+.countdown-timer {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.time-block {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.time-value {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', 'monospace';
+    line-height: 1;
+}
+
+.time-label {
+    font-size: 0.7em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+/* ############################################# */
+/* ### КОНЕЦ СТИЛЕЙ ### */
+/* ############################################# */
+
+
+/* Остальные стили */
+.featured-card {
+    display: flex;
+    gap: 30px;
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: 16px;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.featured-card:hover {
+    transform: translateY(-5px);
+    background-color: var(--card-hover-bg);
+    border-color: var(--accent-color);
+}
+
+.featured-card .card-image-wrapper {
+    width: 180px;
+    height: 180px;
+    flex-shrink: 0;
+}
+
+.featured-card .card-image {
+    margin-bottom: 0;
+}
+
+.featured-card-info {
+    min-width: 0;
+}
+
+.featured-card-info h3 {
+    font-size: 1em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.featured-card-info .card-title {
+    font-size: 2.8em;
+    font-weight: 800;
+    white-space: normal;
+    line-height: 1.2;
+}
+.logout-btn {
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.3s ease, color 0.3s ease;
+    margin-top: auto;
+}
+
+.logout-btn:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
 body.creator-mode {
     background-color: var(--creator-bg);
     color: var(--creator-text-primary);
@@ -1143,70 +1260,6 @@ body.creator-mode {
 
 .creator-mode .submit-btn:hover {
     background-color: var(--creator-primary-hover);
-}
-.featured-card {
-    display: flex;
-    gap: 30px;
-    background: var(--card-bg);
-    padding: 24px;
-    border-radius: 16px;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-    position: relative;
-}
-
-.featured-card:hover {
-    transform: translateY(-5px);
-    background-color: var(--card-hover-bg);
-    border-color: var(--accent-color);
-}
-
-.featured-card .card-image-wrapper {
-    width: 180px;
-    height: 180px;
-    flex-shrink: 0;
-}
-
-.featured-card .card-image {
-    margin-bottom: 0;
-}
-
-.featured-card-info {
-    min-width: 0;
-}
-
-.featured-card-info h3 {
-    font-size: 1em;
-    color: var(--text-secondary);
-    margin-bottom: 10px;
-}
-
-.featured-card-info .card-title {
-    font-size: 2.8em;
-    font-weight: 800;
-    white-space: normal;
-    line-height: 1.2;
-}
-.logout-btn {
-    width: 100%;
-    background-color: transparent;
-    color: var(--text-secondary);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 1em;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: border-color 0.3s ease, color 0.3s ease;
-    margin-top: auto;
-}
-
-.logout-btn:hover {
-    color: var(--accent-color);
-    border-color: var(--accent-color);
 }
 .creator-mode .creator-main-screen {
     text-align: center;

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -57,6 +57,27 @@
             <header class="main-header">
                 <h1 id="viewTitle">Главная</h1>
                 <div class="header-controls">
+                    <div id="summerCountdown">
+                        <span class="countdown-label">До лета</span>
+                        <div class="countdown-timer">
+                            <div class="time-block">
+                                <span class="time-value" id="countdownDays">0</span>
+                                <span class="time-label">д</span>
+                            </div>
+                            <div class="time-block">
+                                <span class="time-value" id="countdownHours">0</span>
+                                <span class="time-label">ч</span>
+                            </div>
+                            <div class="time-block">
+                                <span class="time-value" id="countdownMinutes">0</span>
+                                <span class="time-label">м</span>
+                            </div>
+                            <div class="time-block">
+                                <span class="time-value" id="countdownSeconds">0</span>
+                                <span class="time-label">с</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="search-bar-wrapper">
                         <input type="text" id="searchInput" placeholder="Поиск трека или исполнителя...">
                     </div>
@@ -291,6 +312,9 @@
         </div>
 
         <div class="player-style-copy" style="display: none;">
+            <div class="copy-progress-bar-container">
+                <div class="copy-progress-filled"></div>
+            </div>
             <div class="copy-player-body">
                 <div class="copy-track-info">
                     <img src="default.svg" alt="Track Art" id="copyPlayerCover">
@@ -320,9 +344,6 @@
                         <input type="range" id="copyVolumeBar" min="0" max="1" step="0.01" value="1">
                     </div>
                 </div>
-            </div>
-            <div class="copy-progress-bar-container">
-                <div class="copy-progress-filled"></div>
             </div>
         </div>
     </div>
