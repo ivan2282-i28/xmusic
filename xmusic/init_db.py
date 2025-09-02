@@ -139,7 +139,7 @@ def init_db():
     ''')
     print("Tables created successfully.")
 
-    # --- Миграция паролей и создание root ---
+    # --- Миграция паролей и создание/обновление root ---
     print("Starting password migration...")
     users_to_migrate = c.execute("SELECT id, password FROM users WHERE password NOT LIKE 'pbkdf2:%'").fetchall()
     if not users_to_migrate:
@@ -156,9 +156,11 @@ def init_db():
         c.execute("SELECT id FROM users WHERE username = 'root'")
         admin_user = c.fetchone()
         if admin_user:
+            # Пользователь 'root' существует, ОБНОВЛЯЕМ его пароль
             c.execute("UPDATE users SET password = ?, role = 'admin' WHERE username = 'root'", (hashed_admin_password,))
             print("Password for user 'root' was updated from environment variable.")
         else:
+            # Пользователь 'root' не существует, СОЗДАЕМ его
             c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
                       ('root', hashed_admin_password, 'admin'))
             print("User 'root' created with password from environment variable.")
