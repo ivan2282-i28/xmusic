@@ -11,31 +11,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioPlayer = new Audio();
     const videoPlayer = document.getElementById('backgroundVideo');
     let activeMediaElement = audioPlayer;
-    let currentPlaylist = []; // NEW: Array for the current playback playlist
+    let currentPlaylist = []; 
 
-    // --- Paging variables for categories ---
     let currentPage = 1;
     const tracksPerPage = 30;
     let isLoading = false;
     let currentCategoryId = null;
 
-    // --- New paging variables for "My Tracks" ---
     let myTracksCurrentPage = 1;
     let myTracksIsLoading = false;
 
-    // --- NEW paging variables for SEARCH ---
     let searchCurrentPage = 1;
     let searchIsLoading = false;
     let currentSearchQuery = '';
     let searchTimeout;
 
-    // --- NEW VARIABLES FOR VISUALIZER (EQUALIZER) ---
     let audioContext;
     let analyser;
     let dataArray;
     let animationFrameId;
     let visualizerInitialized = false;
-
 
     const ACCESS_TOKEN_KEY = "access_token"
     const REFRESH_TOKEN_KEY = "refresh_token"
@@ -43,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const UI_OPACITY_KEY = "ui_opacity";
     const PLAYER_STYLE_KEY = "player_style";
     const BLUR_ENABLED_KEY = "blur_enabled";
-
 
     const mainContent = document.querySelector('.main-content');
     const allGridContainer = document.getElementById('allGridContainer');
@@ -62,9 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const player = document.querySelector('.player');
     const videoBackgroundContainer = document.getElementById('videoBackgroundContainer');
     
-    // --- Player elements DEFAULT ---
     const playerDefaultStyle = document.querySelector('.player-style-default');
-    const playerHeader = document.querySelector('.player-header');
     const playerCover = document.getElementById('playerCover');
     const playerTitle = document.getElementById('playerTitle');
     const playerArtist = document.getElementById('playerArtist');
@@ -82,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const durationEl = document.getElementById('duration');
     const volumeBar = document.getElementById('volumeBar');
 
-    // --- Player elements COPY (Horizontal) ---
     const playerCopyStyle = document.querySelector('.player-style-copy');
     const copyPlayerCover = document.getElementById('copyPlayerCover');
     const copyPlayerTitle = document.getElementById('copyPlayerTitle');
@@ -97,13 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyProgressFilled = document.querySelector('.copy-progress-filled');
     const copyVolumeBar = document.getElementById('copyVolumeBar');
 
-    // --- NEW elements for search ---
     const searchView = document.getElementById('searchView');
     const searchResultsGrid = document.getElementById('searchResultsGrid');
     const searchResultsTitle = document.getElementById('searchResultsTitle');
 
-
-    // --- UPDATED AND NEW ELEMENTS FOR UPLOAD WINDOW ---
     const uploadModal = document.getElementById('uploadModal');
     const closeUploadBtn = uploadModal.querySelector('.close-btn');
     const uploadForm = document.getElementById('uploadForm');
@@ -115,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const categorySelect = document.getElementById('categorySelect');
     const artistFields = document.getElementById('artistFields');
     const isForeignArtist = document.getElementById('isForeignArtist');
-    // Elements for Drag-and-Drop
     const coverDropArea = document.getElementById('coverDropArea');
     const mediaDropArea = document.getElementById('mediaDropArea');
     const coverPreview = document.getElementById('coverPreview');
@@ -124,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const coverFileInput = document.getElementById('coverFile');
     const audioFileInput = document.getElementById('audioFile');
     const videoFileInput = document.getElementById('videoFile');
-
 
     const settingsModal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
@@ -145,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const favoritesView = document.getElementById('favoritesView');
     const favoritesGridContainer = document.getElementById('favoritesGridContainer');
     
-    // New elements for profile
     const userProfile = document.getElementById('userProfile');
     const userAvatar = document.getElementById('userAvatar');
     const welcomeMessage = document.getElementById('welcomeMessage');
@@ -223,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
     
-    // New elements for category management
     const categoryModal = document.getElementById('categoryModal');
     const closeCategoryModalBtn = document.getElementById('closeCategoryModalBtn');
     const categoryForm = document.getElementById('categoryForm');
@@ -234,14 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedUsersContainer = document.getElementById('selectedUsersContainer');
     let selectedUsers = [];
     
-    // New elements for player
     const playerStyleButtons = document.querySelectorAll('.player-style-selector .style-btn');
 
-    // --- NEW DOM ELEMENTS FOR VISUALIZER (EQUALIZER) ---
     const equalizer = document.getElementById('equalizer');
-    const equalizerBars = document.querySelectorAll('.equalizer-bar');
+    const equalizerBars = Array.from(document.querySelectorAll('.equalizer-bar'));
 
-    // +++ НОВЫЕ ЭЛЕМЕНТЫ ДЛЯ YOUTUBE +++
     const navYoutube = document.getElementById('navYoutube');
     const youtubeView = document.getElementById('youtubeView');
     const youtubeUrlInput = document.getElementById('youtubeUrlInput');
@@ -253,27 +234,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const youtubeDownloadBtn = document.getElementById('youtubeDownloadBtn');
     const youtubeStatus = document.getElementById('youtubeStatus');
 
-
     let chartInstance = null;
     let playTimer;
     let userSearchTimeout;
     let currentTrack = null;
     
+    const modals = [ uploadModal, settingsModal, loginModal, registerModal, applicationModal, videoModal, moderationModal, categoryModal ];
+    modals.forEach(modal => { if (modal) modal.style.display = 'none'; });
 
-    // Hide all modal windows on load
-    const modals = [
-        uploadModal, settingsModal, loginModal,
-        registerModal, applicationModal, videoModal,
-        moderationModal, categoryModal
-    ];
+    // === УЛУЧШЕНИЕ: ЛОГИКА АНИМАЦИИ ПРИ СКРОЛЛЕ ===
+    const initScrollAnimations = () => {
+        const observerOptions = {
+            root: mainContent, // Наблюдаем внутри .main-content
+            rootMargin: '0px',
+            threshold: 0.1 // Срабатывать, когда 10% элемента видно
+        };
 
-    modals.forEach(modal => {
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    });
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target); // Отключаем наблюдение после анимации
+                }
+            });
+        }, observerOptions);
 
-    // === НОВАЯ ФУНКЦИЯ: ЛОГИКА ТАЙМЕРА ===
+        // Назначаем наблюдение за всеми секциями
+        const sections = document.querySelectorAll('.section, .featured-card');
+        sections.forEach(section => observer.observe(section));
+    };
+
+
     const initSummerCountdown = () => {
         const countdownContainer = document.getElementById('summerCountdown');
         const daysEl = document.getElementById('countdownDays');
@@ -281,9 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const minutesEl = document.getElementById('countdownMinutes');
         const secondsEl = document.getElementById('countdownSeconds');
 
-        // Устанавливаем целевую дату: 1 июня 2026, 00:00:00 по Московскому времени (UTC+3)
         const targetDate = new Date('2026-06-01T00:00:00+03:00').getTime();
-
         const padZero = (num) => (num < 10 ? `0${num}` : num);
 
         const updateCountdown = () => {
@@ -307,12 +296,9 @@ document.addEventListener('DOMContentLoaded', () => {
             secondsEl.textContent = padZero(seconds);
         };
 
-        // Запускаем обновление каждую секунду
         const countdownInterval = setInterval(updateCountdown, 1000);
-        // Вызываем функцию сразу, чтобы не было задержки в 1 секунду при загрузке
         updateCountdown();
     };
-
 
     async function fetchWithAuth(url, options = {}) {
         const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -347,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const bestTracksRes = await fetchWithAuth(`${api}/api/tracks/best`);
             const bestTracks = await bestTracksRes.json();
             
-            // Clear allMedia before adding new data
             allMedia = [...bestTracks]; 
             renderBestTracks(bestTracks);
             
@@ -359,7 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentUser) {
                 fetchFavorites();
             }
-            fetchXrecomen();
+            await fetchXrecomen();
+            initScrollAnimations(); // Запускаем анимации после загрузки данных
             
         } catch (error) {
             console.error('Error:', error);
@@ -375,7 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetchWithAuth(url);
             const newTracks = await res.json();
             if (newTracks.length > 0) {
-                // Add new tracks to allMedia, avoiding duplicates
                 const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
                 allMedia.push(...newTracksToAdd);
                 renderMediaInContainer(allGridContainer, newTracksToAdd);
@@ -388,74 +373,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-
     const fetchXrecomen = async () => {
         if (!currentUser) {
+            // Логика для неавторизованного пользователя
             if (youLikeSection) youLikeSection.style.display = 'block';
             if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
-
-            if (xrecomenBtn) {
-                if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-                if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'The best algorithm for track selection';
-            }
-
-            if (youLikeGrid) {
-                youLikeGrid.innerHTML = '<p>Log in to your account to view.</p>';
-            }
-
-            if (favoriteCollectionsGrid) {
-                favoriteCollectionsGrid.innerHTML = '<p>Log in to your account to view.</p>';
-            }
+            if (youLikeGrid) youLikeGrid.innerHTML = '<p>Войдите в аккаунт, чтобы увидеть рекомендации.</p>';
+            if (favoriteCollectionsGrid) favoriteCollectionsGrid.innerHTML = '<p>Войдите, чтобы увидеть любимые подборки.</p>';
 
             const bestTracksResponse = await fetchWithAuth(`${api}/api/tracks/best`);
             if (bestTracksResponse.ok) {
                 const bestTracks = await bestTracksResponse.json();
-                renderBestTracks(bestTracks);
+                if (bestTracks.length > 0) {
+                    const randomTrack = bestTracks[Math.floor(Math.random() * bestTracks.length)];
+                    renderXrecomen(randomTrack, true);
+                }
             }
             return;
         }
 
-        if (xrecomenSection) xrecomenSection.style.display = 'flex';
-        if (youLikeSection) youLikeSection.style.display = 'block';
-        if (favoriteCollectionsSection) favoriteCollectionsSection.style.display = 'block';
-
         try {
             const response = await fetchWithAuth(`${api}/api/xrecomen/${currentUser.id}`);
             const data = await response.json();
-
-            if (data.xrecomenTrack) {
-                if (!allMedia.some(t => t.id === data.xrecomenTrack.id)) {
-                    allMedia.push(data.xrecomenTrack);
-                }
-                const index = allMedia.findIndex(t => t.id === data.xrecomenTrack.id);
-                if (xrecomenBtn && index !== -1) {
-                    xrecomenBtn.dataset.index = index;
-                    xrecomenBtn.dataset.isRandom = 'false';
-                    if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-                    if (xrecomenSubtitle) xrecomenSubtitle.textContent = `You might like the track "${data.xrecomenTrack.title}"`;
-                }
-            } else {
-                if (allMedia.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * allMedia.length);
-                    if (xrecomenBtn) {
-                        xrecomenBtn.dataset.index = randomIndex;
-                        xrecomenBtn.dataset.isRandom = 'true';
-                    }
-                } else {
-                    if (xrecomenSection) xrecomenSection.style.display = 'none';
-                }
-                if (xrecomenTitle) xrecomenTitle.textContent = 'Xrecomen';
-                if (xrecomenSubtitle) xrecomenSubtitle.textContent = 'The best algorithm for track selection';
-            }
+            
+            renderXrecomen(data.xrecomenTrack, false);
 
             if (youLikeGrid) {
                 if (data.youLike && data.youLike.length > 0) {
-                    // Update allMedia array with new tracks, avoiding duplicates
                     const newTracks = data.youLike.filter(t => !allMedia.some(item => item.id === t.id));
                     allMedia.push(...newTracks);
                     renderMediaInContainer(youLikeGrid, data.youLike);
                 } else {
-                    youLikeGrid.innerHTML = '<p>Add tracks to favorites to view.</p>';
+                    youLikeGrid.innerHTML = '<p>Добавьте треки в избранное, чтобы мы могли составить рекомендации.</p>';
                 }
             }
 
@@ -463,26 +412,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.favoriteCollections && data.favoriteCollections.length > 0) {
                      renderAllCategoriesOnMain(favoriteCollectionsGrid, 5);
                 } else {
-                    favoriteCollectionsGrid.innerHTML = '<p>No favorite collections found.</p>';
+                    favoriteCollectionsGrid.innerHTML = '<p>Нет любимых подборок.</p>';
                 }
             }
 
         } catch (error) {
             console.error('Error fetching recommendations:', error);
-            if (xrecomenSection) xrecomenSection.style.display = 'none';
         }
     };
-
-    const renderXrecomen = (track) => {
+    
+    // === УЛУЧШЕНИЕ: ОБНОВЛЕННАЯ ФУНКЦИЯ РЕНДЕРА XRECOMEN ===
+    const renderXrecomen = (track, isRandom) => {
+        if (!track) {
+            xrecomenTitle.textContent = 'Xrecomen';
+            xrecomenSubtitle.textContent = 'Лучший алгоритм подбора треков';
+            xrecomenBtn.style.setProperty('--xrecomen-bg', `url('/fon/default.png')`);
+            return;
+        }
+        
         const index = allMedia.findIndex(t => t.id === track.id);
         if (xrecomenBtn && index !== -1) {
             xrecomenBtn.dataset.index = index;
-            xrecomenBtn.querySelector('.xrecomen-title').textContent = track.title;
-            xrecomenBtn.querySelector('.xrecomen-subtitle').textContent = `By ${track.artist || track.creator_name}`;
-        } else {
-            if (xrecomenSection) xrecomenSection.style.display = 'none';
+            xrecomenTitle.textContent = track.title;
+            xrecomenSubtitle.textContent = isRandom ? 'Случайный трек' : `Возможно, вам понравится`;
+            // Устанавливаем фон через CSS переменную для плавности
+            xrecomenBtn.style.setProperty('--xrecomen-bg', `url('/fon/${track.cover}')`);
         }
     };
+
 
     const renderAllCategoriesOnMain = async (container, limit) => {
         try {
@@ -553,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isLoading = true;
         currentCategoryId = categoryId;
         currentPage = 1;
-        allMedia = []; // Clear allMedia for the new category playlist
+        allMedia = [];
         if (specificCategoryGrid) specificCategoryGrid.innerHTML = '';
         mainContent.removeEventListener('scroll', handleScroll);
         mainContent.addEventListener('scroll', handleScroll);
@@ -574,7 +531,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Network response was not ok');
             const newTracks = await response.json();
             
-            // Add new tracks to allMedia, avoiding duplicates
             const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
             allMedia.push(...newTracksToAdd);
 
@@ -593,13 +549,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- NEW LOGIC FOR SEARCH ---
     const startSearch = (query) => {
         if (searchIsLoading) return;
         currentSearchQuery = query;
         searchCurrentPage = 1;
         
-        // Clear allMedia to store only search results
         allMedia = []; 
         if(searchResultsGrid) searchResultsGrid.innerHTML = '';
         
@@ -618,16 +572,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTracks = await response.json();
             
             if (newTracks.length > 0) {
-                 // Add new tracks to allMedia, avoiding duplicates
                 const newTracksToAdd = newTracks.filter(newTrack => !allMedia.some(existingTrack => existingTrack.id === newTrack.id));
                 allMedia.push(...newTracksToAdd);
                 renderMediaInContainer(searchResultsGrid, newTracksToAdd);
                 searchCurrentPage++;
             } else {
-                if (searchCurrentPage === 1) { // If it's the first page and there are no results
-                    searchResultsGrid.innerHTML = `<p>Nothing found for "${currentSearchQuery}".</p>`;
+                if (searchCurrentPage === 1) {
+                    searchResultsGrid.innerHTML = `<p>Ничего не найдено по запросу "${currentSearchQuery}".</p>`;
                 }
-                // No more results, disable scroll
                 mainContent.removeEventListener('scroll', handleScroll);
             }
         } catch (error) {
@@ -636,7 +588,6 @@ document.addEventListener('DOMContentLoaded', () => {
             searchIsLoading = false;
         }
     };
-    // --- END OF NEW SEARCH LOGIC ---
 
     const handleScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = mainContent;
@@ -663,8 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loginBtn) loginBtn.style.display = 'none';
             if (userProfile) userProfile.style.display = 'flex';
             if (userAvatar) userAvatar.textContent = user.username.charAt(0).toUpperCase();
-            if (welcomeMessage) welcomeMessage.textContent = `Hello, ${user.username}!`;
-            if (userRole) userRole.textContent = `Your role: ${user.role}`;
+            if (welcomeMessage) welcomeMessage.textContent = `Привет, ${user.username}!`;
+            if (userRole) userRole.textContent = `Роль: ${user.role}`;
 
             if (navFavorites) navFavorites.style.display = 'flex';
             if (creatorStudioBtn) creatorStudioBtn.style.display = 'block';
@@ -712,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Error fetching categories.');
             const categories = await response.json();
             if (categorySelect) {
-                categorySelect.innerHTML = '<option value="">General</option>';
+                categorySelect.innerHTML = '<option value="">Общая</option>';
                 categories.forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat.id;
@@ -749,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allGridContainer) {
             allGridContainer.innerHTML = '';
             if (mediaToRender.length === 0) {
-                allGridContainer.innerHTML = `<p>Nothing here yet.</p>`;
+                allGridContainer.innerHTML = `<p>Здесь пока ничего нет.</p>`;
                 return;
             }
             renderMediaInContainer(allGridContainer, mediaToRender);
@@ -762,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         media.forEach((item) => {
             if (!item || !item.title || !item.file) {
-                console.warn("Skipped track due to incomplete data:", item);
+                console.warn("Пропущен трек из-за неполных данных:", item);
                 return;
             }
             if (existingMediaIds.includes(item.id)) {
@@ -771,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const trackIndex = allMedia.findIndex(t => t.id === item.id);
             if (trackIndex === -1) {
-                console.warn("Track not found in allMedia, could not create card:", item);
+                console.warn("Трек не найден в allMedia, карточка не создана:", item);
                 return;
             }
 
@@ -780,14 +731,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `card ${item.type === 'video' ? 'card--video' : ''}`;
             card.dataset.index = trackIndex;
             card.dataset.id = item.id;
-            card.dataset.categoryId = item.category_id; // NEW: Added category ID to card for playlist creation
+            card.dataset.categoryId = item.category_id;
 
             let cardActionsHtml = '';
             if (currentUser && currentUser.role === 'admin') {
                 cardActionsHtml = `
                     <div class="card-actions">
-                        <button class="rename-btn" data-track-id="${item.id}" title="Rename"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path fill-rule="evenodd" d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
-                        <button class="delete-btn" data-track-id="${item.id}" title="Delete"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                        <button class="rename-btn" data-track-id="${item.id}" title="Переименовать"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path fill-rule="evenodd" d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg></button>
+                        <button class="delete-btn" data-track-id="${item.id}" title="Удалить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                     </div>
                 `;
             }
@@ -796,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card-image-wrapper">
                     <img src="/fon/${item.cover}" onerror="this.src='/fon/default.png';" class="card-image" alt="${item.title}">
                     ${cardActionsHtml}
-                    ${currentUser ? `<button class="favorite-btn ${isFavorite ? 'favorited' : ''}" data-file="${item.file}" title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">❤</button>` : ''}
+                    ${currentUser ? `<button class="favorite-btn ${isFavorite ? 'favorited' : ''}" data-file="${item.file}" title="${isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}">❤</button>` : ''}
                 </div>
                 <p class="card-title">${item.title} ${item.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
                 <p class="card-artist">${item.artist || item.creator_name}</p>
@@ -804,38 +755,37 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(card);
         });
     };
-
+    
+    // === УЛУЧШЕНИЕ: ОБНОВЛЕННАЯ ЛОГИКА СМЕНЫ ТРЕКА С АНИМАЦИЯМИ ===
     const playMedia = async (index) => {
         if (index < 0 || index >= currentPlaylist.length) return;
+        
         currentTrack = currentPlaylist[index];
-
+        currentTrackIndex = index;
+        const item = currentTrack;
+        
         hideVideo();
         activeMediaElement.pause();
         activeMediaElement.currentTime = 0;
-        currentTrackIndex = index;
-        const item = currentPlaylist[index];
-
-        // Initialize the visualizer on first playback
+        
         initVisualizer();
 
         if (nowPlayingText) {
-            nowPlayingText.textContent = `Now playing: ${item.title} by ${item.artist || item.creator_name}`;
+            nowPlayingText.textContent = `Сейчас играет: ${item.title} - ${item.artist || item.creator_name}`;
         }
-
-        // Update both players
-        if (playerHeader) playerHeader.classList.add('fading');
+        
+        // 1. Запускаем анимацию исчезновения
+        [playerCover, copyPlayerCover].forEach(cover => cover.classList.add('fading-out'));
+        
+        // 2. Ждем завершения анимации (400ms, как в CSS)
         setTimeout(() => {
-            // Default Player
-            if (playerCover) playerCover.src = `/fon/${item.cover}`;
-            if (playerTitle) playerTitle.textContent = item.title;
-            if (playerArtist) playerArtist.textContent = `by ${item.artist || item.creator_name}`;
-            
-            // Copy Player
-            if (copyPlayerCover) copyPlayerCover.src = `/fon/${item.cover}`;
-            if (copyPlayerTitle) copyPlayerTitle.textContent = item.title;
-            if (copyPlayerArtist) copyPlayerArtist.textContent = `by ${item.artist || item.creator_name}`;
-
-
+            // 3. Обновляем информацию и SRC
+            [playerCover, copyPlayerCover].forEach(cover => cover.src = `/fon/${item.cover}`);
+            playerTitle.textContent = item.title;
+            playerArtist.textContent = item.artist || item.creator_name;
+            copyPlayerTitle.textContent = item.title;
+            copyPlayerArtist.textContent = item.artist || item.creator_name;
+        
             if (item.type === 'audio') {
                 activeMediaElement = audioPlayer;
                 activeMediaElement.src = `/music/${item.file}`;
@@ -845,12 +795,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeMediaElement.src = `/video/${item.file}`;
                 showVideo();
             }
-            activeMediaElement.play().catch(e => console.error("Playback error:", e));
-            if (playerHeader) playerHeader.classList.remove('fading');
-        }, 150);
+            
+            // 4. После смены SRC, запускаем воспроизведение и анимацию появления
+            activeMediaElement.play().catch(e => console.error("Ошибка воспроизведения:", e));
+            [playerCover, copyPlayerCover].forEach(cover => cover.classList.remove('fading-out'));
+
+        }, 400); // Должно совпадать с transition-duration в CSS
+        
 
         updateFavoriteStatus(item.file);
-
 
         if (playTimer) clearTimeout(playTimer);
         playTimer = setTimeout(async () => {
@@ -869,27 +822,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     };
 
+
     const updateFavoriteStatus = (mediaFile) => {
         if (!currentUser) return;
         const isFavorite = userFavorites.includes(mediaFile);
 
-        // Default Player Button
         if (favoritePlayerBtn) {
             favoritePlayerBtn.classList.toggle('favorited', isFavorite);
             const heartIcon = favoritePlayerBtn.querySelector('svg');
             heartIcon.style.fill = isFavorite ? 'red' : 'none';
             heartIcon.style.stroke = isFavorite ? 'red' : 'currentColor';
-            favoritePlayerBtn.title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+            favoritePlayerBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
         }
 
-        // Copy Player Button
         if (copyFavoriteBtn) {
             copyFavoriteBtn.classList.toggle('favorited', isFavorite);
-            copyFavoriteBtn.title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+            copyFavoriteBtn.title = isFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
         }
     }
-    
-    // --- NEW LOGIC FOR LOADING "MY TRACKS" ---
     
     const fetchMyTracks = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
@@ -898,12 +848,11 @@ document.addEventListener('DOMContentLoaded', () => {
         myTracksCurrentPage = 1;
         myTracksIsLoading = false;
         
-        // Clear and prepare the container
         myTracksSection.innerHTML = ''; 
         const uploadBtn = document.createElement('button');
         uploadBtn.className = 'submit-btn';
         uploadBtn.id = 'uploadTrackBtn';
-        uploadBtn.textContent = 'Upload Track';
+        uploadBtn.textContent = 'Загрузить трек';
         uploadBtn.addEventListener('click', () => {
             if (uploadModal) uploadModal.style.display = 'flex';
         });
@@ -941,17 +890,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderMyTracksChunk(newTracks);
                 myTracksCurrentPage++;
             } else {
-                // No more tracks, disable scroll
                 mainContent.removeEventListener('scroll', handleMyTracksScroll);
                 if (myTracks.length === 0) {
                      const myTracksGrid = document.getElementById('myTracksGrid');
                      if (myTracksGrid) {
-                        myTracksGrid.innerHTML = `<p>You haven't uploaded any tracks yet.</p>`;
+                        myTracksGrid.innerHTML = `<p>Вы еще не загрузили ни одного трека.</p>`;
                      }
                 }
             }
         } catch (error) {
-            console.error('Error loading your tracks:', error);
+            console.error('Ошибка загрузки ваших треков:', error);
         } finally {
             myTracksIsLoading = false;
         }
@@ -964,8 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tracksToRender.forEach(track => {
             const card = document.createElement('div');
             card.className = `card my-track-card ${track.type === 'video' ? 'card--video' : ''}`;
-            card.dataset.trackId = track.id; // Use track ID for uniqueness
-             // Add the track to the global allMedia if it's not already there, for player functionality
+            card.dataset.trackId = track.id;
             if (!allMedia.some(t => t.id === track.id)) {
                 allMedia.push(track);
             }
@@ -977,9 +924,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="/fon/${track.cover}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
                 </div>
                 <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
-                <p class="card-artist">by ${track.artist || track.creator_name}</p>
+                <p class="card-artist">${track.artist || track.creator_name}</p>
                 <div class="card-actions">
-                    <button class="delete-my-track-btn" data-track-id="${track.id}">Delete</button>
+                    <button class="delete-my-track-btn" data-track-id="${track.id}">Удалить</button>
                 </div>
             `;
             myTracksGrid.appendChild(card);
@@ -988,14 +935,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleMyTracksScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = mainContent;
-        // Check if the "My Tracks" tab is active
         const isActive = myTracksSection.style.display === 'block';
         if (isActive && scrollTop + clientHeight >= scrollHeight - 500 && !myTracksIsLoading) {
             loadMoreMyTracks();
         }
     };
-    // --- END OF NEW LOGIC ---
-
 
     const fetchCreatorStats = async () => {
         if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) return;
@@ -1018,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: {
                     labels: dates,
                     datasets: [{
-                        label: 'Listens',
+                        label: 'Прослушивания',
                         data: plays,
                         borderColor: '#9147FF',
                         backgroundColor: 'rgba(145, 71, 255, 0.2)',
@@ -1047,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error(error);
-            if (analyticsSection) analyticsSection.innerHTML = `<p>Could not load statistics.</p>`;
+            if (analyticsSection) analyticsSection.innerHTML = `<p>Не удалось загрузить статистику.</p>`;
         }
     };
 
@@ -1109,7 +1053,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const switchView = (viewIdToShow, ...args) => {
-        // Remove scroll handler before changing view
         mainContent.removeEventListener('scroll', handleScroll);
         
         document.querySelectorAll('.nav-link, .creator-nav-btn').forEach(l => l.classList.remove('active'));
@@ -1128,7 +1071,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.classList.remove('creator-mode');
             }
         };
-        // Hide search bar by default, show only when needed
         if (searchBarWrapper) searchBarWrapper.style.display = 'none';
 
         if (viewIdToShow === 'homeView') {
@@ -1137,14 +1079,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
             fetchXrecomen();
-             // Add scroll handler for home page
             mainContent.addEventListener('scroll', handleScroll);
+            initScrollAnimations();
         } else if (viewIdToShow === 'searchView') {
             const query = args[0] || '';
             if (viewTitle) viewTitle.textContent = `Поиск: "${query}"`;
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
-            // Add scroll handler for search results
             mainContent.addEventListener('scroll', handleScroll);
         } else if (viewIdToShow === 'categoriesView') {
             if (navCategories) navCategories.classList.add('active');
@@ -1174,12 +1115,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewIdToShow === 'specificCategoryView') {
             if (searchBarWrapper) searchBarWrapper.style.display = 'block';
             defaultPlayerDisplay();
-             // Add scroll handler for categories
             mainContent.addEventListener('scroll', handleScroll);
-        } else if (viewIdToShow === 'youtubeView') { // +++ НОВАЯ ЛОГИКА +++
+        } else if (viewIdToShow === 'youtubeView') {
             if (navYoutube) navYoutube.classList.add('active');
             if (viewTitle) viewTitle.textContent = 'Youtube';
-            // Search bar is hidden by default, so no need to hide it again
             defaultPlayerDisplay();
         }
     };
@@ -1206,10 +1145,9 @@ document.addEventListener('DOMContentLoaded', () => {
             creatorNavButtons.forEach(btn => btn.classList.remove('active'));
 
             if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
-                // Initially show "My Tracks"
                 if (myTracksSection) myTracksSection.style.display = 'block';
                 if (myTracksBtn) myTracksBtn.classList.add('active');
-                fetchMyTracks(); // Start loading tracks
+                fetchMyTracks();
             } else {
                 if (creatorHomeSection) creatorHomeSection.style.display = 'block';
                 if (creatorHomeBtn) creatorHomeBtn.classList.add('active');
@@ -1237,19 +1175,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (applicationsList) {
                 applicationsList.innerHTML = '';
                 if (applications.length === 0) {
-                    applicationsList.innerHTML = '<p>No new applications.</p>';
+                    applicationsList.innerHTML = '<p>Новых заявок нет.</p>';
                     return;
                 }
                 applications.forEach(app => {
                     const appDiv = document.createElement('div');
                     appDiv.className = 'admin-card';
                     appDiv.innerHTML = `
-                        <h3>Application from: ${app.username}</h3>
-                        <p><strong>Name:</strong> ${app.full_name}</p>
-                        <p><strong>Phone:</strong> ${app.phone_number}</p>
+                        <h3>Заявка от: ${app.username}</h3>
+                        <p><strong>Имя:</strong> ${app.full_name}</p>
+                        <p><strong>Телефон:</strong> ${app.phone_number}</p>
                         <p><strong>Email:</strong> ${app.email}</p>
-                        <button class="approve-app-btn" data-user-id="${app.user_id}">Approve</button>
-                        <button class="reject-app-btn" data-app-id="${app.id}">Reject</button>
+                        <button class="approve-app-btn" data-user-id="${app.user_id}">Одобрить</button>
+                        <button class="reject-app-btn" data-app-id="${app.id}">Отклонить</button>
                     `;
                     applicationsList.appendChild(appDiv);
                 });
@@ -1267,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (categoriesList) {
                 categoriesList.innerHTML = '';
                 if (categories.length === 0) {
-                    categoriesList.innerHTML = '<p>No categories created yet.</p>';
+                    categoriesList.innerHTML = '<p>Категории еще не созданы.</p>';
                 }
                 categories.forEach(cat => {
                     const catDiv = document.createElement('div');
@@ -1275,10 +1213,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     catDiv.innerHTML = `
                         <h3>${cat.name}</h3>
                         <div class="category-actions">
-                            <button class="btn-edit" data-category-id="${cat.id}" title="Edit">
+                            <button class="btn-edit" data-category-id="${cat.id}" title="Редактировать">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
                             </button>
-                            <button class="btn-delete" data-category-id="${cat.id}" title="Delete">
+                            <button class="btn-delete" data-category-id="${cat.id}" title="Удалить">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
                             </button>
                         </div>
@@ -1302,10 +1240,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     userDiv.className = 'admin-card';
                     userDiv.innerHTML = `
                         <h3>${user.username}</h3>
-                        <p>Role: ${user.role}</p>
-                        <button class="change-role-btn" data-user-id="${user.id}" data-current-role="${user.role}">Change Role</button>
-                        <button class="change-password-btn" data-user-id="${user.id}" data-username="${user.username}">Change Password</button>
-                        <button class="delete-user-btn" data-user-id="${user.id}">Delete</button>
+                        <p>Роль: ${user.role}</p>
+                        <button class="change-role-btn" data-user-id="${user.id}" data-current-role="${user.role}">Сменить роль</button>
+                        <button class="change-password-btn" data-user-id="${user.id}" data-username="${user.username}">Сменить пароль</button>
+                        <button class="delete-user-btn" data-user-id="${user.id}">Удалить</button>
                     `;
                     usersList.appendChild(userDiv);
                 });
@@ -1323,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (moderationTracksList) {
                 moderationTracksList.innerHTML = '';
                 if (tracks.length === 0) {
-                    moderationTracksList.innerHTML = '<p>No tracks for moderation.</p>';
+                    moderationTracksList.innerHTML = '<p>Треков на модерации нет.</p>';
                     return;
                 }
                 tracks.forEach((track, index) => {
@@ -1335,9 +1273,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <img src="/temp_uploads/${track.cover_name}" onerror="this.src='/fon/default.png';" class="card-image" alt="${track.title}">
                         </div>
                         <p class="card-title">${track.title} ${track.type === 'video' ? '<span class="video-icon">🎥</span>' : ''}</p>
-                        <p class="card-artist">by ${track.username}</p>
+                        <p class="card-artist">от ${track.username}</p>
                         <div class="moderation-actions">
-                            <button class="moderation-check-btn" data-track-id="${track.id}">Check</button>
+                            <button class="moderation-check-btn" data-track-id="${track.id}">Проверить</button>
                         </div>
                     `;
                     moderationTracksList.appendChild(trackCard);
@@ -1367,74 +1305,59 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTimeout = setTimeout(func, delay);
     };
 
-    // --- NEW FUNCTIONS FOR VISUALIZER ---
-
     const initVisualizer = () => {
         if (visualizerInitialized) return;
         
-        // Create audio context
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Create analyzer
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256; // Number of data "columns"
-        
-        // Connect our HTML audio and video elements to the Web Audio API
-        const audioSource = audioContext.createMediaElementSource(audioPlayer);
-        const videoSource = audioContext.createMediaElementSource(videoPlayer);
-        
-        // Build the chain: source -> analyzer -> output (speakers)
-        // Connect both sources to the same analyzer
-        audioSource.connect(analyser);
-        videoSource.connect(analyser);
-        analyser.connect(audioContext.destination);
-        
-        // Create an array to store frequency data
-        const bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-        
-        visualizerInitialized = true;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            
+            const audioSource = audioContext.createMediaElementSource(audioPlayer);
+            const videoSource = audioContext.createMediaElementSource(videoPlayer);
+            
+            audioSource.connect(analyser);
+            videoSource.connect(analyser);
+            analyser.connect(audioContext.destination);
+            
+            const bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+            
+            visualizerInitialized = true;
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser.", e);
+        }
     };
 
     const renderVisualizer = () => {
-        // Start animation loop
+        if (!visualizerInitialized) return;
         animationFrameId = requestAnimationFrame(renderVisualizer);
         
-        // Get real-time frequency data
         analyser.getByteFrequencyData(dataArray);
         
         const barCount = equalizerBars.length;
         const bufferLength = analyser.frequencyBinCount;
 
         for (let i = 0; i < barCount; i++) {
-            // Get a value from the data array (0-255)
-            // We take values with a certain step to distribute them across 20 columns
             const dataIndex = Math.floor(i * (bufferLength / barCount));
             const barHeight = dataArray[dataIndex];
             const heightPercentage = (barHeight / 255) * 100;
-            
-            // Set the column height, adding a minimum height
             equalizerBars[i].style.height = `${Math.max(5, heightPercentage)}%`;
         }
     };
 
-
     const initEventListeners = () => {
         [audioPlayer, videoPlayer, videoPlayerModal, moderationPlayer, moderationVideoPlayer].forEach(el => {
-            if (el) {
-                el.loop = false;
-            }
+            if (el) el.loop = false;
         });
 
-        // --- START: FIXED AND NEW LOGIC FOR UPLOAD WINDOW ---
-        
-        // Switch upload type (Audio/Video)
         if (uploadTypeRadios) {
             uploadTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
                     audioFileInput.value = '';
                     videoFileInput.value = '';
-                    if (mediaFileName) mediaFileName.textContent = 'File not selected';
+                    if (mediaFileName) mediaFileName.textContent = 'Файл не выбран';
         
                     if (radio.value === 'audio') {
                         audioFileInput.setAttribute('required', 'required');
@@ -1447,14 +1370,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // File handler function
         const handleFiles = (files, type) => {
             if (!files || files.length === 0) return;
             const file = files[0];
 
             if (type === 'cover') {
                 if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file for the cover.');
+                    alert('Пожалуйста, выберите изображение для обложки.');
                     return;
                 }
                 coverFileInput.files = files;
@@ -1469,13 +1391,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const selectedType = document.querySelector('input[name="uploadType"]:checked').value;
                 if (selectedType === 'audio') {
                     if (!file.type.startsWith('audio/')) {
-                        alert('Please select an audio file.');
+                        alert('Пожалуйста, выберите аудиофайл.');
                         return;
                     }
                     audioFileInput.files = files;
                 } else {
                     if (!file.type.startsWith('video/')) {
-                        alert('Please select a video file.');
+                        alert('Пожалуйста, выберите видеофайл.');
                         return;
                     }
                     videoFileInput.files = files;
@@ -1484,79 +1406,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // Handlers for cover area
         if (coverDropArea) {
             coverDropArea.addEventListener('click', () => coverFileInput.click());
-            coverDropArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                coverDropArea.classList.add('dragover');
-            });
+            coverDropArea.addEventListener('dragover', (e) => { e.preventDefault(); coverDropArea.classList.add('dragover'); });
             coverDropArea.addEventListener('dragleave', () => coverDropArea.classList.remove('dragover'));
-            coverDropArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                coverDropArea.classList.remove('dragover');
-                handleFiles(e.dataTransfer.files, 'cover');
-            });
+            coverDropArea.addEventListener('drop', (e) => { e.preventDefault(); coverDropArea.classList.remove('dragover'); handleFiles(e.dataTransfer.files, 'cover'); });
         }
         if(coverFileInput) coverFileInput.addEventListener('change', () => handleFiles(coverFileInput.files, 'cover'));
         
-        // Handlers for media file area
         if (mediaDropArea) {
             mediaDropArea.addEventListener('click', () => {
                 const selectedType = document.querySelector('input[name="uploadType"]:checked').value;
-                if (selectedType === 'audio') audioFileInput.click();
-                else videoFileInput.click();
+                if (selectedType === 'audio') audioFileInput.click(); else videoFileInput.click();
             });
-            mediaDropArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                mediaDropArea.classList.add('dragover');
-            });
+            mediaDropArea.addEventListener('dragover', (e) => { e.preventDefault(); mediaDropArea.classList.add('dragover'); });
             mediaDropArea.addEventListener('dragleave', () => mediaDropArea.classList.remove('dragover'));
-            mediaDropArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                mediaDropArea.classList.remove('dragover');
-                handleFiles(e.dataTransfer.files, 'media');
-            });
+            mediaDropArea.addEventListener('drop', (e) => { e.preventDefault(); mediaDropArea.classList.remove('dragover'); handleFiles(e.dataTransfer.files, 'media'); });
         }
         if(audioFileInput) audioFileInput.addEventListener('change', () => handleFiles(audioFileInput.files, 'media'));
         if(videoFileInput) videoFileInput.addEventListener('change', () => handleFiles(videoFileInput.files, 'media'));
 
-        // Reset form when closing modal
         if (closeUploadBtn) {
             closeUploadBtn.addEventListener('click', () => {
                 uploadForm.reset();
                 coverPreview.style.display = 'none';
                 coverPlaceholder.style.display = 'flex';
-                mediaFileName.textContent = 'File not selected';
-                // Set audio as default type for next opening
+                mediaFileName.textContent = 'Файл не выбран';
                 document.querySelector('input[name="uploadType"][value="audio"]').checked = true;
                 audioFileInput.setAttribute('required', 'required');
                 videoFileInput.removeAttribute('required');
             });
         }
 
-        // --- END: FIXED AND NEW LOGIC FOR UPLOAD WINDOW ---
-
-        if (navHome) navHome.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('homeView');
-        });
-        if (navCategories) navCategories.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('categoriesView');
-        });
-        // +++ НОВЫЙ ОБРАБОТЧИК ДЛЯ МЕНЮ YOUTUBE +++
-        if (navYoutube) navYoutube.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('youtubeView');
-        });
+        if (navHome) navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('homeView'); });
+        if (navCategories) navCategories.addEventListener('click', (e) => { e.preventDefault(); switchView('categoriesView'); });
+        if (navYoutube) navYoutube.addEventListener('click', (e) => { e.preventDefault(); switchView('youtubeView'); });
         if (navFavorites) navFavorites.addEventListener('click', (e) => {
             e.preventDefault();
             if (currentUser) {
                 switchView('favoritesView');
                 renderFavorites();
             } else {
-                alert('Please log in to view favorites.');
+                alert('Пожалуйста, войдите, чтобы просмотреть избранное.');
             }
         });
 
@@ -1570,59 +1461,51 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentUser) {
                 toggleCreatorMode(true);
             } else {
-                alert('Please log in to access the Creator Studio.');
+                alert('Пожалуйста, войдите, чтобы получить доступ к Creator Studio.');
             }
         });
 
-        if (backToXMusicBtn) backToXMusicBtn.addEventListener('click', () => {
-            toggleCreatorMode(false);
-        });
+        if (backToXMusicBtn) backToXMusicBtn.addEventListener('click', () => { toggleCreatorMode(false); });
 
         const creatorNavButtons = document.querySelectorAll('.creator-nav-btn');
         creatorNavButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // Remove scroll handler when switching tabs
                 mainContent.removeEventListener('scroll', handleMyTracksScroll);
-
                 creatorNavButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => {
-                    if (sec) sec.style.display = 'none';
-                });
+                document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => { if (sec) sec.style.display = 'none'; });
 
                 if (btn.id === 'myTracksBtn') {
                     if (myTracksSection) myTracksSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'My Tracks';
-                    fetchMyTracks(); // This function now initiates paginated loading
+                    if (viewTitle) viewTitle.textContent = 'Мои треки';
+                    fetchMyTracks();
                 } else if (btn.id === 'analyticsBtn') {
                     if (analyticsSection) analyticsSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Analytics';
+                    if (viewTitle) viewTitle.textContent = 'Аналитика';
                     fetchCreatorStats();
                 } else if (btn.id === 'adminApplicationsBtn') {
                     if (adminApplicationsSection) adminApplicationsSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Creator Applications';
+                    if (viewTitle) viewTitle.textContent = 'Заявки в Creator';
                     fetchAdminApplications();
                 } else if (btn.id === 'adminUsersBtn') {
                     if (adminUsersSection) adminUsersSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Accounts';
+                    if (viewTitle) viewTitle.textContent = 'Аккаунты';
                     fetchAdminUsers();
                 } else if (btn.id === 'adminModerationBtn') {
                     if (adminModerationSection) adminModerationSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Tracks for Moderation';
+                    if (viewTitle) viewTitle.textContent = 'Треки на модерации';
                     fetchModerationTracks();
                 } else if (btn.id === 'adminStatsBtn') {
                     if (adminStatsSection) adminStatsSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Statistics';
+                    if (viewTitle) viewTitle.textContent = 'Статистика';
                     fetchAdminStats();
                 } else if (btn.id === 'adminCategoriesBtn') {
                     if (adminCategoriesSection) adminCategoriesSection.style.display = 'block';
-                    if (viewTitle) viewTitle.textContent = 'Categories';
+                    if (viewTitle) viewTitle.textContent = 'Категории';
                     fetchAdminCategories();
                 } else if (btn.id === 'adminLogsBtn') {
                     const password = prompt("Для доступа к логам введите пароль:");
                     if (password) {
-                        // Переключаем вид и запрашиваем логи только ПОСЛЕ ввода пароля
                         document.querySelectorAll('#creatorView .creator-main-section').forEach(sec => sec.style.display = 'none');
                         if (adminLogsSection) adminLogsSection.style.display = 'block';
                         if (viewTitle) viewTitle.textContent = 'Логи';
@@ -1638,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (applyBtn) applyBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (!currentUser) {
-                alert('Please log in to apply.');
+                alert('Пожалуйста, войдите, чтобы подать заявку.');
                 return;
             }
             if (applicationModal) applicationModal.style.display = 'flex';
@@ -1654,15 +1537,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const res = await fetchWithAuth(`${api}/api/apply-for-creator`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            fullName,
-                            phoneNumber,
-                            email
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id, fullName, phoneNumber, email })
                     });
                     const result = await res.json();
                     alert(result.message);
@@ -1671,68 +1547,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         applicationForm.reset();
                     }
                 } catch (err) {
-                    alert('Error submitting application.');
+                    alert('Ошибка при отправке заявки.');
                 }
             });
         }
         
-        if (closeApplicationBtn) closeApplicationBtn.addEventListener('click', () => {
-            if (applicationModal) applicationModal.style.display = 'none';
-        });
-        if (applicationModal) applicationModal.addEventListener('click', (e) => {
-            if (e.target === applicationModal) {
-                applicationModal.style.display = 'none';
-            }
-        });
-
-        if (myTracksSection) myTracksSection.addEventListener('click', (e) => {
-            if (e.target.id === 'uploadTrackBtn') {
-                if (uploadModal) uploadModal.style.display = 'flex';
-            }
-        });
-
-        if (closeUploadBtn) closeUploadBtn.addEventListener('click', () => {
-            if (uploadModal) uploadModal.style.display = 'none';
-        });
-        if (uploadModal) uploadModal.addEventListener('click', (e) => {
-            if (e.target === uploadModal) {
-                uploadModal.style.display = 'none';
-            }
-        });
-
-        if (isForeignArtist) isForeignArtist.addEventListener('change', () => {
-            if (artistFields) artistFields.style.display = isForeignArtist.checked ? 'block' : 'none';
-        });
-
-        if (settingsBtn) settingsBtn.addEventListener('click', () => {
-            if (settingsModal) settingsModal.style.display = 'flex';
-        });
-        if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => {
-            if (settingsModal) settingsModal.style.display = 'none';
-        });
-        if (settingsModal) settingsModal.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                settingsModal.style.display = 'none';
-            }
-        });
-
-        if (loginBtn) loginBtn.addEventListener('click', () => {
-            if (loginModal) loginModal.style.display = 'flex';
-        });
-        if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => {
-            if (loginModal) loginModal.style.display = 'none';
-        });
-        if (closeRegisterBtn) closeRegisterBtn.addEventListener('click', () => {
-            if (registerModal) registerModal.style.display = 'none';
-        });
-        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => {
-            if (loginModal) loginModal.style.display = 'none';
-            if (registerModal) registerModal.style.display = 'flex';
-        });
-        if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => {
-            if (registerModal) registerModal.style.display = 'none';
-            if (loginModal) loginModal.style.display = 'flex';
-        });
+        if (closeApplicationBtn) closeApplicationBtn.addEventListener('click', () => { if (applicationModal) applicationModal.style.display = 'none'; });
+        if (applicationModal) applicationModal.addEventListener('click', (e) => { if (e.target === applicationModal) applicationModal.style.display = 'none'; });
+        if (myTracksSection) myTracksSection.addEventListener('click', (e) => { if (e.target.id === 'uploadTrackBtn') if (uploadModal) uploadModal.style.display = 'flex'; });
+        if (closeUploadBtn) closeUploadBtn.addEventListener('click', () => { if (uploadModal) uploadModal.style.display = 'none'; });
+        if (uploadModal) uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) uploadModal.style.display = 'none'; });
+        if (isForeignArtist) isForeignArtist.addEventListener('change', () => { if (artistFields) artistFields.style.display = isForeignArtist.checked ? 'block' : 'none'; });
+        if (settingsBtn) settingsBtn.addEventListener('click', () => { if (settingsModal) settingsModal.style.display = 'flex'; });
+        if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => { if (settingsModal) settingsModal.style.display = 'none'; });
+        if (settingsModal) settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.style.display = 'none'; });
+        if (loginBtn) loginBtn.addEventListener('click', () => { if (loginModal) loginModal.style.display = 'flex'; });
+        if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => { if (loginModal) loginModal.style.display = 'none'; });
+        if (closeRegisterBtn) closeRegisterBtn.addEventListener('click', () => { if (registerModal) registerModal.style.display = 'none'; });
+        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => { if (loginModal) loginModal.style.display = 'none'; if (registerModal) registerModal.style.display = 'flex'; });
+        if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => { if (registerModal) registerModal.style.display = 'none'; if (loginModal) loginModal.style.display = 'flex'; });
         
         if (logoutBtn) logoutBtn.addEventListener('click', () => {
             clearTokens();
@@ -1742,42 +1575,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (settingsModal) settingsModal.style.display = 'none';
         });
 
-
-        if (closeVideoBtn) closeVideoBtn.addEventListener('click', () => {
-            videoPlayerModal.pause();
-            videoPlayerModal.currentTime = 0;
-            if (videoModal) videoModal.style.display = 'none';
-        });
-
-        if (closeModerationBtn) closeModerationBtn.addEventListener('click', () => {
-            if (moderationModal) moderationModal.style.display = 'none';
-            moderationPlayer.pause();
-            moderationPlayer.currentTime = 0;
-            moderationVideoPlayer.pause();
-            moderationVideoPlayer.currentTime = 0;
-        });
-
-        if (closeCategoryModalBtn) closeCategoryModalBtn.addEventListener('click', () => {
-            if (categoryModal) categoryModal.style.display = 'none';
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (uploadModal) uploadModal.style.display = 'none';
-                if (settingsModal) settingsModal.style.display = 'none';
-                if (loginModal) loginModal.style.display = 'none';
-                if (registerModal) registerModal.style.display = 'none';
-                if (videoModal) videoModal.style.display = 'none';
-                if (moderationModal) moderationModal.style.display = 'none';
-                if (categoryModal) categoryModal.style.display = 'none';
-            }
-        });
-
-        if (categoryModal) categoryModal.addEventListener('click', (e) => {
-            if (e.target === categoryModal) {
-                categoryModal.style.display = 'none';
-            }
-        });
+        if (closeVideoBtn) closeVideoBtn.addEventListener('click', () => { videoPlayerModal.pause(); videoPlayerModal.currentTime = 0; if (videoModal) videoModal.style.display = 'none'; });
+        if (closeModerationBtn) closeModerationBtn.addEventListener('click', () => { if (moderationModal) moderationModal.style.display = 'none'; moderationPlayer.pause(); moderationPlayer.currentTime = 0; moderationVideoPlayer.pause(); moderationVideoPlayer.currentTime = 0; });
+        if (closeCategoryModalBtn) closeCategoryModalBtn.addEventListener('click', () => { if (categoryModal) categoryModal.style.display = 'none'; });
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') modals.forEach(m => { if(m) m.style.display = 'none' }); });
+        if (categoryModal) categoryModal.addEventListener('click', (e) => { if (e.target === categoryModal) categoryModal.style.display = 'none'; });
 
         if (userSearchInput) {
             userSearchInput.addEventListener('input', () => {
@@ -1786,9 +1588,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userSearchStatus.textContent = '';
                 userSearchStatus.className = '';
 
-                if (query.length === 0) {
-                    return;
-                }
+                if (query.length === 0) return;
 
                 userSearchTimeout = setTimeout(async () => {
                     try {
@@ -1798,10 +1598,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (user) {
                             const userExists = selectedUsers.some(su => su.id === user.id);
                             if (userExists) {
-                                userSearchStatus.textContent = 'User already added';
+                                userSearchStatus.textContent = 'Уже добавлен';
                                 userSearchStatus.className = 'status-warning';
                             } else if (user.role !== 'creator' && user.role !== 'admin') {
-                                userSearchStatus.textContent = 'Not a creator';
+                                userSearchStatus.textContent = 'Не creator';
                                 userSearchStatus.className = 'status-invalid';
                             } else {
                                 userSearchStatus.innerHTML = '&#10004;';
@@ -1809,11 +1609,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 userSearchInput.dataset.userId = user.id;
                             }
                         } else {
-                            userSearchStatus.textContent = 'Not found';
+                            userSearchStatus.textContent = 'Не найден';
                             userSearchStatus.className = 'status-invalid';
                         }
                     } catch (err) {
-                        userSearchStatus.textContent = 'Error';
+                        userSearchStatus.textContent = 'Ошибка';
                         userSearchStatus.className = 'status-invalid';
                     }
                 }, 500);
@@ -1866,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const allCategories = await res.json();
                 const category = allCategories.find(c => c.id == categoryId);
                 if (!category) {
-                    alert('Category not found.');
+                    alert('Категория не найдена.');
                     return;
                 }
 
@@ -1879,10 +1679,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderSelectedUsers();
 
                 if (categoryModal) categoryModal.style.display = 'flex';
-                if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Edit Category';
+                if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Редактировать категорию';
             } catch (err) {
                 console.error(err);
-                alert('Error loading category data.');
+                alert('Ошибка загрузки данных категории.');
             }
         };
 
@@ -1893,7 +1693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const allowedUsers = selectedUsers.map(user => user.id);
 
             if (!categoryName) {
-                alert('Category name cannot be empty.');
+                alert('Название категории не может быть пустым.');
                 return;
             }
 
@@ -1903,13 +1703,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await fetchWithAuth(url, {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: categoryName,
-                        allowedUsers: allowedUsers
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: categoryName, allowedUsers: allowedUsers })
                 });
                 const result = await res.json();
                 alert(result.message);
@@ -1918,7 +1713,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAdminCategories();
                 }
             } catch (err) {
-                alert('Error saving category.');
+                alert('Ошибка сохранения категории.');
             }
         });
 
@@ -1926,23 +1721,18 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
 
-            if (uploadType === 'audio' && (!audioFileInput || !audioFileInput.files[0])) {
-                alert('Please select an audio file.');
-                return;
-            } else if (uploadType === 'video' && (!videoFileInput || !videoFileInput.files[0])) {
-                alert('Please select a video file.');
+            if ((uploadType === 'audio' && (!audioFileInput || !audioFileInput.files[0])) || (uploadType === 'video' && (!videoFileInput || !videoFileInput.files[0]))) {
+                alert('Пожалуйста, выберите медиафайл.');
                 return;
             }
-
             if (!coverFileInput || !coverFileInput.files[0]) {
-                alert('Please select a cover file.');
+                alert('Пожалуйста, выберите обложку.');
                 return;
             }
-
 
             if (uploadManager) uploadManager.style.display = 'block';
             if (uploadProgressBar) uploadProgressBar.style.width = '0%';
-            if (uploadStatusText) uploadStatusText.textContent = 'Preparing for upload...';
+            if (uploadStatusText) uploadStatusText.textContent = 'Подготовка к загрузке...';
             if (uploadSubmitBtn) uploadSubmitBtn.disabled = true;
 
             const formData = new FormData(uploadForm);
@@ -1952,53 +1742,38 @@ document.addEventListener('DOMContentLoaded', () => {
             xhr.open('POST', `${api}/api/moderation/upload`, true);
 
             const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-            if (accessToken) {
-                xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
-            }
+            if (accessToken) xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
 
             xhr.upload.addEventListener('progress', (event) => {
                 if (event.lengthComputable) {
                     const percent = Math.round((event.loaded / event.total) * 100);
                     if (uploadProgressBar) uploadProgressBar.style.width = `${percent}%`;
-                    if (uploadStatusText) uploadStatusText.textContent = `Uploading: ${percent}%`;
+                    if (uploadStatusText) uploadStatusText.textContent = `Загрузка: ${percent}%`;
                 }
             });
 
             xhr.onload = () => {
+                let result = { message: 'Произошла неизвестная ошибка.' };
+                try {
+                    result = JSON.parse(xhr.responseText);
+                } catch (e) { console.error('Не удалось разобрать JSON:', e); }
+
                 if (xhr.status === 201) {
-                    if (uploadStatusText) uploadStatusText.textContent = 'Uploaded! Awaiting moderation.';
+                    if (uploadStatusText) uploadStatusText.textContent = 'Загружено! Ожидает модерации.';
                     setTimeout(() => {
                         if (uploadModal) uploadModal.style.display = 'none';
                         if (uploadForm) uploadForm.reset();
                         if (uploadManager) uploadManager.style.display = 'none';
                         if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
-                        alert('Track submitted for moderation. Await approval.');
+                        alert('Трек отправлен на модерацию. Ожидайте одобрения.');
                     }, 1000);
                 } else {
-                    const contentType = xhr.getResponseHeader('Content-Type');
-                    let result = { message: 'An unknown error occurred.' };
-
-                    if (contentType && contentType.includes('application/json')) {
-                        try {
-                            result = JSON.parse(xhr.responseText);
-                        } catch (e) {
-                            console.error('Could not parse JSON:', e);
-                        }
-                    } else {
-                        console.error('Server returned a non-JSON response:', xhr.responseText);
-                    }
-
-                    if (uploadStatusText) uploadStatusText.textContent = `Upload error: ${result.message}`;
+                    if (uploadStatusText) uploadStatusText.textContent = `Ошибка загрузки: ${result.message}`;
                     if (uploadProgressBar) uploadProgressBar.style.width = '0%';
                     if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
                 }
             };
-
-            xhr.onerror = () => {
-                if (uploadStatusText) uploadStatusText.textContent = 'Network error. Try again.';
-                if (uploadSubmitBtn) uploadSubmitBtn.disabled = false;
-            };
-
+            xhr.onerror = () => { if (uploadStatusText) uploadStatusText.textContent = 'Ошибка сети. Попробуйте снова.'; if (uploadSubmitBtn) uploadSubmitBtn.disabled = false; };
             xhr.send(formData);
         });
 
@@ -2009,26 +1784,21 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await fetch(`${api}/api/login`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    setTokens(result.token)
+                    setTokens(result.token);
                     localStorage.setItem('currentUser', JSON.stringify(result.user));
                     updateUIForAuth(result.user);
                     if (loginModal) loginModal.style.display = 'none';
-                    alert('Login successful!');
+                    alert('Вход выполнен успешно!');
                 } else {
                     alert(result.message);
                 }
             } catch (err) {
-                alert('Login error.');
+                alert('Ошибка входа.');
             }
         });
 
@@ -2039,39 +1809,24 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await fetch(`${api}/api/register`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    alert(result.message + ' You can now log in.');
+                    alert(result.message + ' Теперь вы можете войти.');
                     if (registerModal) registerModal.style.display = 'none';
                     if (loginModal) loginModal.style.display = 'flex';
                 } else {
                     alert(result.message);
                 }
             } catch (err) {
-                alert('Registration error.');
+                alert('Ошибка регистрации.');
             }
         });
 
-        if (opacitySlider) opacitySlider.addEventListener('input', () => {
-            applyOpacity(opacitySlider.value);
-            saveOpacitySetting(opacitySlider.value);
-        });
-        
-        if (blurToggle) {
-            blurToggle.addEventListener('change', () => {
-                const enabled = blurToggle.checked;
-                applyBlur(enabled);
-                saveBlurSetting(enabled);
-            });
-        }
+        if (opacitySlider) opacitySlider.addEventListener('input', () => { applyOpacity(opacitySlider.value); saveOpacitySetting(opacitySlider.value); });
+        if (blurToggle) blurToggle.addEventListener('change', () => { const enabled = blurToggle.checked; applyBlur(enabled); saveBlurSetting(enabled); });
         
         if (playerStyleButtons) {
             playerStyleButtons.forEach(btn => {
@@ -2095,20 +1850,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.classList.remove('player--default');
                 player.classList.add('player--copy');
                 playerDefaultStyle.style.display = 'none';
-                playerCopyStyle.style.display = 'block'; // Use block, not flex, since flex is controlled internally
+                playerCopyStyle.style.display = 'block';
             }
         };
 
         const loadPlayerStyle = () => {
             const savedStyle = localStorage.getItem(PLAYER_STYLE_KEY) || 'default';
             applyPlayerStyle(savedStyle);
-            playerStyleButtons.forEach(btn => {
-                if (btn.dataset.style === savedStyle) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+            playerStyleButtons.forEach(btn => { btn.classList.toggle('active', btn.dataset.style === savedStyle); });
         };
 
         loadPlayerStyle();
@@ -2128,15 +1877,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (xrecomenBtn) xrecomenBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const index = parseInt(e.currentTarget.dataset.index, 10);
+            if (isNaN(index) || index < 0 || index >= allMedia.length) return;
             const track = allMedia[index];
-            currentPlaylist = allMedia; // Set the entire allMedia array as the playlist
+            currentPlaylist = allMedia;
             currentTrackIndex = allMedia.findIndex(t => t.id === track.id);
             if (currentTrackIndex !== -1) {
                 playMedia(currentTrackIndex);
             }
         });
 
-        // +++ НАЧАЛО: НОВЫЕ ОБРАБОТЧИКИ ДЛЯ YOUTUBE +++
         if (youtubeFetchBtn) {
             youtubeFetchBtn.addEventListener('click', async () => {
                 const url = youtubeUrlInput.value.trim();
@@ -2221,11 +1970,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     youtubeStatus.textContent = 'Начинаю загрузку файла...';
 
-                    // Создаем временную ссылку и кликаем по ней для скачивания
                     const link = document.createElement('a');
                     link.href = data.download_path;
                     
-                    // Пытаемся извлечь расширение из пути
                     const extension = data.download_path.split('.').pop();
                     link.download = `${videoTitle}.${extension}`; 
 
@@ -2241,8 +1988,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        // +++ КОНЕЦ: НОВЫЕ ОБРАБОТЧИКИ ДЛЯ YOUTUBE +++
-
+        
         document.body.addEventListener('click', async (e) => {
             const card = e.target.closest('.card');
             const deleteBtn = e.target.closest('.delete-btn');
@@ -2265,65 +2011,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const trackId = renameBtn.dataset.trackId;
                 const track = allMedia.find(t => t.id == trackId);
-                const newTitle = prompt('Enter new title:', track.title);
+                const newTitle = prompt('Введите новое название:', track.title);
                 if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
                     try {
                         const res = await fetchWithAuth(`${api}/api/rename`, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                trackId,
-                                newTitle: newTitle.trim()
-                            })
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ trackId, newTitle: newTitle.trim() })
                         });
-                        if (res.ok) fetchInitialData();
-                        else alert('Error renaming');
-                    } catch (err) {
-                        console.error(err);
-                    }
+                        if (res.ok) fetchInitialData(); else alert('Ошибка переименования');
+                    } catch (err) { console.error(err); }
                 }
             } else if (deleteBtn) {
                 e.stopPropagation();
                 const trackId = deleteBtn.dataset.trackId;
                 const track = allMedia.find(t => t.id == trackId);
-                if (confirm(`Are you sure you want to delete "${track.title}"?`)) {
+                if (confirm(`Вы уверены, что хотите удалить "${track.title}"?`)) {
                     try {
-                        const res = await fetchWithAuth(`${api}/api/tracks/${trackId}`, {
-                            method: 'DELETE'
-                        });
-                        if (res.ok) fetchInitialData();
-                        else alert('Error deleting');
-                    } catch (err) {
-                        console.error(err);
-                    }
+                        const res = await fetchWithAuth(`${api}/api/tracks/${trackId}`, { method: 'DELETE' });
+                        if (res.ok) fetchInitialData(); else alert('Ошибка удаления');
+                    } catch (err) { console.error(err); }
                 }
             } else if (deleteMyTrackBtn) {
                 e.stopPropagation();
                 const trackId = e.target.closest('.my-track-card').dataset.trackId;
                 const track = myTracks.find(t => t.id == trackId) || allMedia.find(t => t.id == trackId);
-                if (confirm(`Are you sure you want to delete the track "${track.title}"?`)) {
+                if (confirm(`Вы уверены, что хотите удалить трек "${track.title}"?`)) {
                     try {
                         const res = await fetchWithAuth(`${api}/api/creator/my-tracks/${trackId}`, {
                             method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId: currentUser.id,
-                                userRole: currentUser.role
-                            })
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: currentUser.id, userRole: currentUser.role })
                         });
                         const result = await res.json();
                         alert(result.message);
-                        if (res.ok) {
-                            // Remove the card from the DOM instead of a full reload
-                            e.target.closest('.my-track-card').remove();
-                        }
-                    } catch (err) {
-                        console.error(err);
-                    }
+                        if (res.ok) e.target.closest('.my-track-card').remove();
+                    } catch (err) { console.error(err); }
                 }
             } else if (favoriteBtn && currentUser) {
                 e.stopPropagation();
@@ -2332,13 +2055,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const res = await fetchWithAuth(`${api}/api/favorites`, {
                         method: isFavorite ? 'DELETE' : 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            mediaFile
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id, mediaFile })
                     });
                     if (res.ok) {
                         await fetchFavorites();
@@ -2348,131 +2066,81 @@ document.addEventListener('DOMContentLoaded', () => {
                            updateFavoriteStatus(mediaFile);
                         }
                     } else {
-                        alert('Error changing favorites.');
+                        alert('Ошибка изменения избранного.');
                     }
-                } catch (err) {
-                    console.error(err);
-                }
+                } catch (err) { console.error(err); }
             } else if (approveAppBtn) {
                 e.stopPropagation();
                 const userId = approveAppBtn.dataset.userId;
                 try {
                     const res = await fetchWithAuth(`${api}/api/admin/approve-application`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId })
                     });
                     const result = await res.json();
                     alert(result.message);
                     if (res.ok) fetchAdminApplications();
-                } catch (err) {
-                    alert('Error approving application.');
-                }
+                } catch (err) { alert('Ошибка одобрения заявки.'); }
             } else if (rejectAppBtn) {
                 e.stopPropagation();
                 const appId = rejectAppBtn.dataset.appId;
                 try {
                     const res = await fetchWithAuth(`${api}/api/admin/reject-application`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            appId
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ appId })
                     });
                     const result = await res.json();
                     alert(result.message);
                     if (res.ok) fetchAdminApplications();
-                } catch (err) {
-                    alert('Error rejecting application.');
-                }
+                } catch (err) { alert('Ошибка отклонения заявки.'); }
             } else if (moderationCheckBtn) {
                 e.stopPropagation();
                 const trackIndex = e.target.closest('.creator-moderation-card').dataset.index;
                 const track = moderationTracks[trackIndex];
-
                 if (moderationTitle) moderationTitle.textContent = track.title;
-                if (moderationArtist) moderationArtist.textContent = `Artist: ${track.artist || track.username}`;
-
+                if (moderationArtist) moderationArtist.textContent = `Исполнитель: ${track.artist || track.username}`;
                 if (track.type === 'audio') {
-                    if (moderationPlayer) moderationPlayer.src = `/temp_uploads/${track.file_name}`;
-                    if (moderationPlayerCover) moderationPlayerCover.src = `/temp_uploads/${track.cover_name}`;
-                    if (moderationPlayer) moderationPlayer.style.display = 'block';
-                    if (moderationPlayerCover) moderationPlayerCover.style.display = 'block';
-                    if (moderationVideoPlayer) {
-                        moderationVideoPlayer.style.display = 'none';
-                        moderationVideoPlayer.pause();
-                    }
+                    if (moderationPlayer) { moderationPlayer.src = `/temp_uploads/${track.file_name}`; moderationPlayer.style.display = 'block'; }
+                    if (moderationPlayerCover) { moderationPlayerCover.src = `/temp_uploads/${track.cover_name}`; moderationPlayerCover.style.display = 'block'; }
+                    if (moderationVideoPlayer) { moderationVideoPlayer.style.display = 'none'; moderationVideoPlayer.pause(); }
                 } else if (track.type === 'video') {
-                    if (moderationPlayer) {
-                        moderationPlayer.style.display = 'none';
-                        moderationPlayer.pause();
-                    }
+                    if (moderationPlayer) { moderationPlayer.style.display = 'none'; moderationPlayer.pause(); }
                     if (moderationPlayerCover) moderationPlayerCover.style.display = 'none';
-                    if (moderationVideoPlayer) {
-                        moderationVideoPlayer.src = `/temp_uploads/${track.file_name}`;
-                        moderationVideoPlayer.style.display = 'block';
-                    }
+                    if (moderationVideoPlayer) { moderationVideoPlayer.src = `/temp_uploads/${track.file_name}`; moderationVideoPlayer.style.display = 'block'; }
                 }
-
-                if (moderationApproveBtn) {
-                    moderationApproveBtn.dataset.trackId = track.id;
-                    moderationApproveBtn.dataset.fileName = track.file_name;
-                    moderationApproveBtn.dataset.coverName = track.cover_name;
-                    moderationApproveBtn.dataset.title = track.title;
-                    moderationApproveBtn.dataset.type = track.type;
-                    moderationApproveBtn.dataset.creatorId = track.user_id;
-                    moderationApproveBtn.dataset.artist = track.artist || '';
-                    moderationApproveBtn.dataset.categoryId = track.category_id || '';
-                }
-
+                if (moderationApproveBtn) { Object.assign(moderationApproveBtn.dataset, { trackId: track.id, fileName: track.file_name, coverName: track.cover_name, title: track.title, type: track.type, creatorId: track.user_id, artist: track.artist || '', categoryId: track.category_id || '' }); }
                 if (moderationRejectBtn) moderationRejectBtn.dataset.trackId = track.id;
-
                 if (moderationModal) moderationModal.style.display = 'flex';
             } else if (changeRoleBtn) {
                 e.stopPropagation();
                 const userId = changeRoleBtn.dataset.userId;
                 const currentRole = changeRoleBtn.dataset.currentRole;
-                const newRole = prompt(`Change user role to: 'user', 'creator', or 'admin'. Current role: ${currentRole}`);
+                const newRole = prompt(`Сменить роль на: 'user', 'creator', или 'admin'. Текущая: ${currentRole}`);
                 if (newRole && ['user', 'creator', 'admin'].includes(newRole)) {
                     try {
                         const res = await fetchWithAuth(`${api}/api/admin/update-role`, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId,
-                                role: newRole
-                            })
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId, role: newRole })
                         });
                         const result = await res.json();
                         alert(result.message);
                         if (res.ok) fetchAdminUsers();
-                    } catch (err) {
-                        alert('Error changing role.');
-                    }
+                    } catch (err) { alert('Ошибка смены роли.'); }
                 }
             } else if (changePasswordBtn) {
                 e.stopPropagation();
                 const userId = changePasswordBtn.dataset.userId;
-                const username = changePasswordBtn.dataset.username; // Получаем имя пользователя
-
+                const username = changePasswordBtn.dataset.username;
                 if (username === 'root') {
-                    // Особый сценарий для root
                     const newPassword = prompt('Введите НОВЫЙ пароль для root:');
                     if (!newPassword || !newPassword.trim()) return;
-
                     const protectionPassword = prompt('Для подтверждения введите ПАРОЛЬ ЗАЩИТЫ:');
                     if (!protectionPassword) return;
-
                     try {
-                        const res = await fetchWithAuth(`${api}/api/admin/change-root-password`, { // Новый эндпоинт
+                        const res = await fetchWithAuth(`${api}/api/admin/change-root-password`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ newPassword, protectionPassword })
@@ -2480,12 +2148,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const result = await res.json();
                         alert(result.message);
                         if (res.ok) fetchAdminUsers();
-                    } catch (err) {
-                        alert('Ошибка при смене пароля root.');
-                    }
-
+                    } catch (err) { alert('Ошибка при смене пароля root.'); }
                 } else {
-                    // Стандартный сценарий для других пользователей
                     const newPassword = prompt(`Введите новый пароль для ${username}:`);
                     if (newPassword && newPassword.trim()) {
                         try {
@@ -2497,25 +2161,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             const result = await res.json();
                             alert(result.message);
                             if (res.ok) fetchAdminUsers();
-                        } catch (err) {
-                            alert('Ошибка при смене пароля.');
-                        }
+                        } catch (err) { alert('Ошибка при смене пароля.'); }
                     }
                 }
             } else if (deleteUserBtn) {
                 e.stopPropagation();
                 const userId = deleteUserBtn.dataset.userId;
-                if (confirm('Are you sure you want to delete this user? This action is irreversible.')) {
+                if (confirm('Вы уверены, что хотите удалить этого пользователя? Это действие необратимо.')) {
                     try {
-                        const res = await fetchWithAuth(`${api}/api/admin/delete-user/${userId}`, {
-                            method: 'DELETE'
-                        });
+                        const res = await fetchWithAuth(`${api}/api/admin/delete-user/${userId}`, { method: 'DELETE' });
                         const result = await res.json();
                         alert(result.message);
                         if (res.ok) fetchAdminUsers();
-                    } catch (err) {
-                        alert('Error deleting user.');
-                    }
+                    } catch (err) { alert('Ошибка удаления пользователя.'); }
                 }
             } else if (createCategoryBtn) {
                 e.stopPropagation();
@@ -2524,7 +2182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedUsers = [];
                 renderSelectedUsers();
                 if (categoryModal) categoryModal.style.display = 'flex';
-                if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Create Category';
+                if (categoryModal.querySelector('h2')) categoryModal.querySelector('h2').textContent = 'Создать категорию';
             } else if (editCategoryBtn) {
                 e.stopPropagation();
                 const categoryId = editCategoryBtn.dataset.categoryId;
@@ -2532,15 +2190,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (deleteCategoryBtn) {
                 e.stopPropagation();
                 const categoryId = deleteCategoryBtn.dataset.categoryId;
-                if (confirm('Are you sure you want to delete this category? Tracks associated with it will remain.')) {
+                if (confirm('Вы уверены, что хотите удалить эту категорию? Треки, связанные с ней, останутся.')) {
                     try {
                         const res = await fetchWithAuth(`${api}/api/admin/categories/${categoryId}`, { method: 'DELETE' });
                         const result = await res.json();
                         alert(result.message);
                         if (res.ok) fetchAdminCategories();
-                    } catch (err) {
-                        alert('Error deleting category.');
-                    }
+                    } catch (err) { alert('Ошибка удаления категории.'); }
                 }
             } else if (card) {
                  const clickedTrackId = parseInt(card.dataset.id, 10);
@@ -2548,28 +2204,25 @@ document.addEventListener('DOMContentLoaded', () => {
                  
                  let playlistToPlay = [];
                  
-                 // If a specific category is active or search results are being viewed
                  if (specificCategoryView.classList.contains('active-view')) {
                      playlistToPlay = allMedia.filter(track => track.category_id === clickedTrackCategoryId);
                  } else if (searchView.classList.contains('active-view')) {
                      playlistToPlay = allMedia;
-                 } else { // Home View
+                 } else {
                      if (clickedTrackCategoryId) {
                          playlistToPlay = allMedia.filter(track => track.category_id === clickedTrackCategoryId);
                      } else {
-                         // If no category, create a playlist from all tracks on the home page
                          playlistToPlay = allMedia;
                      }
                  }
                  
-                 // Find the index of the clicked track in the new playlist
                  const newTrackIndex = playlistToPlay.findIndex(t => t.id === clickedTrackId);
                  
                  if (newTrackIndex !== -1) {
                     currentPlaylist = playlistToPlay;
                     playMedia(newTrackIndex);
                  } else {
-                     console.error("Clicked track not found in the new playlist.");
+                     console.error("Нажатый трек не найден в плейлисте.");
                  }
             } else if (categoryCard || collectionCard) {
                 const targetCard = categoryCard || collectionCard;
@@ -2583,31 +2236,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (moderationApproveBtn) moderationApproveBtn.addEventListener('click', async () => {
-            const trackId = moderationApproveBtn.dataset.trackId;
-            const fileName = moderationApproveBtn.dataset.fileName;
-            const coverName = moderationApproveBtn.dataset.coverName;
-            const title = moderationApproveBtn.dataset.title;
-            const type = moderationApproveBtn.dataset.type;
-            const creatorId = moderationApproveBtn.dataset.creatorId;
-            const artist = moderationApproveBtn.dataset.artist;
-            const categoryId = moderationApproveBtn.dataset.categoryId;
-
+            const trackData = moderationApproveBtn.dataset;
             try {
                 const res = await fetchWithAuth(`${api}/api/admin/approve-track`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        trackId,
-                        fileName,
-                        coverName,
-                        title,
-                        type,
-                        creatorId,
-                        artist,
-                        categoryId
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(trackData)
                 });
                 const result = await res.json();
                 alert(result.message);
@@ -2619,17 +2253,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchInitialData();
                 }
             } catch (err) {
-                alert('Error approving track.');
+                alert('Ошибка одобрения трека.');
             }
         });
 
         if (moderationRejectBtn) moderationRejectBtn.addEventListener('click', async () => {
             const trackId = moderationRejectBtn.dataset.trackId;
-            if (confirm('Are you sure you want to reject this track?')) {
+            if (confirm('Вы уверены, что хотите отклонить этот трек?')) {
                 try {
-                    const res = await fetchWithAuth(`${api}/api/admin/reject-track/${trackId}`, {
-                        method: 'DELETE'
-                    });
+                    const res = await fetchWithAuth(`${api}/api/admin/reject-track/${trackId}`, { method: 'DELETE' });
                     const result = await res.json();
                     alert(result.message);
                     if (res.ok) {
@@ -2639,7 +2271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         fetchModerationTracks();
                     }
                 } catch (err) {
-                    alert('Error rejecting track.');
+                    alert('Ошибка отклонения трека.');
                 }
             }
         });
@@ -2656,7 +2288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
         if (copyPlayPauseBtn) copyPlayPauseBtn.addEventListener('click', togglePlayPause);
 
-
         if (repeatBtn) repeatBtn.addEventListener('click', () => {
             repeatMode = !repeatMode;
             if (repeatBtn) repeatBtn.classList.toggle('active', repeatMode);
@@ -2664,57 +2295,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const handleFavoriteClick = async () => {
-            if (!currentUser) {
-                alert('Please log in to add to favorites.');
-                return;
-            }
-            if (currentTrackIndex === -1 || !currentPlaylist[currentTrackIndex]) {
-                alert('Select a track first.');
-                return;
-            }
+            if (!currentUser) { alert('Пожалуйста, войдите, чтобы добавлять в избранное.'); return; }
+            if (currentTrackIndex === -1 || !currentPlaylist[currentTrackIndex]) { alert('Сначала выберите трек.'); return; }
             const trackToToggle = currentPlaylist[currentTrackIndex];
             const isFavorite = userFavorites.includes(trackToToggle.file);
 
             try {
                 const res = await fetchWithAuth(`${api}/api/favorites`, {
                     method: isFavorite ? 'DELETE' : 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        mediaFile: trackToToggle.file
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id, mediaFile: trackToToggle.file })
                 });
                 if (res.ok) {
                     await fetchFavorites();
-                    const allCardFavButtons = document.querySelectorAll(`.favorite-btn[data-file="${trackToToggle.file}"]`);
-                    allCardFavButtons.forEach(btn => btn.classList.toggle('favorited', !isFavorite));
+                    document.querySelectorAll(`.favorite-btn[data-file="${trackToToggle.file}"]`).forEach(btn => btn.classList.toggle('favorited', !isFavorite));
                     updateFavoriteStatus(trackToToggle.file);
                 } else {
-                    alert('Error changing favorites.');
+                    alert('Ошибка изменения избранного.');
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         };
 
         if (favoritePlayerBtn) favoritePlayerBtn.addEventListener('click', handleFavoriteClick);
         if (copyFavoriteBtn) copyFavoriteBtn.addEventListener('click', handleFavoriteClick);
 
-
         const onPlay = () => {
-            // Resume AudioContext if it was suspended by the browser
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-
+            if (audioContext && audioContext.state === 'suspended') audioContext.resume();
             if (playIcon) playIcon.style.display = 'none';
             if (pauseIcon) pauseIcon.style.display = 'block';
             if (copyPlayIcon) copyPlayIcon.style.display = 'none';
             if (copyPauseIcon) copyPauseIcon.style.display = 'block';
-            
-            // Show equalizer and start animation
             if (equalizer) equalizer.style.display = 'flex';
             renderVisualizer();
         };
@@ -2724,18 +2334,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pauseIcon) pauseIcon.style.display = 'none';
             if (copyPlayIcon) copyPlayIcon.style.display = 'block';
             if (copyPauseIcon) copyPauseIcon.style.display = 'none';
-
-            // Hide equalizer and stop animation to save resources
             if (equalizer) equalizer.style.display = 'none';
             cancelAnimationFrame(animationFrameId);
         };
 
-        const onEnded = () => {
-            if (!repeatMode) {
-                const nextIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                playMedia(nextIndex);
-            }
-        };
+        const onEnded = () => { if (!repeatMode) playMedia((currentTrackIndex + 1) % currentPlaylist.length); };
 
         [audioPlayer, videoPlayer].forEach(el => {
             if (el) {
@@ -2751,18 +2354,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (currentTimeEl) currentTimeEl.textContent = formatTime(el.currentTime);
                 });
-                el.addEventListener('loadedmetadata', () => {
-                    if (!isNaN(el.duration) && durationEl) durationEl.textContent = formatTime(el.duration);
-                });
+                el.addEventListener('loadedmetadata', () => { if (!isNaN(el.duration) && durationEl) durationEl.textContent = formatTime(el.duration); });
             }
         });
 
-        const playNext = () => {
-            if (currentPlaylist.length > 0) playMedia((currentTrackIndex + 1) % currentPlaylist.length);
-        };
-        const playPrev = () => {
-            if (currentPlaylist.length > 0) playMedia((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length);
-        };
+        const playNext = () => { if (currentPlaylist.length > 0) playMedia((currentTrackIndex + 1) % currentPlaylist.length); };
+        const playPrev = () => { if (currentPlaylist.length > 0) playMedia((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length); };
 
         if (nextBtn) nextBtn.addEventListener('click', playNext);
         if (copyNextBtn) copyNextBtn.addEventListener('click', playNext);
@@ -2780,22 +2377,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        if (progressBarContainer) {
-            progressBarContainer.addEventListener('mousedown', (e) => {
-                if (allMedia.length > 0) { isDragging = true; scrub(e, progressBarContainer); }
-            });
-            progressBarContainer.addEventListener('touchstart', (e) => {
-                if (allMedia.length > 0) { isDragging = true; scrub(e, progressBarContainer); }
-            });
-        }
-        if (copyProgressBarContainer) {
-            copyProgressBarContainer.addEventListener('mousedown', (e) => {
-                if (allMedia.length > 0) { isDragging = true; scrub(e, copyProgressBarContainer); }
-            });
-            copyProgressBarContainer.addEventListener('touchstart', (e) => {
-                if (allMedia.length > 0) { isDragging = true; scrub(e, copyProgressBarContainer); }
-            });
-        }
+        const startScrubbing = (e) => {
+            if (allMedia.length === 0) return;
+            isDragging = true;
+            [progressFilled, copyProgressFilled].forEach(el => el.classList.add('no-transition'));
+            const container = e.currentTarget;
+            scrub(e, container);
+        };
+        const stopScrubbing = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            [progressFilled, copyProgressFilled].forEach(el => el.classList.remove('no-transition'));
+        };
+
+        [progressBarContainer, copyProgressBarContainer].forEach(container => {
+            if(container) {
+                container.addEventListener('mousedown', startScrubbing);
+                container.addEventListener('touchstart', startScrubbing, { passive: true });
+            }
+        });
 
         window.addEventListener('mousemove', (e) => { 
             if (isDragging) {
@@ -2810,9 +2410,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const container = style === 'copy' ? copyProgressBarContainer : progressBarContainer;
                 scrub(e, container);
             }
-        });
-        window.addEventListener('mouseup', () => { isDragging = false; });
-        window.addEventListener('touchend', () => { isDragging = false; });
+        }, { passive: true });
+        
+        window.addEventListener('mouseup', stopScrubbing);
+        window.addEventListener('touchend', stopScrubbing);
         
         const setVolume = (value) => {
             audioPlayer.volume = videoPlayer.volume = value;
@@ -2823,7 +2424,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (volumeBar) volumeBar.addEventListener('input', (e) => setVolume(e.target.value));
         if (copyVolumeBar) copyVolumeBar.addEventListener('input', (e) => setVolume(e.target.value));
-
     };
 
     const fetchPasswordLogs = async (password) => {
@@ -2831,12 +2431,9 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Загрузка...</td></tr>`;
 
         try {
-            // Используем POST для безопасной отправки пароля в теле запроса
             const res = await fetchWithAuth(`${api}/api/admin/password-logs`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: password })
             });
 
@@ -2845,13 +2442,11 @@ document.addEventListener('DOMContentLoaded', () => {
                  passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Доступ запрещен. Введите верный пароль.</td></tr>`;
                  return;
             }
-            if (!res.ok) {
-                throw new Error('Could not fetch logs');
-            }
+            if (!res.ok) throw new Error('Could not fetch logs');
             
             const logs = await res.json();
             
-            passwordLogsTableBody.innerHTML = ''; // Очищаем старые данные
+            passwordLogsTableBody.innerHTML = '';
             if (logs.length === 0) {
                 passwordLogsTableBody.innerHTML = `<tr><td colspan="4">Записи о смене паролей отсутствуют.</td></tr>`;
                 return;
@@ -2860,12 +2455,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logs.forEach(log => {
                 const row = document.createElement('tr');
                 const formattedDate = new Date(log.timestamp).toLocaleString('ru-RU');
-                row.innerHTML = `
-                    <td>${formattedDate}</td>
-                    <td>${log.admin_username}</td>
-                    <td>${log.target_username}</td>
-                    <td>${log.ip_address}</td>
-                `;
+                row.innerHTML = `<td>${formattedDate}</td><td>${log.admin_username}</td><td>${log.target_username}</td><td>${log.ip_address}</td>`;
                 passwordLogsTableBody.appendChild(row);
             });
         } catch (err) {
@@ -2874,14 +2464,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Запуск инициализирующих функций ---
     loadOpacitySetting();
     loadBlurSetting();
     loadVolumeSetting();
     initEventListeners();
     fetchInitialData();
     fetchCategories();
-    initSummerCountdown(); // <--- ЗАПУСК ТАЙМЕРА
+    initSummerCountdown();
 
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
