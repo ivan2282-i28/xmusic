@@ -239,6 +239,134 @@ document.addEventListener('DOMContentLoaded', () => {
     const youtubeDownloadBtn = document.getElementById('youtubeDownloadBtn');
     const youtubeStatus = document.getElementById('youtubeStatus');
 
+    const youtubeProgressContainer = document.getElementById('youtubeProgressContainer');
+    const youtubeProgressStatusText = document.getElementById('youtubeProgressStatusText');
+    const youtubeProgressBar = document.getElementById('youtubeProgressBar');
+    const youtubeProgressPercentage = document.getElementById('youtubeProgressPercentage');
+
+    const youtubePreviewContainer = document.getElementById('youtubePreviewContainer');
+    const youtubeVideoPreview = document.getElementById('youtubeVideoPreview');
+    const youtubeFinalDownloadLink = document.getElementById('youtubeFinalDownloadLink');
+
+    let pollingInterval;
+
+    function resetYouTubeDownloader() {
+        youtubeResultContainer.style.display = 'none';
+        youtubeProgressContainer.style.display = 'none';
+        youtubePreviewContainer.style.display = 'none';
+        youtubeUrlInput.value = '';
+        youtubeStatus.textContent = '';
+        youtubeDownloadBtn.disabled = true;
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+        }
+    }
+
+    youtubeFetchBtn.addEventListener('click', () => {
+        const url = youtubeUrlInput.value;
+        if (!url) {
+            showModal('Пожалуйста, вставьте ссылку на YouTube видео.');
+            return;
+        }
+
+        youtubeStatus.textContent = 'Получение информации о видео...';
+        youtubeResultContainer.style.display = 'none';
+        youtubeProgressContainer.style.display = 'none';
+        youtubePreviewContainer.style.display = 'none';
+        youtubeDownloadBtn.disabled = true;
+
+        fetch('/api/youtube/info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+
+            youtubeTitle.textContent = data.title;
+            youtubeThumbnail.src = data.thumbnail;
+            
+            youtubeQualitySelect.innerHTML = '';
+            data.formats.forEach(format => {
+                const option = document.createElement('option');
+                option.value = format.format_id;
+                option.textContent = format.resolution;
+                youtubeQualitySelect.appendChild(option);
+            });
+
+            youtubeResultContainer.style.display = 'flex';
+            youtubeDownloadBtn.disabled = false;
+            youtubeStatus.textContent = '';
+        })
+        .catch(error => {
+            youtubeStatus.textContent = `Ошибка: ${error.message}`;
+            showModal(`Ошибка: ${error.message}`);
+        });
+    });
+
+    youtubeDownloadBtn.addEventListener('click', () => {
+        const url = youtubeUrlInput.value;
+        const formatId = youtubeQualitySelect.value;
+
+        youtubeResultContainer.style.display = 'none';
+        youtubeProgressContainer.style.display = 'block';
+        youtubeProgressBar.style.width = '0%';
+        youtubeProgressPercentage.textContent = '0%';
+        youtubeProgressStatusText.textContent = 'Загрузка на сервер...';
+
+        fetch('/api/youtube/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url, format_id: formatId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            if (data.task_id) {
+                startPolling(data.task_id);
+            }
+        })
+        .catch(error => {
+            youtubeProgressContainer.style.display = 'none';
+            youtubeStatus.textContent = `Ошибка: ${error.message}`;
+            showModal(`Ошибка: ${error.message}`);
+        });
+    });
+
+    function startPolling(taskId) {
+        pollingInterval = setInterval(() => {
+            fetch(`/api/youtube/download/status/${taskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'downloading') {
+                        const percentage = Math.round(data.progress);
+                        youtubeProgressBar.style.width = `${percentage}%`;
+                        youtubeProgressPercentage.textContent = `${percentage}%`;
+                        youtubeProgressStatusText.textContent = `Загрузка на сервер... ${data.progress.toFixed(2)}%`;
+                    } else if (data.status === 'completed') {
+                        clearInterval(pollingInterval);
+                        youtubeProgressContainer.style.display = 'none';
+                        youtubePreviewContainer.style.display = 'block';
+                        youtubeVideoPreview.src = data.path;
+                        youtubeFinalDownloadLink.href = data.path;
+                        youtubeFinalDownloadLink.download = data.filename || 'video.mp4'; 
+                    } else if (data.status === 'error') {
+                        clearInterval(pollingInterval);
+                        youtubeProgressContainer.style.display = 'none';
+                        youtubeStatus.textContent = `Ошибка: ${data.error}`;
+                        showModal(`Ошибка загрузки: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    clearInterval(pollingInterval);
+                    youtubeProgressContainer.style.display = 'none';
+                    youtubeStatus.textContent = `Ошибка опроса: ${error.message}`;
+                    showModal(`Ошибка: ${error.message}`);
+                });
+        }, 2000);
+    }
+
     let chartInstance = null;
     let playTimer;
     let userSearchTimeout;
