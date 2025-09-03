@@ -14,6 +14,8 @@ import librosa
 import numpy as np
 from datetime import datetime, timedelta
 import secrets
+import threading
+import uuid
 
 # +++ НОВЫЙ ИМПОРТ для работы с YouTube +++
 import yt_dlp
@@ -175,6 +177,31 @@ def webserver(app, db, dirs, model=None):
             return jsonify({'error': 'An unexpected error occurred on the server.'}), 500
 
 
+    # Dictionary to track the status of background tasks
+    download_tasks = {}
+
+    def download_worker(url, format_id, task_id, base_filename):
+        """This function will run in a separate thread to download the video."""
+        try:
+            final_filename = f"{base_filename}_{secrets.token_hex(4)}"
+            ydl_opts = {
+                'format': format_id,
+                'outtmpl': os.path.join(dirs["YOUTUBE_DOWNLOAD_DIR"], f'{final_filename}.%(ext)s'),
+                'quiet': True,
+                'no_warnings': True,
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                meta = ydl.extract_info(url, download=True)
+                downloaded_file = ydl.prepare_filename(meta)
+                final_filename_with_ext = os.path.basename(downloaded_file)
+            
+            download_tasks[task_id] = {'status': 'completed', 'path': f'/youtube_downloads/{final_filename_with_ext}'}
+
+        except Exception as e:
+            app.logger.error(f"[Task {task_id}] Download failed: {e}")
+            download_tasks[task_id] = {'status': 'failed', 'error': str(e)}
+
     @app.route('/api/youtube/download', methods=['POST'])
     def youtube_download():
         data = request.get_json()
@@ -184,7 +211,6 @@ def webserver(app, db, dirs, model=None):
         if not url or not format_id:
             return jsonify({'error': 'URL and format ID are required'}), 400
 
-        # Очистка имени файла для безопасности
         try:
             with yt_dlp.YoutubeDL({'skip_download': True, 'quiet': True}) as ydl:
                  info = ydl.extract_info(url, download=False)
@@ -192,32 +218,20 @@ def webserver(app, db, dirs, model=None):
         except Exception:
              base_filename = "downloaded_video"
 
-        # Создаем уникальное имя файла, чтобы избежать конфликтов
-        final_filename = f"{base_filename}_{secrets.token_hex(4)}"
+        task_id = str(uuid.uuid4())
+        download_tasks[task_id] = {'status': 'pending'}
 
-        ydl_opts = {
-            'format': format_id,
-            'outtmpl': os.path.join(dirs["YOUTUBE_DOWNLOAD_DIR"], f'{final_filename}.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-        }
+        thread = threading.Thread(target=download_worker, args=(url, format_id, task_id, base_filename))
+        thread.start()
 
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                meta = ydl.extract_info(url, download=True)
-                # yt-dlp уже скачал файл, теперь нужно найти его имя
-                downloaded_file = ydl.prepare_filename(meta)
-                # Извлекаем только имя файла из полного пути
-                final_filename_with_ext = os.path.basename(downloaded_file)
+        return jsonify({'message': 'Download started', 'task_id': task_id}), 202
 
-            return jsonify({'download_path': f'/youtube_downloads/{final_filename_with_ext}'})
-            
-        except yt_dlp.utils.DownloadError as e:
-            app.logger.error(f"yt-dlp download error: {e}")
-            return jsonify({'error': 'Failed to download the video.'}), 500
-        except Exception as e:
-            app.logger.error(f"An unexpected error occurred during download: {e}")
-            return jsonify({'error': 'An unexpected error occurred on the server.'}), 500
+    @app.route('/api/youtube/download/status/<task_id>')
+    def youtube_download_status(task_id):
+        task = download_tasks.get(task_id)
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        return jsonify(task)
 
 
     # --------------------

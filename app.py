@@ -8,6 +8,8 @@ import librosa
 import numpy as np
 from xmusic.webserver import webserver
 import logging
+# --- ДОБАВЛЕНО ДЛЯ ЛОГИРОВАНИЯ ---
+from logging.handlers import RotatingFileHandler
 # ... остальной код
 
 load_dotenv()

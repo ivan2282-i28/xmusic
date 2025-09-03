@@ -222,7 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const equalizer = document.getElementById('equalizer');
     const equalizerBars = Array.from(document.querySelectorAll('.equalizer-bar'));
-
+    
+    // +++ НОВЫЕ КОНСТАНТЫ ДЛЯ YOUTUBE +++
     const navYoutube = document.getElementById('navYoutube');
     const youtubeView = document.getElementById('youtubeView');
     const youtubeUrlInput = document.getElementById('youtubeUrlInput');
@@ -1886,6 +1887,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // +++ НАЧАЛО: НОВАЯ ЛОГИКА ДЛЯ YOUTUBE +++
         if (youtubeFetchBtn) {
             youtubeFetchBtn.addEventListener('click', async () => {
                 const url = youtubeUrlInput.value.trim();
@@ -1951,43 +1953,87 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                youtubeStatus.textContent = 'Скачивание на сервер... Это может занять некоторое время.';
-                youtubeDownloadBtn.disabled = true;
-                youtubeFetchBtn.disabled = true;
+                async function downloadYouTubeVideo(url, formatId) {
+                    const downloadButton = document.querySelector('#youtube-download-button');
+                    const originalButtonText = downloadButton.innerHTML;
+                    downloadButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Starting...';
+                    downloadButton.disabled = true;
 
-                try {
-                     const response = await fetch(`${api}/api/youtube/download`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url, format_id: formatId })
-                    });
+                    try {
+                        // 1. Start the download
+                        const startResponse = await fetch('/api/youtube/download', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url: url, format_id: formatId }),
+                        });
 
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error || 'Не удалось скачать видео.');
+                        if (!startResponse.ok) {
+                            const errorData = await startResponse.json();
+                            throw new Error(errorData.error || 'Failed to start download.');
+                        }
+
+                        const startResult = await startResponse.json();
+                        const taskId = startResult.task_id;
+
+                        downloadButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Downloading...';
+
+                        // 2. Poll for status
+                        const pollInterval = setInterval(async () => {
+                            try {
+                                const statusResponse = await fetch(`/api/youtube/download/status/${taskId}`);
+                                if (!statusResponse.ok) {
+                                    // Stop polling on server error, but don't overwrite the button state yet
+                                    clearInterval(pollInterval);
+                                    throw new Error('Could not get download status.');
+                                }
+
+                                const statusResult = await statusResponse.json();
+
+                                if (statusResult.status === 'completed') {
+                                    clearInterval(pollInterval);
+                                    downloadButton.innerHTML = 'Download Complete';
+                                    
+                                    // Create a link and trigger download
+                                    const link = document.createElement('a');
+                                    link.href = statusResult.path;
+                                    link.setAttribute('download', '');
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+
+                                    // Reset button after a delay
+                                    setTimeout(() => {
+                                        downloadButton.innerHTML = originalButtonText;
+                                        downloadButton.disabled = false;
+                                    }, 2000);
+
+                                } else if (statusResult.status === 'failed') {
+                                    clearInterval(pollInterval);
+                                    throw new Error(statusResult.error || 'Download failed on the server.');
+                                }
+                                // If status is 'pending', just continue polling
+
+                            } catch (error) {
+                                clearInterval(pollInterval);
+                                console.error('Polling error:', error);
+                                alert('Error during download: ' + error.message);
+                                downloadButton.innerHTML = originalButtonText;
+                                downloadButton.disabled = false;
+                            }
+                        }, 3000); // Poll every 3 seconds
+
+                    } catch (error) {
+                        console.error('Download error:', error);
+                        alert('Error starting download: ' + error.message);
+                        downloadButton.innerHTML = originalButtonText;
+                        downloadButton.disabled = false;
                     }
-
-                    const data = await response.json();
-                    youtubeStatus.textContent = 'Начинаю загрузку файла...';
-
-                    const link = document.createElement('a');
-                    link.href = data.download_path;
-                    
-                    const extension = data.download_path.split('.').pop();
-                    link.download = `${videoTitle}.${extension}`; 
-
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                } catch (error) {
-                    youtubeStatus.textContent = `Ошибка: ${error.message}`;
-                } finally {
-                    youtubeDownloadBtn.disabled = false;
-                    youtubeFetchBtn.disabled = false;
                 }
+
+                downloadYouTubeVideo(url, formatId);
             });
         }
+        // +++ КОНЕЦ: НОВАЯ ЛОГИКА ДЛЯ YOUTUBE +++
         
         document.body.addEventListener('click', async (e) => {
             const card = e.target.closest('.card');
