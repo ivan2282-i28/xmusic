@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const player = document.querySelector('.player');
     const videoBackgroundContainer = document.getElementById('videoBackgroundContainer');
     
+    // --- Default Player Elements ---
     const playerDefaultStyle = document.querySelector('.player-style-default');
     const playerCover = document.getElementById('playerCover');
     const playerTitle = document.getElementById('playerTitle');
@@ -67,17 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('nextBtn');
     const repeatBtn = document.getElementById('repeatBtn');
     const favoritePlayerBtn = document.getElementById('favoritePlayerBtn');
-    const progressBarContainer = document.querySelector('.progress-bar-container');
-    const progressFilled = document.querySelector('.progress-filled');
-    const progressThumb = document.querySelector('.progress-thumb');
+    const progressBar = document.getElementById('progressBar'); // Updated from div to input
     const currentTimeEl = document.getElementById('currentTime');
     const durationEl = document.getElementById('duration');
     const volumeBar = document.getElementById('volumeBar');
 
+    // --- Copy Player Elements ---
     const playerCopyStyle = document.querySelector('.player-style-copy');
     const copyPlayerCover = document.getElementById('copyPlayerCover');
-    const copyPlayerTitle = document.getElementById('copyPlayerTitle');
-    const copyPlayerArtist = document.getElementById('copyPlayerArtist');
+    const copyPlayerTitle = playerCopyStyle.querySelector('.copy-track-text .title'); // Class-based selector
+    const copyPlayerArtist = playerCopyStyle.querySelector('.copy-track-text .artist'); // Class-based selector
     const copyPlayPauseBtn = document.getElementById('copyPlayPauseBtn');
     const copyPlayIcon = document.getElementById('copyPlayIcon');
     const copyPauseIcon = document.getElementById('copyPauseIcon');
@@ -87,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyProgressBarContainer = document.querySelector('.copy-progress-bar-container');
     const copyProgressFilled = document.querySelector('.copy-progress-filled');
     const copyVolumeBar = document.getElementById('copyVolumeBar');
+    const copyCurrentTimeEl = document.getElementById('copyCurrentTime');
+    const copyDurationEl = document.getElementById('copyDuration');
 
     const searchView = document.getElementById('searchView');
     const searchResultsGrid = document.getElementById('searchResultsGrid');
@@ -2520,13 +2522,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.addEventListener('pause', onPause);
                 el.addEventListener('ended', onEnded);
                 el.addEventListener('timeupdate', () => {
-                    if (!isDragging && el.duration) {
-                        const progress = (el.currentTime / el.duration) * 100 || 0;
-                        if (progressFilled) progressFilled.style.width = `${progress}%`;
-                        if (progressThumb) progressThumb.style.left = `${progress}%`;
-                        if (copyProgressFilled) copyProgressFilled.style.width = `${progress}%`;
-                    }
-                    if (currentTimeEl) currentTimeEl.textContent = formatTime(el.currentTime);
+                    const updateProgress = () => {
+                        if (activeMediaElement.duration) {
+                            const currentTime = activeMediaElement.currentTime;
+                            const duration = activeMediaElement.duration;
+                            const progressPercent = (currentTime / duration) * 100;
+
+                            // Default player
+                            if (progressBar) {
+                                progressBar.value = currentTime;
+                                progressBar.max = duration;
+                                progressBar.style.setProperty('--progress-percent', `${progressPercent}%`);
+                            }
+                            if (currentTimeEl) currentTimeEl.textContent = formatTime(currentTime);
+                            if (durationEl) durationEl.textContent = formatTime(duration);
+
+                            // Copy player
+                            if (copyProgressFilled) copyProgressFilled.style.width = `${progressPercent}%`;
+                            if (copyCurrentTimeEl) copyCurrentTimeEl.textContent = formatTime(currentTime);
+                            if (copyDurationEl) copyDurationEl.textContent = formatTime(duration);
+                        }
+                    };
+
+                    const seek = (e) => {
+                        if (!activeMediaElement.duration) return;
+                        activeMediaElement.currentTime = e.target.value;
+                    };
+
+                    updateProgress();
                 });
                 el.addEventListener('loadedmetadata', () => { if (!isNaN(el.duration) && durationEl) durationEl.textContent = formatTime(el.duration); });
             }
