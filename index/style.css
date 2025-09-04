@@ -577,123 +577,99 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    pointer-events: none;
+    pointer-events: none; /* Allows clicking through the container */
 }
 
-/* --- Default Player - Modern Glass Design --- */
+/* --- Default Player --- */
 .player-style-default {
-    width: 95%;
-    max-width: 1000px;
-    height: 90px;
-    background: linear-gradient(135deg, rgba(20, 20, 25, 0.95), rgba(30, 30, 35, 0.9));
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    padding: 0 32px;
+    width: 100%;
+    max-width: 1200px;
+    height: 80px;
+    background: rgba(28, 28, 31, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px 16px 0 0;
+    padding: 0 24px;
     display: grid;
-    grid-template-columns: 280px 1fr 280px;
+    grid-template-columns: 300px 1fr 300px;
     align-items: center;
-    gap: 32px;
-    pointer-events: all;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateY(150%);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
-    margin-bottom: 20px;
+    gap: 24px;
+    pointer-events: all; /* Enable pointer events for the player itself */
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(100%); /* Initially hidden */
 }
 
 .player-style-default.visible {
     transform: translateY(0);
 }
 
-.player-style-default:hover {
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-}
-
-/* Left Section: Track Info - Enhanced */
+/* Left Section: Track Info */
 .track-info {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     min-width: 0;
 }
 
-#playerCover {
-    width: 64px;
-    height: 64px;
-    border-radius: 12px;
+.track-cover {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease;
 }
 
-#playerCover:hover {
-    transform: scale(1.05);
-}
-
-.track-info > div {
+.track-details {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    gap: 4px;
 }
 
-#playerTitle {
-    font-size: 1.1em;
-    font-weight: 700;
+.track-title, .track-artist {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track-title {
+    font-size: 1em;
+    font-weight: 600;
     color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-#playerArtist {
-    font-size: 0.9em;
+.track-artist {
+    font-size: 0.85em;
     color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0.8;
 }
 
-/* Center Section: Controls & Progress - Enhanced */
-.player-controls {
+/* Center Section: Controls & Progress */
+.player-center {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
 }
 
 .control-buttons {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
 }
 
-.control-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
+.control-btn, .play-pause-btn {
+    background: none;
+    border: none;
     cursor: pointer;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    padding: 0;
+    color: var(--player-icon-fill-color);
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.control-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: var(--primary-color);
+.control-btn:hover, .play-pause-btn:hover {
+    color: var(--player-icon-hover-color);
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(145, 71, 255, 0.3);
 }
 
 .control-btn svg {
@@ -701,386 +677,250 @@ body {
     height: 20px;
 }
 
-.play-button {
-    width: 56px;
-    height: 56px;
+.play-pause-btn {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover-color));
-    border: none;
+    background-color: var(--primary-color);
     color: white;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 20px rgba(145, 71, 255, 0.4);
 }
 
-.play-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 12px 30px rgba(145, 71, 255, 0.6);
+.play-pause-btn svg {
+    width: 24px;
+    height: 24px;
 }
 
-.play-button svg {
-    width: 28px;
-    height: 28px;
-}
-
-.progress-bar {
+.progress-container {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
 }
 
-#currentTime, #duration {
-    font-size: 0.85em;
+.time-label {
+    font-size: 0.8em;
     color: var(--text-secondary);
-    min-width: 45px;
+    min-width: 40px;
     text-align: center;
-    font-weight: 500;
-    font-family: 'Roboto Mono', monospace;
 }
 
-.progress-bar-container {
-    flex: 1;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 3px;
-    position: relative;
+input[type="range"].progress-bar {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
     cursor: pointer;
-    transition: height 0.2s ease;
+    outline: none;
 }
 
-.progress-bar-container:hover {
-    height: 8px;
-}
-
-.progress-filled {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    border-radius: 3px;
-    transition: width 0.1s ease;
-    position: relative;
-}
-
-.progress-thumb {
-    position: absolute;
-    right: -6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 12px;
-    height: 12px;
-    background: white;
+input[type="range"].progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--text-primary);
     border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    opacity: 0;
-    transition: all 0.2s ease;
+    margin-top: -5px;
+    transition: transform 0.2s ease;
 }
 
-.progress-bar-container:hover .progress-thumb {
-    opacity: 1;
-    transform: translateY(-50%) scale(1.2);
+input[type="range"].progress-bar:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
 }
 
-/* Right Section: Volume & Actions - Enhanced */
-.volume-controls {
+/* Right Section: Volume & Actions */
+.player-right {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 16px;
 }
 
-#favoritePlayerBtn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    cursor: pointer;
-    color: var(--text-secondary);
+.volume-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    gap: 8px;
 }
 
-#favoritePlayerBtn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: #ff6b6b;
-    transform: scale(1.1);
-    color: #ff6b6b;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+.volume-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--player-icon-fill-color);
+    transition: color 0.2s ease;
 }
 
-#favoritePlayerBtn.favorited {
-    background: rgba(255, 107, 107, 0.2);
-    border-color: #ff6b6b;
-    color: #ff6b6b;
+.volume-btn:hover {
+    color: var(--player-icon-hover-color);
 }
 
-#favoritePlayerBtn svg {
+.volume-btn svg {
     width: 20px;
     height: 20px;
 }
 
-.volume-controls svg {
-    width: 24px;
-    height: 24px;
-    color: var(--text-secondary);
-    margin-right: 12px;
-}
-
-#volumeBar {
+input[type="range"].volume-slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100px;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 3px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
     cursor: pointer;
     outline: none;
-    transition: all 0.2s ease;
 }
 
-#volumeBar:hover {
-    background: rgba(255, 255, 255, 0.25);
-}
-
-#volumeBar::-webkit-slider-thumb {
+input[type="range"].volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    width: 12px;
+    height: 12px;
+    background: var(--text-primary);
     border-radius: 50%;
+    margin-top: -4px;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s ease;
+    color: var(--player-icon-fill-color);
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
-#volumeBar::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
+.favorite-btn:hover {
+    transform: scale(1.1);
 }
 
-/* --- Copy Player - Compact Modern Design --- */
+.favorite-btn.favorited, .favorite-btn:hover {
+    color: var(--primary-color);
+}
+
+.favorite-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* --- Copy Player --- */
 .player-style-copy {
-    width: 380px;
-    background: linear-gradient(145deg, rgba(15, 15, 20, 0.95), rgba(25, 25, 30, 0.9));
-    backdrop-filter: blur(25px) saturate(200%);
-    -webkit-backdrop-filter: blur(25px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    width: 95%;
+    max-width: 450px;
+    background: rgba(28, 28, 31, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     pointer-events: all;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateY(150%) scale(0.9);
+    position: fixed; /* Use fixed positioning */
+    bottom: 20px; /* Position from bottom */
+    right: 20px; /* Position from right */
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(150%); /* Initially hidden */
 }
 
 .player-style-copy.visible {
-    transform: translateY(0) scale(1);
-}
-
-.player-style-copy:hover {
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.15);
-    transform: translateY(-4px) scale(1.02);
+    transform: translateY(0);
 }
 
 .copy-progress-bar-container {
     width: 100%;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.15);
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
     cursor: pointer;
     transition: height 0.2s ease;
-    position: relative;
 }
 
 .copy-progress-bar-container:hover {
-    height: 5px;
+    height: 8px;
 }
 
 .copy-progress-filled {
     width: 0%;
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    border-radius: 0;
-    transition: width 0.1s ease;
+    background-color: var(--primary-color);
+    border-radius: 0 2px 2px 0;
 }
 
 .copy-player-body {
-    padding: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .copy-track-info {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 #copyPlayerCover {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
     object-fit: cover;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease;
-}
-
-#copyPlayerCover:hover {
-    transform: scale(1.05);
 }
 
 .copy-track-text {
     min-width: 0;
-    flex: 1;
+}
+
+.copy-track-text .title, .copy-track-text .artist {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .copy-track-text .title {
-    font-size: 1em;
-    font-weight: 700;
+    font-size: 0.95em;
+    font-weight: 600;
     color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .copy-track-text .artist {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0.8;
 }
 
 .copy-controls-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
 }
 
 .copy-main-controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    flex: 1;
-}
-
-.copy-main-controls .control-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-}
-
-.copy-main-controls .control-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: var(--primary-color);
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(145, 71, 255, 0.3);
-}
-
-.copy-main-controls .play-button {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover-color));
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 6px 16px rgba(145, 71, 255, 0.4);
-}
-
-.copy-main-controls .play-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(145, 71, 255, 0.6);
+    gap: 16px;
+    grid-column: 2 / 3;
 }
 
 .copy-secondary-controls {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 12px;
+    grid-column: 3 / 4;
 }
 
-.copy-secondary-controls .control-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    color: var(--text-secondary);
+.copy-time-labels {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.copy-secondary-controls .control-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: #ff6b6b;
-    color: #ff6b6b;
-    transform: scale(1.1);
-}
-
-.copy-volume-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.copy-volume-controls svg {
-    width: 18px;
-    height: 18px;
+    justify-content: space-between;
+    font-size: 0.75em;
     color: var(--text-secondary);
-}
-
-#copyVolumeBar {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 80px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 2px;
-    cursor: pointer;
-    outline: none;
-}
-
-#copyVolumeBar::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    grid-column: 1 / 2;
+    justify-self: flex-start;
 }
 
 /* === НОВОЕ: Стили для плашки с таймером === */
@@ -1273,76 +1113,49 @@ body {
     color: var(--accent-color);
     border-color: var(--accent-color);
 }
-/* === XCREATOR MODE STYLES - ENHANCED === */
 body.creator-mode {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background-color: var(--creator-bg);
     color: var(--creator-text-primary);
-    transition: all 0.5s ease;
 }
 
 .creator-mode .sidebar {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+    background-color: var(--creator-card-bg);
+    border-right: 1px solid var(--creator-border-color);
 }
 
 .creator-mode .main-content {
-    background: transparent;
+    background-color: var(--creator-bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-.creator-mode .player-style-default {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+.creator-mode .player {
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
-.creator-mode .player-style-copy {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-}
-
-/* === XCREATOR NAVIGATION STYLES === */
-.creator-mode .logo {
-    color: var(--creator-primary-color);
-    font-weight: 800;
-    text-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
-}
-
-.creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
+.creator-mode .logo, .creator-mode .main-nav a, .creator-mode .creator-nav-btn, .creator-mode .go-back-btn, .creator-mode .settings-btn, .creator-mode .logout-btn {
     color: var(--creator-text-secondary);
-    background: rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(226, 232, 240, 0.5);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+}
+.creator-mode .logo{
+    color: var(--creator-text-primary);
 }
 
 .creator-mode .main-nav a span, .creator-mode .creator-nav-btn span, .creator-mode .creator-btn span, .creator-mode .go-back-btn span, .creator-mode .settings-btn span, .creator-mode .logout-btn span {
-    color: inherit;
-    font-weight: 600;
+    color: var(--creator-text-secondary);
 }
 
 .creator-mode .main-nav a:hover, .creator-mode .main-nav a.active, 
 .creator-mode .creator-nav-btn:hover, .creator-mode .creator-nav-btn.active, 
 .creator-mode .creator-btn:hover, .creator-mode .go-back-btn:hover {
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05));
+    background-color: #eef2f7;
     color: var(--creator-primary-color);
-    border-color: rgba(74, 144, 226, 0.3);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
-    transform: translateY(-1px);
 }
-
-.creator-mode .creator-nav-btn.active span {
+.creator-mode .creator-nav-btn.active span{
     color: var(--creator-primary-color);
-    font-weight: 700;
 }
 
 .creator-mode .player .control-buttons svg {
@@ -1364,15 +1177,8 @@ body.creator-mode {
     background-color: var(--creator-primary-color);
 }
 
-/* === XCREATOR CONTENT STYLES === */
 .creator-mode .main-header h1 {
     color: var(--creator-text-primary);
-    background: linear-gradient(135deg, var(--creator-primary-color), #5b9bd5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 800;
-    text-shadow: 0 2px 4px rgba(74, 144, 226, 0.1);
 }
 
 .creator-mode .search-bar-wrapper {
@@ -1381,58 +1187,38 @@ body.creator-mode {
 
 .creator-mode .section-title {
     color: var(--creator-text-primary);
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--creator-primary-color), #5b9bd5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
-/* === XCREATOR CARDS & ANALYTICS === */
 .creator-mode .card, .creator-mode .featured-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(20px);
-    transition: all 0.3s ease;
+    background-color: var(--creator-card-bg);
+    border: 1px solid var(--creator-border-color);
 }
 
 .creator-mode .card:hover, .creator-mode .featured-card:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
-    border-color: rgba(74, 144, 226, 0.4);
-    box-shadow: 0 16px 48px rgba(74, 144, 226, 0.15);
-    transform: translateY(-2px);
+    background-color: #f8f9fa;
+    border-color: var(--creator-primary-color);
 }
 
 .creator-mode .card-title, .creator-mode .card-artist {
     color: var(--creator-text-primary);
-    font-weight: 600;
 }
 
 .creator-mode .card-actions button {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8));
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(226, 232, 240, 0.6);
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--creator-border-color);
     color: var(--creator-text-secondary);
-    transition: all 0.3s ease;
-    font-weight: 600;
 }
 
 .creator-mode .card-actions button:hover {
     color: var(--creator-primary-color);
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05));
-    border-color: rgba(74, 144, 226, 0.3);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
-    transform: scale(1.05);
+    border-color: var(--creator-primary-color);
 }
 
-/* === XCREATOR MODALS & BUTTONS === */
 .creator-mode .favorite-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8));
+    background-color: rgba(255, 255, 255, 0.7);
     color: var(--creator-text-secondary);
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    border-color: var(--creator-border-color);
 }
 
 .creator-mode .favorite-btn.favorited {
@@ -1451,153 +1237,43 @@ body.creator-mode {
     color: var(--creator-text-primary);
 }
 
-/* === XCREATOR ANALYTICS STYLES === */
-.creator-mode .analytics-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-    margin-top: 24px;
+.creator-mode .modal h2, .creator-mode .modal .form-group label, .creator-mode .modal .link-btn {
+    color: var(--creator-text-primary);
 }
 
-.creator-mode .analytics-block {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8));
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    border-radius: 16px;
-    padding: 24px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+.creator-mode input[type="text"],
+.creator-mode input[type="password"],
+.creator-mode input[type="tel"],
+.creator-mode input[type="email"],
+.creator-mode select {
+    background-color: #f0f2f5;
+    border: 1px solid var(--creator-border-color);
+    color: var(--creator-text-primary);
+}
+.creator-mode input:focus, .creator-mode select:focus{
+    border-color: var(--creator-primary-color);
+    outline: none;
 }
 
-.creator-mode .analytics-block:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(74, 144, 226, 0.1);
+.creator-mode .submit-btn {
+    background-color: var(--creator-primary-color);
+    color: var(--creator-card-bg);
 }
 
-.creator-mode .analytics-block h3 {
-    color: var(--creator-primary-color);
-    font-weight: 700;
-    margin-bottom: 16px;
+.creator-mode .submit-btn:hover {
+    background-color: var(--creator-primary-hover);
+}
+.creator-mode .creator-main-screen {
+    text-align: center;
+    padding: 50px;
     font-size: 1.2em;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.creator-mode .analytics-block .stat {
     color: var(--creator-text-secondary);
-    font-weight: 600;
 }
 
-.creator-mode .analytics-block .stat-value {
-    color: var(--creator-primary-color);
-    font-weight: 800;
-    font-size: 1.3em;
-    text-shadow: 0 2px 4px rgba(74, 144, 226, 0.1);
-}
-
-.creator-mode .favorite-btn.favorited {
-    background: linear-gradient(135deg, var(--creator-primary-color), #5b9bd5);
-    color: white;
-    border-color: var(--creator-primary-color);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-}
-
-.creator-mode .favorite-btn:hover {
-    background: linear-gradient(135deg, var(--creator-primary-color), #5b9bd5);
-    color: white;
-    border-color: var(--creator-primary-color);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-    transform: scale(1.05);
-}
-
-/* === XCREATOR MODALS === */
-.creator-mode .modal {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
-    backdrop-filter: blur(25px);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-}
-
-.creator-mode .modal h2 {
+.creator-mode .creator-main-screen h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
     color: var(--creator-text-primary);
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--creator-primary-color), #5b9bd5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.creator-mode .modal .close-btn {
-    color: var(--creator-text-secondary);
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.creator-mode .modal .close-btn:hover {
-    color: var(--creator-primary-color);
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05));
-    border-color: rgba(74, 144, 226, 0.3);
-    transform: scale(1.1);
-}
-
-.creator-mode .modal input, .creator-mode .modal textarea, .creator-mode .modal select {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8));
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    color: var(--creator-text-primary);
-    border-radius: 12px;
-    padding: 12px 16px;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-}
-
-.creator-mode .modal input:focus, .creator-mode .modal textarea:focus, .creator-mode .modal select:focus {
-    border-color: var(--creator-primary-color);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
-}
-
-.creator-mode .modal .btn-primary {
-    background: linear-gradient(135deg, var(--creator-primary-color), #5b9bd5);
-    border: none;
-    border-radius: 12px;
-    padding: 12px 24px;
-    font-weight: 700;
-    color: white;
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-    transition: all 0.3s ease;
-}
-
-.creator-mode .modal .btn-primary:hover {
-    background: linear-gradient(135deg, var(--creator-primary-hover), #4a8bc2);
-    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
-    transform: translateY(-1px);
-}
-
-.creator-mode .modal .btn-secondary {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    color: var(--creator-text-secondary);
-    border-radius: 12px;
-    padding: 12px 24px;
-    font-weight: 600;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-}
-
-.creator-mode .modal .btn-secondary:hover {
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05));
-    color: var(--creator-primary-color);
-    border-color: rgba(74, 144, 226, 0.3);
-    transform: translateY(-1px);
 }
 
 .creator-mode .apply-btn {
