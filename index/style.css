@@ -570,34 +570,42 @@ body {
 /* === PLAYER STYLES === */
 .player {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
     z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     pointer-events: none; /* Allows clicking through the container */
+}
+
+.player:first-of-type {
+    bottom: 20px;
+    right: 20px;
+    width: auto;
+}
+
+.player:last-of-type {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
 }
 
 /* --- Default Player --- */
 .player-style-default {
-    width: 100%;
-    max-width: 1200px;
+    width: 400px;
+    max-width: 400px;
     height: 80px;
-    background: rgba(28, 28, 31, 0.7);
+    background: rgba(28, 28, 31, 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px 16px 0 0;
-    padding: 0 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 0 20px;
     display: grid;
-    grid-template-columns: 300px 1fr 300px;
+    grid-template-columns: 200px 1fr 100px;
     align-items: center;
-    gap: 24px;
+    gap: 16px;
     pointer-events: all; /* Enable pointer events for the player itself */
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateY(100%); /* Initially hidden */
+    transform: translateY(150%); /* Initially hidden */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .player-style-default.visible {
@@ -808,9 +816,9 @@ input[type="range"].volume-slider::-webkit-slider-thumb {
 
 /* --- Copy Player --- */
 .player-style-copy {
-    width: 95%;
+    width: 450px;
     max-width: 450px;
-    background: rgba(28, 28, 31, 0.7);
+    background: rgba(28, 28, 31, 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -820,9 +828,6 @@ input[type="range"].volume-slider::-webkit-slider-thumb {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    position: fixed; /* Use fixed positioning */
-    bottom: 20px; /* Position from bottom */
-    right: 20px; /* Position from right */
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateY(150%); /* Initially hidden */
 }
@@ -971,16 +976,19 @@ input[type="range"].volume-slider::-webkit-slider-thumb {
 /* === УЛУЧШЕНИЕ: НОВЫЙ СТИЛЬНЫЙ БЛОК XRECOMEN === */
 .xrecomen-section {
     display: flex;
-    flex-direction: column; /* Изменено */
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 350px; /* Можно настроить высоту */
+    height: 350px;
     width: 100%;
     margin-bottom: 50px;
     margin-top: 10px;
     position: relative;
-    background-color: transparent; /* Убираем фон */
-    border-radius: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     overflow: visible;
 }
 
