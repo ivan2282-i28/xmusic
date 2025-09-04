@@ -69,8 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const repeatBtn = document.getElementById('repeatBtn');
     const favoritePlayerBtn = document.getElementById('favoritePlayerBtn');
     const progressBar = document.getElementById('progressBar'); // Updated from div to input
-    const progressBarContainer = document.querySelector('.progress-bar-container');
-    const progressFilled = document.querySelector('.progress-filled');
     const currentTimeEl = document.getElementById('currentTime');
     const durationEl = document.getElementById('duration');
     const volumeBar = document.getElementById('volumeBar');
@@ -78,8 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Copy Player Elements ---
     const playerCopyStyle = document.querySelector('.player-style-copy');
     const copyPlayerCover = document.getElementById('copyPlayerCover');
-    const copyPlayerTitle = playerCopyStyle ? playerCopyStyle.querySelector('.copy-track-text .title') : null; // Class-based selector
-    const copyPlayerArtist = playerCopyStyle ? playerCopyStyle.querySelector('.copy-track-text .artist') : null; // Class-based selector
+    const copyPlayerTitle = playerCopyStyle.querySelector('.copy-track-text .title'); // Class-based selector
+    const copyPlayerArtist = playerCopyStyle.querySelector('.copy-track-text .artist'); // Class-based selector
     const copyPlayPauseBtn = document.getElementById('copyPlayPauseBtn');
     const copyPlayIcon = document.getElementById('copyPlayIcon');
     const copyPauseIcon = document.getElementById('copyPauseIcon');
@@ -793,6 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentUser) return;
         try {
             const response = await fetchWithAuth(`${api}/api/creator/my-categories/${currentUser.id}`);
+            if (!response.ok) throw new Error('Error fetching categories.');
             const categories = await response.json();
             if (categorySelect) {
                 categorySelect.innerHTML = '<option value="">Общая</option>';
@@ -915,8 +914,8 @@ document.addEventListener('DOMContentLoaded', () => {
             [playerCover, copyPlayerCover].forEach(cover => cover.src = `/fon/${item.cover}`);
             playerTitle.textContent = item.title;
             playerArtist.textContent = item.artist || item.creator_name;
-            if (copyPlayerTitle) copyPlayerTitle.textContent = item.title;
-            if (copyPlayerArtist) copyPlayerArtist.textContent = item.artist || item.creator_name;
+            copyPlayerTitle.textContent = item.title;
+            copyPlayerArtist.textContent = item.artist || item.creator_name;
         
             if (item.type === 'audio') {
                 activeMediaElement = audioPlayer;
@@ -1346,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3>${cat.name}</h3>
                         <div class="category-actions">
                             <button class="btn-edit" data-category-id="${cat.id}" title="Редактировать">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M3 9.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/><path d="M7.5 0a.5.5 0 0 1 .5.5V2h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5V.5a.5.5 0 0 1 .5-.5zM14 2.5V6.5a.5.5 0 0 1-1 0V4c0-.3-.404-.5-.9-.5a.502.502 0 0 0-.1-.1zM8 10.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1A.5.5 0 0 1 8 10.5zM2.5 10.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
                             </button>
                             <button class="btn-delete" data-category-id="${cat.id}" title="Удалить">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
