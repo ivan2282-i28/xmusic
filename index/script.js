@@ -76,8 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Copy Player Elements ---
     const playerCopyStyle = document.querySelector('.player-style-copy');
     const copyPlayerCover = document.getElementById('copyPlayerCover');
-    const copyPlayerTitle = playerCopyStyle.querySelector('.copy-track-text .title'); // Class-based selector
-    const copyPlayerArtist = playerCopyStyle.querySelector('.copy-track-text .artist'); // Class-based selector
+    const copyPlayerTitle = playerCopyStyle ? playerCopyStyle.querySelector('.copy-track-text .title') : null; // Class-based selector
+    const copyPlayerArtist = playerCopyStyle ? playerCopyStyle.querySelector('.copy-track-text .artist') : null; // Class-based selector
     const copyPlayPauseBtn = document.getElementById('copyPlayPauseBtn');
     const copyPlayIcon = document.getElementById('copyPlayIcon');
     const copyPauseIcon = document.getElementById('copyPauseIcon');
