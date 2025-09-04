@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 import secrets
 import threading
 import uuid
+import time
 
 # +++ НОВЫЙ ИМПОРТ для работы с YouTube +++
 import yt_dlp
@@ -180,27 +181,59 @@ def webserver(app, db, dirs, model=None):
     # Dictionary to track the status of background tasks
     download_tasks = {}
 
+    def file_cleanup_worker(file_path, delay=600):
+        """Deletes a file after a specified delay (in seconds)."""
+        time.sleep(delay)
+        try:
+            os.remove(file_path)
+            app.logger.info(f"Successfully cleaned up file: {file_path}")
+        except OSError as e:
+            app.logger.error(f"Error cleaning up file {file_path}: {e}")
+
     def download_worker(url, format_id, task_id, base_filename):
         """This function will run in a separate thread to download the video."""
+        
+        def progress_hook(d):
+            if d['status'] == 'downloading':
+                total_bytes = d.get('total_bytes') or d.get('total_bytes_estimate')
+                if total_bytes:
+                    progress = round((d['downloaded_bytes'] / total_bytes) * 100, 2)
+                    download_tasks[task_id]['status'] = 'downloading'
+                    download_tasks[task_id]['progress'] = progress
+            elif d['status'] == 'finished':
+                download_tasks[task_id]['status'] = 'processing'
+
         try:
             final_filename = f"{base_filename}_{secrets.token_hex(4)}"
+            output_template = os.path.join(dirs["YOUTUBE_DOWNLOAD_DIR"], f'{final_filename}.%(ext)s')
+            
             ydl_opts = {
                 'format': format_id,
-                'outtmpl': os.path.join(dirs["YOUTUBE_DOWNLOAD_DIR"], f'{final_filename}.%(ext)s'),
+                'outtmpl': output_template,
                 'quiet': True,
                 'no_warnings': True,
+                'progress_hooks': [progress_hook],
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 meta = ydl.extract_info(url, download=True)
-                downloaded_file = ydl.prepare_filename(meta)
-                final_filename_with_ext = os.path.basename(downloaded_file)
+                downloaded_file_path = ydl.prepare_filename(meta)
+                final_filename_with_ext = os.path.basename(downloaded_file_path)
             
-            download_tasks[task_id] = {'status': 'completed', 'path': f'/youtube_downloads/{final_filename_with_ext}'}
+            download_tasks[task_id] = {
+                'status': 'completed',
+                'path': f'/youtube_downloads/{final_filename_with_ext}',
+                'full_path': downloaded_file_path,
+                'thumbnail': meta.get('thumbnail')
+            }
+            
+            # Schedule the file for deletion
+            cleanup_thread = threading.Thread(target=file_cleanup_worker, args=(downloaded_file_path,))
+            cleanup_thread.start()
 
         except Exception as e:
             app.logger.error(f"[Task {task_id}] Download failed: {e}")
-            download_tasks[task_id] = {'status': 'failed', 'error': str(e)}
+            download_tasks[task_id] = {'status': 'failed', 'error': 'An error occurred during download.'}
 
     @app.route('/api/youtube/download', methods=['POST'])
     def youtube_download():
